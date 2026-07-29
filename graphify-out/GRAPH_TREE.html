@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Munay v0.1 — graphify tree viewer</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f9f9f9;
+      color: #333;
+    }
+    h1 {
+      margin: 20px 0 0 24px;
+      font-size: 2.2rem;
+      font-weight: bold;
+      color: #1e3a56;
+    }
+    .controls {
+      margin: 20px 0 15px 24px;
+    }
+    button {
+      margin-right: 10px;
+      padding: 8px 18px;
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background 0.2s ease-in-out;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    button:active {
+      background: #004085;
+    }
+    #tree-container {
+      width: calc(100vw - 48px); /* Adjust for body margin/padding */
+      height: 85vh;
+      overflow: auto;
+      border-radius: 8px;
+      background: #fff;
+      margin-left: 24px;
+      margin-right: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      border: 1px solid #ddd;
+    }
+    svg {
+      background: #fff;
+      border-radius: 8px;
+      display: block; /* Important for D3 */
+    }
+    .node circle {
+      stroke-width: 2.5px;
+    }
+    .node text { /* Base style for the <text> container */
+      font: 13px 'Segoe UI', sans-serif;
+      paint-order: stroke fill; /* Ensures text is readable over lines */
+      stroke: #fff; /* White halo */
+      stroke-width: 3px; /* Halo thickness */
+      stroke-linejoin: round;
+      stroke-opacity: 0.85; /* Halo opacity */
+    }
+    .link {
+      fill: none;
+      stroke-opacity: 0.7;
+      stroke-width: 2px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Munay v0.1 — Knowledge Graph</h1>
+  <div class="controls">
+    <button onclick="expandAll()">Expand All</button>
+    <button onclick="collapseAll()">Collapse All</button>
+    <button onclick="resetView()">Reset View</button>
+  </div>
+  <div id="tree-container">
+    <svg id="tree-svg" width="6000" height="8000"></svg>
+  </div>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script>
+    const initialJsonData = {"name":"Munay v0.1","total_count":777,"children":[{"name":"AGENTS.md","total_count":2,"children":[{"name":"AGENTS.md","total_count":1,"children":[]},{"name":"Graphify","total_count":1,"children":[]}]},{"name":"components.json","total_count":17,"children":[{"name":"$schema","total_count":1,"children":[]},{"name":"aliases","total_count":1,"children":[]},{"name":"baseColor","total_count":1,"children":[]},{"name":"components","total_count":1,"children":[]},{"name":"config","total_count":1,"children":[]},{"name":"css","total_count":1,"children":[]},{"name":"cssVariables","total_count":1,"children":[]},{"name":"hooks","total_count":1,"children":[]},{"name":"iconLibrary","total_count":1,"children":[]},{"name":"lib","total_count":1,"children":[]},{"name":"prefix","total_count":1,"children":[]},{"name":"rsc","total_count":1,"children":[]},{"name":"style","total_count":1,"children":[]},{"name":"tailwind","total_count":1,"children":[]},{"name":"tsx","total_count":1,"children":[]},{"name":"ui","total_count":1,"children":[]},{"name":"utils","total_count":1,"children":[]}]},{"name":"docs","total_count":10,"children":[{"name":"grafos","total_count":1,"children":[{"name":"README.md","total_count":1,"children":[{"name":"Grafos del Proyecto \u2014 Munay v0.1","total_count":1,"children":[]}]}]},{"name":"GUIA_DESPLIEGUE_v0.1.md","total_count":1,"children":[{"name":"Gu\u00eda de despliegue \u2014 Munay v0.1","total_count":1,"children":[]}]},{"name":"MIGRACION_NEON_BREVO.md","total_count":1,"children":[{"name":"Migraci\u00f3n: Supabase+Resend \u2192 Neon+Brevo+Clerk+UploadThing","total_count":1,"children":[]}]},{"name":"PAYMENT_GATEWAYS.md","total_count":2,"children":[{"name":"Kushki Payment Gateway","total_count":1,"children":[]},{"name":"Pasarelas de pago para Ecuador (Ibarra)","total_count":1,"children":[]}]},{"name":"PHASE1.md","total_count":1,"children":[{"name":"FASE 1/5 \u2014 Preparaci\u00f3n de infraestructura + base de datos","total_count":1,"children":[]}]},{"name":"PHASE2.md","total_count":1,"children":[{"name":"FASE 2/5 \u2014 Cat\u00e1logo + Carrito + Flash code search","total_count":1,"children":[]}]},{"name":"PHASE3.md","total_count":1,"children":[{"name":"FASE 3/5 \u2014 Pasarela PCI + \u00d3rdenes + Webhooks + Puntos","total_count":1,"children":[]}]},{"name":"PHASE4.md","total_count":1,"children":[{"name":"FASE 4/5 \u2014 Cuenta de usuario + Puntos + Admin completo","total_count":1,"children":[]}]},{"name":"PHASE5.md","total_count":1,"children":[{"name":"FASE 5/5 \u2014 Endurecimiento + Producci\u00f3n (FINAL)","total_count":1,"children":[]}]}]},{"name":"eslint.config.mjs","total_count":3,"children":[{"name":"__dirname","total_count":1,"children":[]},{"name":"__filename","total_count":1,"children":[]},{"name":"eslintConfig","total_count":1,"children":[]}]},{"name":"next.config.ts","total_count":1,"children":[{"name":"nextConfig","total_count":1,"children":[]}]},{"name":"package.json","total_count":167,"children":[{"name":"@clerk/nextjs","total_count":1,"children":[]},{"name":"@clerk/nextjs","total_count":1,"children":[]},{"name":"@dnd-kit/core","total_count":1,"children":[]},{"name":"@dnd-kit/core","total_count":1,"children":[]},{"name":"@dnd-kit/sortable","total_count":1,"children":[]},{"name":"@dnd-kit/sortable","total_count":1,"children":[]},{"name":"@dnd-kit/utilities","total_count":1,"children":[]},{"name":"@dnd-kit/utilities","total_count":1,"children":[]},{"name":"@hookform/resolvers","total_count":1,"children":[]},{"name":"@hookform/resolvers","total_count":1,"children":[]},{"name":"@mdxeditor/editor","total_count":1,"children":[]},{"name":"@mdxeditor/editor","total_count":1,"children":[]},{"name":"@neondatabase/serverless","total_count":1,"children":[]},{"name":"@neondatabase/serverless","total_count":1,"children":[]},{"name":"@playwright/test","total_count":1,"children":[]},{"name":"@playwright/test","total_count":1,"children":[]},{"name":"@radix-ui/react-accordion","total_count":1,"children":[]},{"name":"@radix-ui/react-accordion","total_count":1,"children":[]},{"name":"@radix-ui/react-alert-dialog","total_count":1,"children":[]},{"name":"@radix-ui/react-alert-dialog","total_count":1,"children":[]},{"name":"@radix-ui/react-aspect-ratio","total_count":1,"children":[]},{"name":"@radix-ui/react-aspect-ratio","total_count":1,"children":[]},{"name":"@radix-ui/react-avatar","total_count":1,"children":[]},{"name":"@radix-ui/react-avatar","total_count":1,"children":[]},{"name":"@radix-ui/react-checkbox","total_count":1,"children":[]},{"name":"@radix-ui/react-checkbox","total_count":1,"children":[]},{"name":"@radix-ui/react-collapsible","total_count":1,"children":[]},{"name":"@radix-ui/react-collapsible","total_count":1,"children":[]},{"name":"@radix-ui/react-context-menu","total_count":1,"children":[]},{"name":"@radix-ui/react-context-menu","total_count":1,"children":[]},{"name":"@radix-ui/react-dialog","total_count":1,"children":[]},{"name":"@radix-ui/react-dialog","total_count":1,"children":[]},{"name":"@radix-ui/react-dropdown-menu","total_count":1,"children":[]},{"name":"@radix-ui/react-dropdown-menu","total_count":1,"children":[]},{"name":"@radix-ui/react-hover-card","total_count":1,"children":[]},{"name":"@radix-ui/react-hover-card","total_count":1,"children":[]},{"name":"@radix-ui/react-label","total_count":1,"children":[]},{"name":"@radix-ui/react-label","total_count":1,"children":[]},{"name":"@radix-ui/react-menubar","total_count":1,"children":[]},{"name":"@radix-ui/react-menubar","total_count":1,"children":[]},{"name":"@radix-ui/react-navigation-menu","total_count":1,"children":[]},{"name":"@radix-ui/react-navigation-menu","total_count":1,"children":[]},{"name":"@radix-ui/react-popover","total_count":1,"children":[]},{"name":"@radix-ui/react-popover","total_count":1,"children":[]},{"name":"@radix-ui/react-progress","total_count":1,"children":[]},{"name":"@radix-ui/react-progress","total_count":1,"children":[]},{"name":"@radix-ui/react-radio-group","total_count":1,"children":[]},{"name":"@radix-ui/react-radio-group","total_count":1,"children":[]},{"name":"@radix-ui/react-scroll-area","total_count":1,"children":[]},{"name":"@radix-ui/react-scroll-area","total_count":1,"children":[]},{"name":"@radix-ui/react-select","total_count":1,"children":[]},{"name":"@radix-ui/react-select","total_count":1,"children":[]},{"name":"@radix-ui/react-separator","total_count":1,"children":[]},{"name":"@radix-ui/react-separator","total_count":1,"children":[]},{"name":"@radix-ui/react-slider","total_count":1,"children":[]},{"name":"@radix-ui/react-slider","total_count":1,"children":[]},{"name":"@radix-ui/react-slot","total_count":1,"children":[]},{"name":"@radix-ui/react-slot","total_count":1,"children":[]},{"name":"@radix-ui/react-switch","total_count":1,"children":[]},{"name":"@radix-ui/react-switch","total_count":1,"children":[]},{"name":"@radix-ui/react-tabs","total_count":1,"children":[]},{"name":"@radix-ui/react-tabs","total_count":1,"children":[]},{"name":"@radix-ui/react-toast","total_count":1,"children":[]},{"name":"@radix-ui/react-toggle","total_count":1,"children":[]},{"name":"@radix-ui/react-toggle","total_count":1,"children":[]},{"name":"@radix-ui/react-toggle-group","total_count":1,"children":[]},{"name":"@radix-ui/react-toggle-group","total_count":1,"children":[]},{"name":"@radix-ui/react-tooltip","total_count":1,"children":[]},{"name":"@radix-ui/react-tooltip","total_count":1,"children":[]},{"name":"@reactuses/core","total_count":1,"children":[]},{"name":"@reactuses/core","total_count":1,"children":[]},{"name":"@tailwindcss/postcss","total_count":1,"children":[]},{"name":"@tailwindcss/postcss","total_count":1,"children":[]},{"name":"@tanstack/react-query","total_count":1,"children":[]},{"name":"@tanstack/react-query","total_count":1,"children":[]},{"name":"@tanstack/react-table","total_count":1,"children":[]},{"name":"@tanstack/react-table","total_count":1,"children":[]},{"name":"@types/nodemailer","total_count":1,"children":[]},{"name":"@types/nodemailer","total_count":1,"children":[]},{"name":"@types/react","total_count":1,"children":[]},{"name":"@types/react","total_count":1,"children":[]},{"name":"@types/react-dom","total_count":1,"children":[]},{"name":"@types/react-dom","total_count":1,"children":[]},{"name":"build","total_count":1,"children":[]},{"name":"bun-types","total_count":1,"children":[]},{"name":"bun-types","total_count":1,"children":[]},{"name":"class-variance-authority","total_count":1,"children":[]},{"name":"class-variance-authority","total_count":1,"children":[]},{"name":"clsx","total_count":1,"children":[]},{"name":"clsx","total_count":1,"children":[]},{"name":"cmdk","total_count":1,"children":[]},{"name":"cmdk","total_count":1,"children":[]},{"name":"date-fns","total_count":1,"children":[]},{"name":"date-fns","total_count":1,"children":[]},{"name":"dependencies","total_count":1,"children":[]},{"name":"description","total_count":1,"children":[]},{"name":"dev","total_count":1,"children":[]},{"name":"devDependencies","total_count":1,"children":[]},{"name":"embla-carousel-react","total_count":1,"children":[]},{"name":"embla-carousel-react","total_count":1,"children":[]},{"name":"eslint","total_count":1,"children":[]},{"name":"eslint","total_count":1,"children":[]},{"name":"eslint-config-next","total_count":1,"children":[]},{"name":"eslint-config-next","total_count":1,"children":[]},{"name":"framer-motion","total_count":1,"children":[]},{"name":"framer-motion","total_count":1,"children":[]},{"name":"input-otp","total_count":1,"children":[]},{"name":"input-otp","total_count":1,"children":[]},{"name":"lint","total_count":1,"children":[]},{"name":"lucide-react","total_count":1,"children":[]},{"name":"lucide-react","total_count":1,"children":[]},{"name":"name","total_count":1,"children":[]},{"name":"next","total_count":1,"children":[]},{"name":"next","total_count":1,"children":[]},{"name":"next-auth","total_count":1,"children":[]},{"name":"next-auth","total_count":1,"children":[]},{"name":"nodemailer","total_count":1,"children":[]},{"name":"nodemailer","total_count":1,"children":[]},{"name":"nodemailer-brevo-transport","total_count":1,"children":[]},{"name":"nodemailer-brevo-transport","total_count":1,"children":[]},{"name":"private","total_count":1,"children":[]},{"name":"react","total_count":1,"children":[]},{"name":"react","total_count":1,"children":[]},{"name":"react-day-picker","total_count":1,"children":[]},{"name":"react-day-picker","total_count":1,"children":[]},{"name":"react-dom","total_count":1,"children":[]},{"name":"react-dom","total_count":1,"children":[]},{"name":"react-hook-form","total_count":1,"children":[]},{"name":"react-hook-form","total_count":1,"children":[]},{"name":"react-markdown","total_count":1,"children":[]},{"name":"react-markdown","total_count":1,"children":[]},{"name":"react-resizable-panels","total_count":1,"children":[]},{"name":"react-resizable-panels","total_count":1,"children":[]},{"name":"react-syntax-highlighter","total_count":1,"children":[]},{"name":"react-syntax-highlighter","total_count":1,"children":[]},{"name":"recharts","total_count":1,"children":[]},{"name":"recharts","total_count":1,"children":[]},{"name":"scripts","total_count":1,"children":[]},{"name":"sharp","total_count":1,"children":[]},{"name":"sharp","total_count":1,"children":[]},{"name":"sonner","total_count":1,"children":[]},{"name":"sonner","total_count":1,"children":[]},{"name":"start","total_count":1,"children":[]},{"name":"tailwind-merge","total_count":1,"children":[]},{"name":"tailwind-merge","total_count":1,"children":[]},{"name":"tailwindcss","total_count":1,"children":[]},{"name":"tailwindcss","total_count":1,"children":[]},{"name":"tailwindcss-animate","total_count":1,"children":[]},{"name":"tailwindcss-animate","total_count":1,"children":[]},{"name":"test:e2e","total_count":1,"children":[]},{"name":"test:e2e:report","total_count":1,"children":[]},{"name":"test:e2e:ui","total_count":1,"children":[]},{"name":"tw-animate-css","total_count":1,"children":[]},{"name":"tw-animate-css","total_count":1,"children":[]},{"name":"typescript","total_count":1,"children":[]},{"name":"typescript","total_count":1,"children":[]},{"name":"uuid","total_count":1,"children":[]},{"name":"uuid","total_count":1,"children":[]},{"name":"vaul","total_count":1,"children":[]},{"name":"vaul","total_count":1,"children":[]},{"name":"version","total_count":1,"children":[]},{"name":"z-ai-web-dev-sdk","total_count":1,"children":[]},{"name":"z-ai-web-dev-sdk","total_count":1,"children":[]},{"name":"zod","total_count":1,"children":[]},{"name":"zod","total_count":1,"children":[]},{"name":"zustand","total_count":1,"children":[]},{"name":"zustand","total_count":1,"children":[]}]},{"name":"postcss.config.mjs","total_count":1,"children":[{"name":"config","total_count":1,"children":[]}]},{"name":"README.md","total_count":4,"children":[{"name":"Brevo Emails","total_count":1,"children":[]},{"name":"Clerk Auth","total_count":1,"children":[]},{"name":"Neon Postgres","total_count":1,"children":[]},{"name":"README.md","total_count":1,"children":[]}]},{"name":"scripts","total_count":30,"children":[{"name":"generate-graphs.js","total_count":30,"children":[{"name":"analyzeRoutes()","total_count":1,"children":[]},{"name":"analyzeUIComponents()","total_count":1,"children":[]},{"name":"depDot","total_count":1,"children":[]},{"name":"depGraph","total_count":1,"children":[]},{"name":"fs","total_count":1,"children":[]},{"name":"generateDependencyGraph()","total_count":1,"children":[]},{"name":"generateDirTreeGraph()","total_count":1,"children":[]},{"name":"generateInteractiveHTML()","total_count":1,"children":[]},{"name":"generateRouteGraph()","total_count":1,"children":[]},{"name":"generateUIComponentsGraph()","total_count":1,"children":[]},{"name":"gv","total_count":1,"children":[]},{"name":"html","total_count":1,"children":[]},{"name":"HTML_OUTPUT","total_count":1,"children":[]},{"name":"htmlData","total_count":1,"children":[]},{"name":"OUTPUT_DIR","total_count":1,"children":[]},{"name":"parseImports()","total_count":1,"children":[]},{"name":"path","total_count":1,"children":[]},{"name":"PROJECT_ROOT","total_count":1,"children":[]},{"name":"renderHTML()","total_count":1,"children":[]},{"name":"routeDot","total_count":1,"children":[]},{"name":"routeGraph","total_count":1,"children":[]},{"name":"routes","total_count":1,"children":[]},{"name":"scanSourceFiles()","total_count":1,"children":[]},{"name":"SRC_DIR","total_count":1,"children":[]},{"name":"treeDot","total_count":1,"children":[]},{"name":"treeGraph","total_count":1,"children":[]},{"name":"uiDot","total_count":1,"children":[]},{"name":"uiGraph","total_count":1,"children":[]},{"name":"{ files, imports }","total_count":1,"children":[]},{"name":"{ uiComponents, componentUsage }","total_count":1,"children":[]}]}]},{"name":"src","total_count":510,"children":[{"name":"app","total_count":91,"children":[{"name":"admin","total_count":23,"children":[{"name":"flash-codes","total_count":7,"children":[{"name":"[id]","total_count":3,"children":[{"name":"page.tsx","total_count":3,"children":[{"name":"EditFlashCodePage()","total_count":1,"children":[]},{"name":"metadata","total_count":1,"children":[]},{"name":"PageProps","total_count":1,"children":[]}]}]},{"name":"new","total_count":2,"children":[{"name":"page.tsx","total_count":2,"children":[{"name":"metadata","total_count":1,"children":[]},{"name":"NewFlashCodePage()","total_count":1,"children":[]}]}]},{"name":"page.tsx","total_count":2,"children":[{"name":"AdminFlashCodesPage()","total_count":1,"children":[]},{"name":"metadata","total_count":1,"children":[]}]}]},{"name":"login","total_count":2,"children":[{"name":"page.tsx","total_count":2,"children":[{"name":"AdminLoginPage()","total_count":1,"children":[]},{"name":"metadata","total_count":1,"children":[]}]}]},{"name":"metrics","total_count":2,"children":[{"name":"page.tsx","total_count":2,"children":[{"name":"AdminMetricsPage()","total_count":1,"children":[]},{"name":"metadata","total_count":1,"children":[]}]}]},{"name":"orders","total_count":5,"children":[{"name":"[id]","total_count":3,"children":[{"name":"page.tsx","total_count":3,"children":[{"name":"AdminOrderDetailPage()","total_count":1,"children":[]},{"name":"metadata","total_count":1,"children":[]},{"name":"PageProps","total_count":1,"children":[]}]}]},{"name":"page.tsx","total_count":2,"children":[{"name":"AdminOrdersPage()","total_count":1,"children":[]},{"name":"metadata","total_count":1,"children":[]}]}]},{"name":"page.tsx","total_count":2,"children":[{"name":"AdminHomePage()","total_count":1,"children":[]},{"name":"metadata","total_count":1,"children":[]}]},{"name":"products","total_count":5,"children":[{"name":"[id]","total_count":3,"children":[{"name":"page.tsx","total_count":3,"children":[{"name":"EditProductPage()","total_count":1,"children":[]},{"name":"metadata","total_count":1,"children":[]},{"name":"PageProps","total_count":1,"children":[]}]}]},{"name":"new","total_count":2,"children":[{"name":"page.tsx","total_count":2,"children":[{"name":"metadata","total_count":1,"children":[]},{"name":"NewProductPage()","total_count":1,"children":[]}]}]}]}]},{"name":"api","total_count":23,"children":[{"name":"admin","total_count":7,"children":[{"name":"products","total_count":7,"children":[{"name":"[id]","total_count":4,"children":[{"name":"route.ts","total_count":4,"children":[{"name":"checkAdmin()","total_count":1,"children":[]},{"name":"DELETE()","total_count":1,"children":[]},{"name":"PUT()","total_count":1,"children":[]},{"name":"RouteContext","total_count":1,"children":[]}]}]},{"name":"route.ts","total_count":3,"children":[{"name":"checkAdmin()","total_count":1,"children":[]},{"name":"GET()","total_count":1,"children":[]},{"name":"POST()","total_count":1,"children":[]}]}]}]},{"name":"auth","total_count":1,"children":[{"name":"logout","total_count":1,"children":[{"name":"route.ts","total_count":1,"children":[{"name":"POST()","total_count":1,"children":[]}]}]}]},{"name":"cron","total_count":1,"children":[{"name":"expire-orders","total_count":1,"children":[{"name":"route.ts","total_count":1,"children":[{"name":"GET()","total_count":1,"children":[]}]}]}]},{"name":"flash","total_count":1,"children":[{"name":"validate","total_count":1,"children":[{"name":"route.ts","total_count":1,"children":[{"name":"POST()","total_count":1,"children":[]}]}]}]},{"name":"flash-codes","total_count":7,"children":[{"name":"[id]","total_count":4,"children":[{"name":"route.ts","total_count":4,"children":[{"name":"checkAdmin()","total_count":1,"children":[]},{"name":"DELETE()","total_count":1,"children":[]},{"name":"PUT()","total_count":1,"children":[]},{"name":"RouteContext","total_count":1,"children":[]}]}]},{"name":"route.ts","total_count":3,"children":[{"name":"checkAdmin()","total_count":1,"children":[]},{"name":"GET()","total_count":1,"children":[]},{"name":"POST()","total_count":1,"children":[]}]}]},{"name":"orders","total_count":1,"children":[{"name":"route.ts","total_count":1,"children":[{"name":"POST()","total_count":1,"children":[]}]}]},{"name":"payments","total_count":3,"children":[{"name":"create","total_count":1,"children":[{"name":"route.ts","total_count":1,"children":[{"name":"POST()","total_count":1,"children":[]}]}]},{"name":"webhook","total_count":2,"children":[{"name":"route.ts","total_count":2,"children":[{"name":"GET()","total_count":1,"children":[]},{"name":"POST()","total_count":1,"children":[]}]}]}]},{"name":"route.ts","total_count":1,"children":[{"name":"GET()","total_count":1,"children":[]}]},{"name":"user","total_count":1,"children":[{"name":"points","total_count":1,"children":[{"name":"route.ts","total_count":1,"children":[{"name":"GET()","total_count":1,"children":[]}]}]}]}]},{"name":"carrito","total_count":1,"children":[{"name":"page.tsx","total_count":1,"children":[{"name":"CarritoPage()","total_count":1,"children":[]}]}]},{"name":"catalogo","total_count":3,"children":[{"name":"page.tsx","total_count":3,"children":[{"name":"CatalogoPage()","total_count":1,"children":[]},{"name":"metadata","total_count":1,"children":[]},{"name":"PageProps","total_count":1,"children":[]}]}]},{"name":"checkout","total_count":9,"children":[{"name":"cancelled","total_count":2,"children":[{"name":"page.tsx","total_count":2,"children":[{"name":"CheckoutCancelledPage()","total_count":1,"children":[]},{"name":"metadata","total_count":1,"children":[]}]}]},{"name":"page.tsx","total_count":2,"children":[{"name":"CheckoutPage()","total_count":1,"children":[]},{"name":"Step","total_count":1,"children":[]}]},{"name":"pending","total_count":2,"children":[{"name":"page.tsx","total_count":2,"children":[{"name":"CheckoutPendingPage()","total_count":1,"children":[]},{"name":"metadata","total_count":1,"children":[]}]}]},{"name":"success","total_count":3,"children":[{"name":"page.tsx","total_count":3,"children":[{"name":"CheckoutSuccessPage()","total_count":1,"children":[]},{"name":"metadata","total_count":1,"children":[]},{"name":"PageProps","total_count":1,"children":[]}]}]}]},{"name":"cuenta","total_count":11,"children":[{"name":"login","total_count":2,"children":[{"name":"page.tsx","total_count":2,"children":[{"name":"metadata","total_count":1,"children":[]},{"name":"UserLoginPage()","total_count":1,"children":[]}]}]},{"name":"ordenes","total_count":5,"children":[{"name":"[id]","total_count":3,"children":[{"name":"page.tsx","total_count":3,"children":[{"name":"metadata","total_count":1,"children":[]},{"name":"MyOrderDetailPage()","total_count":1,"children":[]},{"name":"PageProps","total_count":1,"children":[]}]}]},{"name":"page.tsx","total_count":2,"children":[{"name":"metadata","total_count":1,"children":[]},{"name":"MyOrdersPage()","total_count":1,"children":[]}]}]},{"name":"page.tsx","total_count":2,"children":[{"name":"CuentaHomePage()","total_count":1,"children":[]},{"name":"metadata","total_count":1,"children":[]}]},{"name":"puntos","total_count":2,"children":[{"name":"page.tsx","total_count":2,"children":[{"name":"metadata","total_count":1,"children":[]},{"name":"MyPointsPage()","total_count":1,"children":[]}]}]}]},{"name":"flash","total_count":4,"children":[{"name":"[code]","total_count":3,"children":[{"name":"page.tsx","total_count":3,"children":[{"name":"FlashPage()","total_count":1,"children":[]},{"name":"metadata","total_count":1,"children":[]},{"name":"PageProps","total_count":1,"children":[]}]}]},{"name":"page.tsx","total_count":1,"children":[{"name":"FlashCodeEntryPage()","total_count":1,"children":[]}]}]},{"name":"layout.tsx","total_count":5,"children":[{"name":"displaySerif","total_count":1,"children":[]},{"name":"geistMono","total_count":1,"children":[]},{"name":"geistSans","total_count":1,"children":[]},{"name":"metadata","total_count":1,"children":[]},{"name":"RootLayout()","total_count":1,"children":[]}]},{"name":"p","total_count":5,"children":[{"name":"[slug]","total_count":5,"children":[{"name":"page.tsx","total_count":5,"children":[{"name":"CONDITION_LABEL","total_count":1,"children":[]},{"name":"generateMetadata()","total_count":1,"children":[]},{"name":"GRADING_LABEL","total_count":1,"children":[]},{"name":"PageProps","total_count":1,"children":[]},{"name":"ProductDetailPage()","total_count":1,"children":[]}]}]}]},{"name":"page.tsx","total_count":5,"children":[{"name":"FASE5_FEATURES","total_count":1,"children":[]},{"name":"Home()","total_count":1,"children":[]},{"name":"PHASE5_CHECKLIST","total_count":1,"children":[]},{"name":"ROUTES_OVERVIEW","total_count":1,"children":[]},{"name":"STACK","total_count":1,"children":[]}]},{"name":"robots.ts","total_count":1,"children":[{"name":"robots()","total_count":1,"children":[]}]},{"name":"sitemap.ts","total_count":1,"children":[{"name":"sitemap()","total_count":1,"children":[]}]}]},{"name":"components","total_count":307,"children":[{"name":"admin","total_count":4,"children":[{"name":"flash-codes","total_count":2,"children":[{"name":"flash-code-form.tsx","total_count":2,"children":[{"name":"FlashCodeForm()","total_count":1,"children":[]},{"name":"Props","total_count":1,"children":[]}]}]},{"name":"product-form.tsx","total_count":2,"children":[{"name":"ProductForm()","total_count":1,"children":[]},{"name":"Props","total_count":1,"children":[]}]}]},{"name":"auth","total_count":5,"children":[{"name":"turnstile-widget.tsx","total_count":5,"children":[{"name":"detectInitialMode()","total_count":1,"children":[]},{"name":"Props","total_count":1,"children":[]},{"name":"TurnstileWidget()","total_count":1,"children":[]},{"name":"WidgetStatus","total_count":1,"children":[]},{"name":"Window","total_count":1,"children":[]}]}]},{"name":"cart","total_count":4,"children":[{"name":"cart-flash-code-input.tsx","total_count":2,"children":[{"name":"CartFlashCodeInput()","total_count":1,"children":[]},{"name":"ValidateResponse","total_count":1,"children":[]}]},{"name":"points-redeemer.tsx","total_count":2,"children":[{"name":"PointsRedeemer()","total_count":1,"children":[]},{"name":"Props","total_count":1,"children":[]}]}]},{"name":"catalogo","total_count":5,"children":[{"name":"catalog-filters.tsx","total_count":2,"children":[{"name":"CatalogFilters()","total_count":1,"children":[]},{"name":"Props","total_count":1,"children":[]}]},{"name":"catalog-search.tsx","total_count":1,"children":[{"name":"CatalogSearch()","total_count":1,"children":[]}]},{"name":"supabase-not-configured-banner.tsx","total_count":2,"children":[{"name":"DbNotConfiguredBanner()","total_count":1,"children":[]},{"name":"SupabaseNotConfiguredBanner","total_count":1,"children":[]}]}]},{"name":"layout","total_count":5,"children":[{"name":"footer.tsx","total_count":1,"children":[{"name":"Footer()","total_count":1,"children":[]}]},{"name":"navbar.tsx","total_count":2,"children":[{"name":"NAV_LINKS","total_count":1,"children":[]},{"name":"Navbar()","total_count":1,"children":[]}]},{"name":"user-menu.tsx","total_count":2,"children":[{"name":"UserInfo","total_count":1,"children":[]},{"name":"UserMenu()","total_count":1,"children":[]}]}]},{"name":"product","total_count":6,"children":[{"name":"product-add-to-cart.tsx","total_count":2,"children":[{"name":"ProductAddToCart()","total_count":1,"children":[]},{"name":"Props","total_count":1,"children":[]}]},{"name":"product-card.tsx","total_count":4,"children":[{"name":"CONDITION_LABEL","total_count":1,"children":[]},{"name":"GRADING_LABEL","total_count":1,"children":[]},{"name":"ProductCard()","total_count":1,"children":[]},{"name":"ProductCardData","total_count":1,"children":[]}]}]},{"name":"ui","total_count":278,"children":[{"name":"accordion.tsx","total_count":4,"children":[{"name":"Accordion()","total_count":1,"children":[]},{"name":"AccordionContent()","total_count":1,"children":[]},{"name":"AccordionItem()","total_count":1,"children":[]},{"name":"AccordionTrigger()","total_count":1,"children":[]}]},{"name":"alert-dialog.tsx","total_count":11,"children":[{"name":"AlertDialog()","total_count":1,"children":[]},{"name":"AlertDialogAction()","total_count":1,"children":[]},{"name":"AlertDialogCancel()","total_count":1,"children":[]},{"name":"AlertDialogContent()","total_count":1,"children":[]},{"name":"AlertDialogDescription()","total_count":1,"children":[]},{"name":"AlertDialogFooter()","total_count":1,"children":[]},{"name":"AlertDialogHeader()","total_count":1,"children":[]},{"name":"AlertDialogOverlay()","total_count":1,"children":[]},{"name":"AlertDialogPortal()","total_count":1,"children":[]},{"name":"AlertDialogTitle()","total_count":1,"children":[]},{"name":"AlertDialogTrigger()","total_count":1,"children":[]}]},{"name":"alert.tsx","total_count":4,"children":[{"name":"Alert()","total_count":1,"children":[]},{"name":"AlertDescription()","total_count":1,"children":[]},{"name":"AlertTitle()","total_count":1,"children":[]},{"name":"alertVariants","total_count":1,"children":[]}]},{"name":"aspect-ratio.tsx","total_count":1,"children":[{"name":"AspectRatio()","total_count":1,"children":[]}]},{"name":"avatar.tsx","total_count":3,"children":[{"name":"Avatar()","total_count":1,"children":[]},{"name":"AvatarFallback()","total_count":1,"children":[]},{"name":"AvatarImage()","total_count":1,"children":[]}]},{"name":"badge.tsx","total_count":2,"children":[{"name":"Badge()","total_count":1,"children":[]},{"name":"badgeVariants","total_count":1,"children":[]}]},{"name":"breadcrumb.tsx","total_count":7,"children":[{"name":"Breadcrumb()","total_count":1,"children":[]},{"name":"BreadcrumbEllipsis()","total_count":1,"children":[]},{"name":"BreadcrumbItem()","total_count":1,"children":[]},{"name":"BreadcrumbLink()","total_count":1,"children":[]},{"name":"BreadcrumbList()","total_count":1,"children":[]},{"name":"BreadcrumbPage()","total_count":1,"children":[]},{"name":"BreadcrumbSeparator()","total_count":1,"children":[]}]},{"name":"button.tsx","total_count":2,"children":[{"name":"Button()","total_count":1,"children":[]},{"name":"buttonVariants","total_count":1,"children":[]}]},{"name":"calendar.tsx","total_count":2,"children":[{"name":"Calendar()","total_count":1,"children":[]},{"name":"CalendarDayButton()","total_count":1,"children":[]}]},{"name":"card.tsx","total_count":7,"children":[{"name":"Card()","total_count":1,"children":[]},{"name":"CardAction()","total_count":1,"children":[]},{"name":"CardContent()","total_count":1,"children":[]},{"name":"CardDescription()","total_count":1,"children":[]},{"name":"CardFooter()","total_count":1,"children":[]},{"name":"CardHeader()","total_count":1,"children":[]},{"name":"CardTitle()","total_count":1,"children":[]}]},{"name":"carousel.tsx","total_count":13,"children":[{"name":"Carousel()","total_count":1,"children":[]},{"name":"CarouselApi","total_count":1,"children":[]},{"name":"CarouselContent()","total_count":1,"children":[]},{"name":"CarouselContext","total_count":1,"children":[]},{"name":"CarouselContextProps","total_count":1,"children":[]},{"name":"CarouselItem()","total_count":1,"children":[]},{"name":"CarouselNext()","total_count":1,"children":[]},{"name":"CarouselOptions","total_count":1,"children":[]},{"name":"CarouselPlugin","total_count":1,"children":[]},{"name":"CarouselPrevious()","total_count":1,"children":[]},{"name":"CarouselProps","total_count":1,"children":[]},{"name":"useCarousel()","total_count":1,"children":[]},{"name":"UseCarouselParameters","total_count":1,"children":[]}]},{"name":"chart.tsx","total_count":10,"children":[{"name":"ChartConfig","total_count":1,"children":[]},{"name":"ChartContainer()","total_count":1,"children":[]},{"name":"ChartContext","total_count":1,"children":[]},{"name":"ChartContextProps","total_count":1,"children":[]},{"name":"ChartLegendContent()","total_count":1,"children":[]},{"name":"ChartStyle()","total_count":1,"children":[]},{"name":"ChartTooltipContent()","total_count":1,"children":[]},{"name":"getPayloadConfigFromPayload()","total_count":1,"children":[]},{"name":"THEMES","total_count":1,"children":[]},{"name":"useChart()","total_count":1,"children":[]}]},{"name":"checkbox.tsx","total_count":1,"children":[{"name":"Checkbox()","total_count":1,"children":[]}]},{"name":"collapsible.tsx","total_count":3,"children":[{"name":"Collapsible()","total_count":1,"children":[]},{"name":"CollapsibleContent()","total_count":1,"children":[]},{"name":"CollapsibleTrigger()","total_count":1,"children":[]}]},{"name":"command.tsx","total_count":9,"children":[{"name":"Command()","total_count":1,"children":[]},{"name":"CommandDialog()","total_count":1,"children":[]},{"name":"CommandEmpty()","total_count":1,"children":[]},{"name":"CommandGroup()","total_count":1,"children":[]},{"name":"CommandInput()","total_count":1,"children":[]},{"name":"CommandItem()","total_count":1,"children":[]},{"name":"CommandList()","total_count":1,"children":[]},{"name":"CommandSeparator()","total_count":1,"children":[]},{"name":"CommandShortcut()","total_count":1,"children":[]}]},{"name":"context-menu.tsx","total_count":15,"children":[{"name":"ContextMenu()","total_count":1,"children":[]},{"name":"ContextMenuCheckboxItem()","total_count":1,"children":[]},{"name":"ContextMenuContent()","total_count":1,"children":[]},{"name":"ContextMenuGroup()","total_count":1,"children":[]},{"name":"ContextMenuItem()","total_count":1,"children":[]},{"name":"ContextMenuLabel()","total_count":1,"children":[]},{"name":"ContextMenuPortal()","total_count":1,"children":[]},{"name":"ContextMenuRadioGroup()","total_count":1,"children":[]},{"name":"ContextMenuRadioItem()","total_count":1,"children":[]},{"name":"ContextMenuSeparator()","total_count":1,"children":[]},{"name":"ContextMenuShortcut()","total_count":1,"children":[]},{"name":"ContextMenuSub()","total_count":1,"children":[]},{"name":"ContextMenuSubContent()","total_count":1,"children":[]},{"name":"ContextMenuSubTrigger()","total_count":1,"children":[]},{"name":"ContextMenuTrigger()","total_count":1,"children":[]}]},{"name":"dialog.tsx","total_count":10,"children":[{"name":"Dialog()","total_count":1,"children":[]},{"name":"DialogClose()","total_count":1,"children":[]},{"name":"DialogContent()","total_count":1,"children":[]},{"name":"DialogDescription()","total_count":1,"children":[]},{"name":"DialogFooter()","total_count":1,"children":[]},{"name":"DialogHeader()","total_count":1,"children":[]},{"name":"DialogOverlay()","total_count":1,"children":[]},{"name":"DialogPortal()","total_count":1,"children":[]},{"name":"DialogTitle()","total_count":1,"children":[]},{"name":"DialogTrigger()","total_count":1,"children":[]}]},{"name":"drawer.tsx","total_count":10,"children":[{"name":"Drawer()","total_count":1,"children":[]},{"name":"DrawerClose()","total_count":1,"children":[]},{"name":"DrawerContent()","total_count":1,"children":[]},{"name":"DrawerDescription()","total_count":1,"children":[]},{"name":"DrawerFooter()","total_count":1,"children":[]},{"name":"DrawerHeader()","total_count":1,"children":[]},{"name":"DrawerOverlay()","total_count":1,"children":[]},{"name":"DrawerPortal()","total_count":1,"children":[]},{"name":"DrawerTitle()","total_count":1,"children":[]},{"name":"DrawerTrigger()","total_count":1,"children":[]}]},{"name":"dropdown-menu.tsx","total_count":15,"children":[{"name":"DropdownMenu()","total_count":1,"children":[]},{"name":"DropdownMenuCheckboxItem()","total_count":1,"children":[]},{"name":"DropdownMenuContent()","total_count":1,"children":[]},{"name":"DropdownMenuGroup()","total_count":1,"children":[]},{"name":"DropdownMenuItem()","total_count":1,"children":[]},{"name":"DropdownMenuLabel()","total_count":1,"children":[]},{"name":"DropdownMenuPortal()","total_count":1,"children":[]},{"name":"DropdownMenuRadioGroup()","total_count":1,"children":[]},{"name":"DropdownMenuRadioItem()","total_count":1,"children":[]},{"name":"DropdownMenuSeparator()","total_count":1,"children":[]},{"name":"DropdownMenuShortcut()","total_count":1,"children":[]},{"name":"DropdownMenuSub()","total_count":1,"children":[]},{"name":"DropdownMenuSubContent()","total_count":1,"children":[]},{"name":"DropdownMenuSubTrigger()","total_count":1,"children":[]},{"name":"DropdownMenuTrigger()","total_count":1,"children":[]}]},{"name":"form.tsx","total_count":11,"children":[{"name":"FormControl()","total_count":1,"children":[]},{"name":"FormDescription()","total_count":1,"children":[]},{"name":"FormField()","total_count":1,"children":[]},{"name":"FormFieldContext","total_count":1,"children":[]},{"name":"FormFieldContextValue","total_count":1,"children":[]},{"name":"FormItem()","total_count":1,"children":[]},{"name":"FormItemContext","total_count":1,"children":[]},{"name":"FormItemContextValue","total_count":1,"children":[]},{"name":"FormLabel()","total_count":1,"children":[]},{"name":"FormMessage()","total_count":1,"children":[]},{"name":"useFormField()","total_count":1,"children":[]}]},{"name":"hover-card.tsx","total_count":3,"children":[{"name":"HoverCard()","total_count":1,"children":[]},{"name":"HoverCardContent()","total_count":1,"children":[]},{"name":"HoverCardTrigger()","total_count":1,"children":[]}]},{"name":"input-otp.tsx","total_count":4,"children":[{"name":"InputOTP()","total_count":1,"children":[]},{"name":"InputOTPGroup()","total_count":1,"children":[]},{"name":"InputOTPSeparator()","total_count":1,"children":[]},{"name":"InputOTPSlot()","total_count":1,"children":[]}]},{"name":"input.tsx","total_count":1,"children":[{"name":"Input()","total_count":1,"children":[]}]},{"name":"label.tsx","total_count":1,"children":[{"name":"Label()","total_count":1,"children":[]}]},{"name":"menubar.tsx","total_count":16,"children":[{"name":"Menubar()","total_count":1,"children":[]},{"name":"MenubarCheckboxItem()","total_count":1,"children":[]},{"name":"MenubarContent()","total_count":1,"children":[]},{"name":"MenubarGroup()","total_count":1,"children":[]},{"name":"MenubarItem()","total_count":1,"children":[]},{"name":"MenubarLabel()","total_count":1,"children":[]},{"name":"MenubarMenu()","total_count":1,"children":[]},{"name":"MenubarPortal()","total_count":1,"children":[]},{"name":"MenubarRadioGroup()","total_count":1,"children":[]},{"name":"MenubarRadioItem()","total_count":1,"children":[]},{"name":"MenubarSeparator()","total_count":1,"children":[]},{"name":"MenubarShortcut()","total_count":1,"children":[]},{"name":"MenubarSub()","total_count":1,"children":[]},{"name":"MenubarSubContent()","total_count":1,"children":[]},{"name":"MenubarSubTrigger()","total_count":1,"children":[]},{"name":"MenubarTrigger()","total_count":1,"children":[]}]},{"name":"navigation-menu.tsx","total_count":9,"children":[{"name":"NavigationMenu()","total_count":1,"children":[]},{"name":"NavigationMenuContent()","total_count":1,"children":[]},{"name":"NavigationMenuIndicator()","total_count":1,"children":[]},{"name":"NavigationMenuItem()","total_count":1,"children":[]},{"name":"NavigationMenuLink()","total_count":1,"children":[]},{"name":"NavigationMenuList()","total_count":1,"children":[]},{"name":"NavigationMenuTrigger()","total_count":1,"children":[]},{"name":"navigationMenuTriggerStyle","total_count":1,"children":[]},{"name":"NavigationMenuViewport()","total_count":1,"children":[]}]},{"name":"pagination.tsx","total_count":8,"children":[{"name":"Pagination()","total_count":1,"children":[]},{"name":"PaginationContent()","total_count":1,"children":[]},{"name":"PaginationEllipsis()","total_count":1,"children":[]},{"name":"PaginationItem()","total_count":1,"children":[]},{"name":"PaginationLink()","total_count":1,"children":[]},{"name":"PaginationLinkProps","total_count":1,"children":[]},{"name":"PaginationNext()","total_count":1,"children":[]},{"name":"PaginationPrevious()","total_count":1,"children":[]}]},{"name":"popover.tsx","total_count":4,"children":[{"name":"Popover()","total_count":1,"children":[]},{"name":"PopoverAnchor()","total_count":1,"children":[]},{"name":"PopoverContent()","total_count":1,"children":[]},{"name":"PopoverTrigger()","total_count":1,"children":[]}]},{"name":"progress.tsx","total_count":1,"children":[{"name":"Progress()","total_count":1,"children":[]}]},{"name":"radio-group.tsx","total_count":2,"children":[{"name":"RadioGroup()","total_count":1,"children":[]},{"name":"RadioGroupItem()","total_count":1,"children":[]}]},{"name":"resizable.tsx","total_count":3,"children":[{"name":"ResizableHandle()","total_count":1,"children":[]},{"name":"ResizablePanel()","total_count":1,"children":[]},{"name":"ResizablePanelGroup()","total_count":1,"children":[]}]},{"name":"scroll-area.tsx","total_count":2,"children":[{"name":"ScrollArea()","total_count":1,"children":[]},{"name":"ScrollBar()","total_count":1,"children":[]}]},{"name":"select.tsx","total_count":10,"children":[{"name":"Select()","total_count":1,"children":[]},{"name":"SelectContent()","total_count":1,"children":[]},{"name":"SelectGroup()","total_count":1,"children":[]},{"name":"SelectItem()","total_count":1,"children":[]},{"name":"SelectLabel()","total_count":1,"children":[]},{"name":"SelectScrollDownButton()","total_count":1,"children":[]},{"name":"SelectScrollUpButton()","total_count":1,"children":[]},{"name":"SelectSeparator()","total_count":1,"children":[]},{"name":"SelectTrigger()","total_count":1,"children":[]},{"name":"SelectValue()","total_count":1,"children":[]}]},{"name":"separator.tsx","total_count":1,"children":[{"name":"Separator()","total_count":1,"children":[]}]},{"name":"sheet.tsx","total_count":10,"children":[{"name":"Sheet()","total_count":1,"children":[]},{"name":"SheetClose()","total_count":1,"children":[]},{"name":"SheetContent()","total_count":1,"children":[]},{"name":"SheetDescription()","total_count":1,"children":[]},{"name":"SheetFooter()","total_count":1,"children":[]},{"name":"SheetHeader()","total_count":1,"children":[]},{"name":"SheetOverlay()","total_count":1,"children":[]},{"name":"SheetPortal()","total_count":1,"children":[]},{"name":"SheetTitle()","total_count":1,"children":[]},{"name":"SheetTrigger()","total_count":1,"children":[]}]},{"name":"sidebar.tsx","total_count":27,"children":[{"name":"Sidebar()","total_count":1,"children":[]},{"name":"SidebarContent()","total_count":1,"children":[]},{"name":"SidebarContext","total_count":1,"children":[]},{"name":"SidebarContextProps","total_count":1,"children":[]},{"name":"SidebarFooter()","total_count":1,"children":[]},{"name":"SidebarGroup()","total_count":1,"children":[]},{"name":"SidebarGroupAction()","total_count":1,"children":[]},{"name":"SidebarGroupContent()","total_count":1,"children":[]},{"name":"SidebarGroupLabel()","total_count":1,"children":[]},{"name":"SidebarHeader()","total_count":1,"children":[]},{"name":"SidebarInput()","total_count":1,"children":[]},{"name":"SidebarInset()","total_count":1,"children":[]},{"name":"SidebarMenu()","total_count":1,"children":[]},{"name":"SidebarMenuAction()","total_count":1,"children":[]},{"name":"SidebarMenuBadge()","total_count":1,"children":[]},{"name":"SidebarMenuButton()","total_count":1,"children":[]},{"name":"sidebarMenuButtonVariants","total_count":1,"children":[]},{"name":"SidebarMenuItem()","total_count":1,"children":[]},{"name":"SidebarMenuSkeleton()","total_count":1,"children":[]},{"name":"SidebarMenuSub()","total_count":1,"children":[]},{"name":"SidebarMenuSubButton()","total_count":1,"children":[]},{"name":"SidebarMenuSubItem()","total_count":1,"children":[]},{"name":"SidebarProvider()","total_count":1,"children":[]},{"name":"SidebarRail()","total_count":1,"children":[]},{"name":"SidebarSeparator()","total_count":1,"children":[]},{"name":"SidebarTrigger()","total_count":1,"children":[]},{"name":"useSidebar()","total_count":1,"children":[]}]},{"name":"skeleton.tsx","total_count":1,"children":[{"name":"Skeleton()","total_count":1,"children":[]}]},{"name":"slider.tsx","total_count":1,"children":[{"name":"Slider()","total_count":1,"children":[]}]},{"name":"sonner.tsx","total_count":1,"children":[{"name":"Toaster()","total_count":1,"children":[]}]},{"name":"switch.tsx","total_count":1,"children":[{"name":"Switch()","total_count":1,"children":[]}]},{"name":"table.tsx","total_count":8,"children":[{"name":"Table()","total_count":1,"children":[]},{"name":"TableBody()","total_count":1,"children":[]},{"name":"TableCaption()","total_count":1,"children":[]},{"name":"TableCell()","total_count":1,"children":[]},{"name":"TableFooter()","total_count":1,"children":[]},{"name":"TableHead()","total_count":1,"children":[]},{"name":"TableHeader()","total_count":1,"children":[]},{"name":"TableRow()","total_count":1,"children":[]}]},{"name":"tabs.tsx","total_count":4,"children":[{"name":"Tabs()","total_count":1,"children":[]},{"name":"TabsContent()","total_count":1,"children":[]},{"name":"TabsList()","total_count":1,"children":[]},{"name":"TabsTrigger()","total_count":1,"children":[]}]},{"name":"textarea.tsx","total_count":1,"children":[{"name":"Textarea()","total_count":1,"children":[]}]},{"name":"toast.tsx","total_count":9,"children":[{"name":"Toast","total_count":1,"children":[]},{"name":"ToastAction","total_count":1,"children":[]},{"name":"ToastActionElement","total_count":1,"children":[]},{"name":"ToastClose","total_count":1,"children":[]},{"name":"ToastDescription","total_count":1,"children":[]},{"name":"ToastProps","total_count":1,"children":[]},{"name":"ToastTitle","total_count":1,"children":[]},{"name":"toastVariants","total_count":1,"children":[]},{"name":"ToastViewport","total_count":1,"children":[]}]},{"name":"toaster.tsx","total_count":1,"children":[{"name":"Toaster()","total_count":1,"children":[]}]},{"name":"toggle-group.tsx","total_count":3,"children":[{"name":"ToggleGroup()","total_count":1,"children":[]},{"name":"ToggleGroupContext","total_count":1,"children":[]},{"name":"ToggleGroupItem()","total_count":1,"children":[]}]},{"name":"toggle.tsx","total_count":2,"children":[{"name":"Toggle()","total_count":1,"children":[]},{"name":"toggleVariants","total_count":1,"children":[]}]},{"name":"tooltip.tsx","total_count":4,"children":[{"name":"Tooltip()","total_count":1,"children":[]},{"name":"TooltipContent()","total_count":1,"children":[]},{"name":"TooltipProvider()","total_count":1,"children":[]},{"name":"TooltipTrigger()","total_count":1,"children":[]}]}]}]},{"name":"hooks","total_count":17,"children":[{"name":"use-mobile.ts","total_count":1,"children":[{"name":"useIsMobile()","total_count":1,"children":[]}]},{"name":"use-mounted.ts","total_count":2,"children":[{"name":"emptySubscribe()","total_count":1,"children":[]},{"name":"useMounted()","total_count":1,"children":[]}]},{"name":"use-toast.ts","total_count":14,"children":[{"name":"Action","total_count":1,"children":[]},{"name":"ActionType","total_count":1,"children":[]},{"name":"actionTypes","total_count":1,"children":[]},{"name":"addToRemoveQueue()","total_count":1,"children":[]},{"name":"dispatch()","total_count":1,"children":[]},{"name":"genId()","total_count":1,"children":[]},{"name":"listeners","total_count":1,"children":[]},{"name":"memoryState","total_count":1,"children":[]},{"name":"reducer()","total_count":1,"children":[]},{"name":"State","total_count":1,"children":[]},{"name":"Toast","total_count":1,"children":[]},{"name":"ToasterToast","total_count":1,"children":[]},{"name":"toastTimeouts","total_count":1,"children":[]},{"name":"useToast()","total_count":1,"children":[]}]}]},{"name":"lib","total_count":81,"children":[{"name":"auth","total_count":13,"children":[{"name":"admin-checks.ts","total_count":1,"children":[{"name":"checkAdminRow()","total_count":1,"children":[]}]},{"name":"clerk-server.ts","total_count":3,"children":[{"name":"CurrentUser","total_count":1,"children":[]},{"name":"getCurrentUser()","total_count":1,"children":[]},{"name":"isUserLoggedIn()","total_count":1,"children":[]}]},{"name":"require-admin.ts","total_count":2,"children":[{"name":"AdminUser","total_count":1,"children":[]},{"name":"requireAdmin()","total_count":1,"children":[]}]},{"name":"require-user.ts","total_count":4,"children":[{"name":"CurrentUser","total_count":1,"children":[]},{"name":"getOptionalUser()","total_count":1,"children":[]},{"name":"isUserLoggedIn()","total_count":1,"children":[]},{"name":"requireUser()","total_count":1,"children":[]}]},{"name":"turnstile.ts","total_count":3,"children":[{"name":"requireTurnstile()","total_count":1,"children":[]},{"name":"TurnstileVerifyResult","total_count":1,"children":[]},{"name":"verifyTurnstileToken()","total_count":1,"children":[]}]}]},{"name":"constants.ts","total_count":6,"children":[{"name":"LIMITS","total_count":1,"children":[]},{"name":"PAYMENT","total_count":1,"children":[]},{"name":"POINTS_RULES","total_count":1,"children":[]},{"name":"ROUTES","total_count":1,"children":[]},{"name":"SITE","total_count":1,"children":[]},{"name":"STORAGE_BUCKETS","total_count":1,"children":[]}]},{"name":"db","total_count":6,"children":[{"name":"neon.ts","total_count":6,"children":[{"name":"getPool()","total_count":1,"children":[]},{"name":"getSql()","total_count":1,"children":[]},{"name":"isDbConfigured()","total_count":1,"children":[]},{"name":"query()","total_count":1,"children":[]},{"name":"queryOne()","total_count":1,"children":[]},{"name":"transaction()","total_count":1,"children":[]}]}]},{"name":"email","total_count":8,"children":[{"name":"brevo.ts","total_count":7,"children":[{"name":"escapeHtml()","total_count":1,"children":[]},{"name":"getTransporter()","total_count":1,"children":[]},{"name":"OrderConfirmationEmailData","total_count":1,"children":[]},{"name":"RefundEmailData","total_count":1,"children":[]},{"name":"sendEmail()","total_count":1,"children":[]},{"name":"sendOrderConfirmationEmail()","total_count":1,"children":[]},{"name":"sendRefundEmail()","total_count":1,"children":[]}]},{"name":"index.ts","total_count":1,"children":[]}]},{"name":"format.ts","total_count":8,"children":[{"name":"calculateEarnedPoints()","total_count":1,"children":[]},{"name":"centsToDollars()","total_count":1,"children":[]},{"name":"dollarsToCents()","total_count":1,"children":[]},{"name":"formatCents()","total_count":1,"children":[]},{"name":"formatDate()","total_count":1,"children":[]},{"name":"pointsToDiscountCents()","total_count":1,"children":[]},{"name":"slugify()","total_count":1,"children":[]},{"name":"truncate()","total_count":1,"children":[]}]},{"name":"orders-neon.ts","total_count":6,"children":[{"name":"createOrder()","total_count":1,"children":[]},{"name":"CreateOrderInput","total_count":1,"children":[]},{"name":"CreateOrderItemInput","total_count":1,"children":[]},{"name":"CreateOrderResult","total_count":1,"children":[]},{"name":"markOrderCancelled()","total_count":1,"children":[]},{"name":"markOrderPaid()","total_count":1,"children":[]}]},{"name":"payments","total_count":11,"children":[{"name":"kushki.ts","total_count":11,"children":[{"name":"createDemoPayment()","total_count":1,"children":[]},{"name":"createKushkiPayment()","total_count":1,"children":[]},{"name":"createPayment()","total_count":1,"children":[]},{"name":"detectPaymentMode()","total_count":1,"children":[]},{"name":"KUSHKI_API_URLS","total_count":1,"children":[]},{"name":"parseKushkiWebhook()","total_count":1,"children":[]},{"name":"PaymentCreateInput","total_count":1,"children":[]},{"name":"PaymentCreateResult","total_count":1,"children":[]},{"name":"PaymentMode","total_count":1,"children":[]},{"name":"verifyKushkiWebhookSignature()","total_count":1,"children":[]},{"name":"WebhookVerifyResult","total_count":1,"children":[]}]}]},{"name":"queries","total_count":16,"children":[{"name":"products-neon.ts","total_count":15,"children":[{"name":"applyFlashDiscount()","total_count":1,"children":[]},{"name":"DEFAULT_FILTERS","total_count":1,"children":[]},{"name":"FlashCodeInfo","total_count":1,"children":[]},{"name":"getProductByIdForAdmin()","total_count":1,"children":[]},{"name":"getProductBySlug()","total_count":1,"children":[]},{"name":"getProductBySlugAdmin()","total_count":1,"children":[]},{"name":"getUnlockedProductIds()","total_count":1,"children":[]},{"name":"getValidFlashCode()","total_count":1,"children":[]},{"name":"listAllProductsForAdmin()","total_count":1,"children":[]},{"name":"listProducts()","total_count":1,"children":[]},{"name":"looksLikeFlashCode()","total_count":1,"children":[]},{"name":"parseFiltersFromSearchParams()","total_count":1,"children":[]},{"name":"ProductDetail","total_count":1,"children":[]},{"name":"ProductFilters","total_count":1,"children":[]},{"name":"ProductListItem","total_count":1,"children":[]}]},{"name":"products.ts","total_count":1,"children":[]}]},{"name":"supabase","total_count":4,"children":[{"name":"admin.ts","total_count":1,"children":[{"name":"createAdminClient()","total_count":1,"children":[]}]},{"name":"client.ts","total_count":1,"children":[{"name":"createBrowserClient()","total_count":1,"children":[]}]},{"name":"configured.ts","total_count":1,"children":[{"name":"isSupabaseConfigured()","total_count":1,"children":[]}]},{"name":"server.ts","total_count":1,"children":[{"name":"createServerClient()","total_count":1,"children":[]}]}]},{"name":"utils.ts","total_count":1,"children":[{"name":"cn()","total_count":1,"children":[]}]},{"name":"db.ts","total_count":1,"children":[]},{"name":"orders.ts","total_count":1,"children":[]}]},{"name":"middleware.ts","total_count":1,"children":[{"name":"config","total_count":1,"children":[]}]},{"name":"store","total_count":4,"children":[{"name":"cart.ts","total_count":4,"children":[{"name":"CartFlashCode","total_count":1,"children":[]},{"name":"CartLine","total_count":1,"children":[]},{"name":"CartState","total_count":1,"children":[]},{"name":"useCart","total_count":1,"children":[]}]}]},{"name":"types","total_count":9,"children":[{"name":"database.ts","total_count":9,"children":[{"name":"Currency","total_count":1,"children":[]},{"name":"Database","total_count":1,"children":[]},{"name":"FlashCodeType","total_count":1,"children":[]},{"name":"OrderStatus","total_count":1,"children":[]},{"name":"PaymentProvider","total_count":1,"children":[]},{"name":"PaymentStatus","total_count":1,"children":[]},{"name":"PointTxType","total_count":1,"children":[]},{"name":"ProductCondition","total_count":1,"children":[]},{"name":"ProductGrading","total_count":1,"children":[]}]}]}]},{"name":"tailwind.config.ts","total_count":1,"children":[{"name":"config","total_count":1,"children":[]}]},{"name":"tests","total_count":1,"children":[{"name":"e2e","total_count":1,"children":[{"name":"checkout-flow.spec.ts","total_count":1,"children":[]}]}]},{"name":"tsconfig.json","total_count":28,"children":[{"name":"**/*.ts","total_count":1,"children":[]},{"name":"**/*.tsx","total_count":1,"children":[]},{"name":".next/dev/types/**/*.ts","total_count":1,"children":[]},{"name":".next/types/**/*.ts","total_count":1,"children":[]},{"name":"allowJs","total_count":1,"children":[]},{"name":"compilerOptions","total_count":1,"children":[]},{"name":"dom","total_count":1,"children":[]},{"name":"dom.iterable","total_count":1,"children":[]},{"name":"esModuleInterop","total_count":1,"children":[]},{"name":"esnext","total_count":1,"children":[]},{"name":"exclude","total_count":1,"children":[]},{"name":"include","total_count":1,"children":[]},{"name":"incremental","total_count":1,"children":[]},{"name":"isolatedModules","total_count":1,"children":[]},{"name":"jsx","total_count":1,"children":[]},{"name":"lib","total_count":1,"children":[]},{"name":"module","total_count":1,"children":[]},{"name":"moduleResolution","total_count":1,"children":[]},{"name":"next-env.d.ts","total_count":1,"children":[]},{"name":"node_modules","total_count":1,"children":[]},{"name":"noEmit","total_count":1,"children":[]},{"name":"noImplicitAny","total_count":1,"children":[]},{"name":"paths","total_count":1,"children":[]},{"name":"plugins","total_count":1,"children":[]},{"name":"resolveJsonModule","total_count":1,"children":[]},{"name":"skipLibCheck","total_count":1,"children":[]},{"name":"strict","total_count":1,"children":[]},{"name":"target","total_count":1,"children":[]}]},{"name":"vercel.json","total_count":1,"children":[{"name":"crons","total_count":1,"children":[]}]},{"name":"playwright.config.ts","total_count":1,"children":[]}]};
+
+    function transformData(jsonData) {
+        // Helper function to recursively build the children structure
+        function processNode(node, parentL1StageName) {
+            let displayName = node.name;
+            // Append total_count if it exists and is not already in the name
+            if (node.total_count !== undefined) {
+                if (!/\(Total Count: \d+\)$/.test(displayName)) {
+                    displayName += ` (Total Count: ${node.total_count})`;
+                }
+            }
+
+            const newNode = { name: displayName };
+
+            if (parentL1StageName === "Root") {
+                 newNode.originalStageName = node.name;
+            } else {
+                newNode.originalStageName = parentL1StageName;
+            }
+
+            if (node.children && node.children.length > 0) {
+                const stageNameToPass = (parentL1StageName === "Root") ? node.name : parentL1StageName;
+                newNode.children = node.children.map(child => processNode(child, stageNameToPass));
+            }
+
+            return newNode;
+        }
+
+        let rootDisplayName = jsonData.name;
+        if (jsonData.total_count !== undefined && !/\(Total Count: \d+\)$/.test(rootDisplayName)) {
+            rootDisplayName += ` (Total Count: ${jsonData.total_count})`;
+        }
+
+        return {
+            name: rootDisplayName,
+            originalStageName: "Root",
+            children: (jsonData.children || []).map(child => processNode(child, "Root"))
+        };
+    }
+
+    const treeData = transformData(initialJsonData);
+
+    // Auto-populated phaseColors: every depth-1 child of the root gets
+    // a stable colour from a bigger palette so all top-level dirs are
+    // distinguishable.
+    const PALETTE = [
+      ["#3498DB","#2980B9","#AED6F1"], ["#2ECC71","#27AE60","#A9DFBF"],
+      ["#E74C3C","#C0392B","#F5B7B1"], ["#9B59B6","#8E44AD","#D7BDE2"],
+      ["#F39C12","#D68910","#FAD7A0"], ["#1ABC9C","#117864","#A2D9CE"],
+      ["#34495E","#1B2631","#ABB2B9"], ["#E67E22","#BA4A00","#F5CBA7"],
+      ["#16A085","#0E6655","#A2D9CE"], ["#D35400","#A04000","#EDBB99"],
+      ["#7F8C8D","#566573","#D5DBDB"], ["#C0392B","#7B241C","#F5B7B1"],
+      ["#2E86C1","#1B4F72","#A9CCE3"], ["#28B463","#196F3D","#A9DFBF"],
+      ["#AF7AC5","#6C3483","#D2B4DE"],
+    ];
+    const phaseColors = { "Root": { fill: "#4A4A4A", stroke: "#333333", collapsedFill: "#6C757D" },
+                          "Default": { fill: "#BDC3C7", stroke: "#95A5A6", collapsedFill: "#ECF0F1" } };
+    (initialJsonData.children || []).forEach((c, i) => {
+      const pal = PALETTE[i % PALETTE.length];
+      phaseColors[c.name] = { fill: pal[0], stroke: pal[1], collapsedFill: pal[2] };
+    });
+
+    const levelSpecificPalettes = {
+      0: { fill: "#4A4A4A", stroke: "#333333", collapsedFill: "#6C757D" },
+      2: { fill: "#6ab04c", stroke: "#508a38", collapsedFill: "#a3d391" },
+      3: { fill: "#f0932b", stroke: "#d0730f", collapsedFill: "#f6c07e" },
+      4: { fill: "#be2edd", stroke: "#a01cb3", collapsedFill: "#e08bf2" },
+      5: { fill: "#00a8ff", stroke: "#007ac1", collapsedFill: "#74d2ff" },
+      6: { fill: "#e55039", stroke: "#c23620", collapsedFill: "#f09a8d" },
+      default: { fill: "#747d8c", stroke: "#57606f", collapsedFill: "#a4b0be" }
+    };
+
+    const svgElement = d3.select("#tree-svg");
+    const initialSvgWidth = +svgElement.attr("width");
+    const initialSvgHeight = +svgElement.attr("height");
+    const margin = { top: 40, right: 120, bottom: 80, left: 450 };
+    let width = initialSvgWidth - margin.left - margin.right;
+    let height = initialSvgHeight - margin.top - margin.bottom;
+    const duration = 500;
+    let nodeCounter = 0;
+    const g = svgElement.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+    const treemap = d3.tree().nodeSize([40, 0]);
+    let rootNode = d3.hierarchy(treeData, d => d.children);
+    rootNode.x0 = 0;
+    rootNode.y0 = 0;
+
+    if (rootNode.children) {
+      rootNode.children.forEach(d_child => {
+        if (d_child.children) { collapseBranch(d_child); }
+      });
+    }
+    updateTree(rootNode);
+
+    function collapseBranch(d) { if (d.children) { d._children = d.children; d._children.forEach(collapseBranch); d.children = null; } }
+    function expandBranch(d) { if (d._children) { d.children = d._children; d._children = null; } if (d.children) { d.children.forEach(expandBranch); } }
+    window.expandAll = () => { expandBranch(rootNode); updateTree(rootNode); };
+    window.collapseAll = () => { if (rootNode.children) { rootNode.children.forEach(collapseBranch); } updateTree(rootNode); };
+    window.resetView = () => { if (rootNode.children) { rootNode.children.forEach(d_child => { if (d_child.children || d_child._children) { collapseBranch(d_child); } }); } if (rootNode._children && !rootNode.children) { rootNode.children = rootNode._children; rootNode._children = null; } updateTree(rootNode); };
+
+    function updateTree(source) {
+      const treeLayoutData = treemap(rootNode);
+      let nodes = treeLayoutData.descendants();
+      let links = treeLayoutData.descendants().slice(1);
+
+      let minX = 0;
+      let maxX = 0;
+      if (nodes.length > 0) {
+        minX = d3.min(nodes, d => d.x);
+        maxX = d3.max(nodes, d => d.x);
+      }
+
+      let neededHeight = Math.max(initialSvgHeight, maxX - minX + margin.top + margin.bottom + 100);
+      svgElement.transition().duration(duration / 2).attr("height", neededHeight);
+      g.transition().duration(duration / 2).attr("transform", `translate(${margin.left},${margin.top - minX + 40})`);
+
+      nodes.forEach(d => { d.y = d.depth * 400; }); // Adjust horizontal separation if needed
+
+      const node = g.selectAll('g.node').data(nodes, d => d.id || (d.id = ++nodeCounter));
+      const nodeEnter = node.enter().append('g')
+        .attr('class', d => "node" + (d.children || d._children ? " node--internal" : " node--leaf") + (d._children ? " _children" : ""))
+        .attr('transform', d => `translate(${source.y0},${source.x0})`)
+        .on('click', (event, d) => { if (d.children) { d._children = d.children; d.children = null; } else if (d._children) { d.children = d._children; d._children = null; } updateTree(d); })
+        .style('cursor', d => (d.children || d._children) ? 'pointer' : 'default');
+
+      nodeEnter.append('circle').attr('r', 1e-6);
+
+      nodeEnter.append('text')
+        .attr('dy', '.35em')
+        .attr('x', d => d.children || d._children ? -14 : 14)
+        .attr('text-anchor', d => d.children || d._children ? 'end' : 'start')
+        .style("fill-opacity", 1e-6)
+        .call(wrapText, 380);
+
+      const nodeUpdate = nodeEnter.merge(node);
+      nodeUpdate.transition().duration(duration)
+        .attr('transform', d => `translate(${d.y},${d.x})`)
+        .attr('class', d => "node" + (d.children ? " node--internal" : " node--leaf") + (d._children ? " node--internal _children" : ""));
+
+      nodeUpdate.select('circle').attr('r', 8.5)
+        .style('fill', d => {
+            let palette;
+            if (d.depth === 0) {
+                palette = levelSpecificPalettes[0];
+            } else if (d.depth === 1) {
+                palette = phaseColors[d.data.originalStageName] || phaseColors.Default;
+            } else {
+                palette = levelSpecificPalettes[d.depth] || levelSpecificPalettes.default;
+            }
+            if (d._children) return palette.collapsedFill;
+            if (d.children) return palette.fill;
+            return "#fff";
+        })
+        .style('stroke', d => {
+            let palette;
+            if (d.depth === 0) {
+                palette = levelSpecificPalettes[0];
+            } else if (d.depth === 1) {
+                palette = phaseColors[d.data.originalStageName] || phaseColors.Default;
+            } else {
+                palette = levelSpecificPalettes[d.depth] || levelSpecificPalettes.default;
+            }
+            return palette.stroke;
+        });
+      nodeUpdate.select('text').style("fill-opacity", 1).call(wrapText, 380);
+
+      const nodeExit = node.exit().transition().duration(duration).attr('transform', d => `translate(${source.y},${source.x})`).remove();
+      nodeExit.select('circle').attr('r', 1e-6);
+      nodeExit.select('text').style('fill-opacity', 1e-6);
+
+      const link = g.selectAll('path.link').data(links, d => d.id);
+      const linkEnter = link.enter().insert('path', "g").attr('class', 'link').attr('d', d => { const o = { x: source.x0, y: source.y0 }; return diagonal(o, o); });
+
+      linkEnter.merge(link).transition().duration(duration).attr('d', d => diagonal(d, d.parent))
+        .style('stroke', d => {
+            const sourceNode = d.parent;
+            if (!sourceNode) return phaseColors.Default.stroke;
+            const l1AncestorName = sourceNode.data.originalStageName;
+            const colorPalette = phaseColors[l1AncestorName] || phaseColors.Default;
+            return colorPalette.stroke;
+        });
+      link.exit().transition().duration(duration).attr('d', d => { const o = { x: source.x, y: source.y }; return diagonal(o, o); }).remove();
+      nodes.forEach(d => { d.x0 = d.x; d.y0 = d.y; });
+    }
+
+    function diagonal(s, d) { return `M ${s.y} ${s.x} C ${(s.y + d.y) / 2} ${s.x}, ${(s.y + d.y) / 2} ${d.x}, ${d.y} ${d.x}`; }
+
+    function wrapText(textElements, maxWidth) {
+        const textPartColors = {
+            name: '#343a40',
+            count: '#0056b3'
+        };
+        const countRegex = /(\s\(Total Count: \d+\))$/;
+
+        textElements.each(function () {
+            const textD3 = d3.select(this);
+            const originalNodeText = textD3.datum().data.name;
+            const x = parseFloat(textD3.attr("x") || 0);
+            const initialDy = textD3.attr("dy");
+            const textAnchor = textD3.attr("text-anchor");
+            const lineHeight = 1.1;
+
+            textD3.text(null);
+
+            let namePart = originalNodeText;
+            let countPartText = "";
+
+            const countMatch = originalNodeText.match(countRegex);
+            if (countMatch && originalNodeText.endsWith(countMatch[0])) {
+                namePart = originalNodeText.substring(0, originalNodeText.length - countMatch[0].length).trim();
+                countPartText = countMatch[0].trim();
+            }
+
+            const tokens = [];
+            namePart.split(/\s+/).filter(Boolean).forEach(word => {
+                tokens.push({ text: word, type: 'name' });
+            });
+            if (countPartText) {
+                tokens.push({ text: countPartText, type: 'count' });
+            }
+
+            if (tokens.length === 0 && originalNodeText) {
+                tokens.push({ text: originalNodeText, type: 'name' });
+            }
+
+            let currentTspan = textD3.append("tspan").attr("x", x).attr("dy", initialDy);
+            if (textAnchor === "end") currentTspan.attr("text-anchor", "end");
+
+            let lineTokens = [];
+
+            for (let i = 0; i < tokens.length; i++) {
+                const tokenObj = tokens[i];
+
+                lineTokens.push(tokenObj);
+                currentTspan.text(lineTokens.map(t => t.text).join(" "));
+
+                if (currentTspan.node().getComputedTextLength() > maxWidth && lineTokens.length > 1) {
+                    lineTokens.pop();
+
+                    currentTspan.text(null);
+                    lineTokens.forEach((prevToken, idx) => {
+                        currentTspan.append("tspan")
+                            .text((idx > 0 ? " " : "") + prevToken.text)
+                            .style("fill", textPartColors[prevToken.type] || textPartColors.name)
+                            .style("font-weight", prevToken.type === 'count' ? "bold" : "normal");
+                    });
+
+                    lineTokens = [tokenObj];
+                    currentTspan = textD3.append("tspan").attr("x", x).attr("dy", lineHeight + "em");
+                    if (textAnchor === "end") currentTspan.attr("text-anchor", "end");
+                }
+            }
+
+            currentTspan.text(null);
+            lineTokens.forEach((token, idx) => {
+                currentTspan.append("tspan")
+                    .text((idx > 0 ? " " : "") + token.text)
+                    .style("fill", textPartColors[token.type] || textPartColors.name)
+                    .style("font-weight", token.type === 'count' ? "bold" : "normal");
+            });
+
+            if (textD3.selectAll("tspan > tspan").empty() && textD3.select("tspan").text().length === 0 && originalNodeText) {
+                let t = textD3.select("tspan");
+                let displayText = originalNodeText;
+                t.text(displayText).style("fill", textPartColors.name);
+                if (t.node() && t.node().getComputedTextLength() > maxWidth && displayText.length > 20) {
+                    let estimatedChars = Math.floor(maxWidth / (t.node().getComputedTextLength()/displayText.length) );
+                    displayText = displayText.substring(0, Math.max(0, estimatedChars - 3)) + "...";
+                    t.text(displayText);
+                }
+            }
+        });
+    }
+  </script>
+</body>
+</html>

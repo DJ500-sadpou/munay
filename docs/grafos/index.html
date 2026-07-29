@@ -1,0 +1,6931 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grafos del Proyecto — Munay v0.1</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.6/standalone/umd/vis-network.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      overflow: hidden;
+      height: 100vh;
+    }
+    
+    /* Header */
+    #header {
+      background: linear-gradient(135deg, #1e293b, #334155);
+      color: white;
+      padding: 16px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      position: relative;
+      z-index: 100;
+    }
+    #header h1 {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+    }
+    #header h1 span {
+      color: #60a5fa;
+    }
+    #header .subtitle {
+      font-size: 12px;
+      color: #94a3b8;
+      font-weight: 400;
+    }
+    
+    /* Tab Navigation */
+    #tabs {
+      display: flex;
+      gap: 4px;
+      background: #1e293b;
+      padding: 0 28px;
+      border-bottom: 1px solid #334155;
+      position: relative;
+      z-index: 100;
+    }
+    .tab-btn {
+      padding: 10px 18px;
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      color: #94a3b8;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover { color: #e2e8f0; background: rgba(255,255,255,0.05); }
+    .tab-btn.active {
+      color: #60a5fa;
+      border-bottom-color: #60a5fa;
+      background: rgba(96, 165, 250, 0.08);
+    }
+    
+    /* Graph Container */
+    #graph-container {
+      width: 100%;
+      height: calc(100vh - 120px);
+      position: relative;
+    }
+    #mynetwork {
+      width: 100%;
+      height: 100%;
+    }
+    
+    /* Legend */
+    #legend {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: white;
+      border-radius: 12px;
+      padding: 14px 18px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      font-size: 11px;
+      min-width: 140px;
+      z-index: 10;
+      border: 1px solid #e2e8f0;
+    }
+    #legend h3 {
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 3px 0;
+    }
+    .legend-color {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+    .legend-label {
+      color: #475569;
+      font-size: 11px;
+    }
+    
+    /* Stats */
+    #stats {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      background: white;
+      border-radius: 10px;
+      padding: 12px 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      font-size: 12px;
+      z-index: 10;
+      border: 1px solid #e2e8f0;
+      display: flex;
+      gap: 20px;
+    }
+    .stat-item {
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1e293b;
+    }
+    .stat-label {
+      font-size: 10px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    
+    /* Controls */
+    .controls {
+      display: flex;
+      gap: 6px;
+    }
+    .control-btn {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #e2e8f0;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.15s;
+    }
+    .control-btn:hover {
+      background: rgba(255,255,255,0.18);
+    }
+    
+    /* Info Tooltip */
+    #info-panel {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: white;
+      border-radius: 12px;
+      padding: 16px 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+      font-size: 12px;
+      z-index: 10;
+      border: 1px solid #e2e8f0;
+      max-width: 320px;
+      display: none;
+      line-height: 1.5;
+    }
+    #info-panel h4 {
+      font-size: 13px;
+      margin-bottom: 4px;
+      color: #1e293b;
+    }
+    #info-panel .info-path {
+      color: #64748b;
+      font-family: monospace;
+      font-size: 11px;
+      margin-bottom: 6px;
+    }
+    #info-panel .info-deps {
+      color: #475569;
+    }
+    #info-panel .close-info {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      cursor: pointer;
+      color: #94a3b8;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div id="header">
+    <div>
+      <h1>🔮 <span>Munay</span> v0.1 — Grafos del Proyecto</h1>
+      <div class="subtitle">Next.js 16 · Neon · Clerk · Brevo · Kushki</div>
+    </div>
+    <div class="controls">
+      <button class="control-btn" onclick="resetView()">🔄 Reset</button>
+      <button class="control-btn" onclick="fitView()">🔍 Fit</button>
+    </div>
+  </div>
+  
+  <div id="tabs">
+    <button class="tab-btn active" onclick="switchTab('deps', this)">🔗 Dependencias</button>
+    <button class="tab-btn" onclick="switchTab('routes', this)">🗺️ Rutas</button>
+    <button class="tab-btn" onclick="switchTab('ui', this)">🧩 UI Components</button>
+  </div>
+  
+  <div id="graph-container">
+    <div id="stats">
+      <div class="stat-item">
+        <div class="stat-value">127</div>
+        <div class="stat-label">Módulos</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">305</div>
+        <div class="stat-label">Conexiones</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">24</div>
+        <div class="stat-label">Rutas</div>
+      </div>
+    </div>
+    
+    <div id="mynetwork"></div>
+    
+    <div id="legend">
+      <h3>Leyenda</h3>
+      <div class="legend-item"><div class="legend-color" style="background:#FFE0B2;border-color:#FF9800"></div><span class="legend-label">Pages / App</span></div>
+      <div class="legend-item"><div class="legend-color" style="background:#C8E6C9;border-color:#4CAF50"></div><span class="legend-label">Components</span></div>
+      <div class="legend-item"><div class="legend-color" style="background:#BBDEFB;border-color:#2196F3"></div><span class="legend-label">Lib / Lógica</span></div>
+      <div class="legend-item"><div class="legend-color" style="background:#E1BEE7;border-color:#9C27B0"></div><span class="legend-label">Store</span></div>
+      <div class="legend-item"><div class="legend-color" style="background:#F8BBD0;border-color:#E91E63"></div><span class="legend-label">Hooks</span></div>
+    </div>
+    
+    <div id="info-panel">
+      <span class="close-info" onclick="closeInfo()">✕</span>
+      <h4 id="info-title">Nodo</h4>
+      <div class="info-path" id="info-path">ruta/archivo.tsx</div>
+      <div class="info-deps" id="info-deps">Dependencias: ...</div>
+    </div>
+  </div>
+  
+  <script>
+    const DATA = {
+  "nodes": [
+    {
+      "id": "app/admin/flash-codes/new/page.tsx",
+      "label": "new/page.tsx",
+      "title": "<b>app/admin/flash-codes/new/page.tsx</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/admin/flash-codes/page.tsx",
+      "label": "flash-codes/page.tsx",
+      "title": "<b>app/admin/flash-codes/page.tsx</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/admin/flash-codes/[id]/page.tsx",
+      "label": "[id]/page.tsx",
+      "title": "<b>app/admin/flash-codes/[id]/page.tsx</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/admin/login/page.tsx",
+      "label": "login/page.tsx",
+      "title": "<b>app/admin/login/page.tsx</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/admin/metrics/page.tsx",
+      "label": "metrics/page.tsx",
+      "title": "<b>app/admin/metrics/page.tsx</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/admin/orders/page.tsx",
+      "label": "orders/page.tsx",
+      "title": "<b>app/admin/orders/page.tsx</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/admin/orders/[id]/page.tsx",
+      "label": "[id]/page.tsx",
+      "title": "<b>app/admin/orders/[id]/page.tsx</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/admin/page.tsx",
+      "label": "admin/page.tsx",
+      "title": "<b>app/admin/page.tsx</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/admin/products/new/page.tsx",
+      "label": "new/page.tsx",
+      "title": "<b>app/admin/products/new/page.tsx</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/admin/products/[id]/page.tsx",
+      "label": "[id]/page.tsx",
+      "title": "<b>app/admin/products/[id]/page.tsx</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/api/admin/products/route.ts",
+      "label": "products/route.ts",
+      "title": "<b>app/api/admin/products/route.ts</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/api/admin/products/[id]/route.ts",
+      "label": "[id]/route.ts",
+      "title": "<b>app/api/admin/products/[id]/route.ts</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/api/auth/logout/route.ts",
+      "label": "logout/route.ts",
+      "title": "<b>app/api/auth/logout/route.ts</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/api/cron/expire-orders/route.ts",
+      "label": "expire-orders/route.ts",
+      "title": "<b>app/api/cron/expire-orders/route.ts</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/api/flash/validate/route.ts",
+      "label": "validate/route.ts",
+      "title": "<b>app/api/flash/validate/route.ts</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/api/flash-codes/route.ts",
+      "label": "flash-codes/route.ts",
+      "title": "<b>app/api/flash-codes/route.ts</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/api/flash-codes/[id]/route.ts",
+      "label": "[id]/route.ts",
+      "title": "<b>app/api/flash-codes/[id]/route.ts</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/api/orders/route.ts",
+      "label": "orders/route.ts",
+      "title": "<b>app/api/orders/route.ts</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/api/payments/create/route.ts",
+      "label": "create/route.ts",
+      "title": "<b>app/api/payments/create/route.ts</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/api/payments/webhook/route.ts",
+      "label": "webhook/route.ts",
+      "title": "<b>app/api/payments/webhook/route.ts</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/api/route.ts",
+      "label": "api/route.ts",
+      "title": "<b>app/api/route.ts</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/api/user/points/route.ts",
+      "label": "points/route.ts",
+      "title": "<b>app/api/user/points/route.ts</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/carrito/page.tsx",
+      "label": "carrito/page.tsx",
+      "title": "<b>app/carrito/page.tsx</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/catalogo/page.tsx",
+      "label": "catalogo/page.tsx",
+      "title": "<b>app/catalogo/page.tsx</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/checkout/cancelled/page.tsx",
+      "label": "cancelled/page.tsx",
+      "title": "<b>app/checkout/cancelled/page.tsx</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/checkout/page.tsx",
+      "label": "checkout/page.tsx",
+      "title": "<b>app/checkout/page.tsx</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/checkout/pending/page.tsx",
+      "label": "pending/page.tsx",
+      "title": "<b>app/checkout/pending/page.tsx</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/checkout/success/page.tsx",
+      "label": "success/page.tsx",
+      "title": "<b>app/checkout/success/page.tsx</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/cuenta/login/page.tsx",
+      "label": "login/page.tsx",
+      "title": "<b>app/cuenta/login/page.tsx</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/cuenta/ordenes/page.tsx",
+      "label": "ordenes/page.tsx",
+      "title": "<b>app/cuenta/ordenes/page.tsx</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/cuenta/ordenes/[id]/page.tsx",
+      "label": "[id]/page.tsx",
+      "title": "<b>app/cuenta/ordenes/[id]/page.tsx</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/cuenta/page.tsx",
+      "label": "cuenta/page.tsx",
+      "title": "<b>app/cuenta/page.tsx</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/cuenta/puntos/page.tsx",
+      "label": "puntos/page.tsx",
+      "title": "<b>app/cuenta/puntos/page.tsx</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/flash/page.tsx",
+      "label": "flash/page.tsx",
+      "title": "<b>app/flash/page.tsx</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/flash/[code]/page.tsx",
+      "label": "[code]/page.tsx",
+      "title": "<b>app/flash/[code]/page.tsx</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/layout.tsx",
+      "label": "app/layout.tsx",
+      "title": "<b>app/layout.tsx</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/p/[slug]/page.tsx",
+      "label": "[slug]/page.tsx",
+      "title": "<b>app/p/[slug]/page.tsx</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/page.tsx",
+      "label": "app/page.tsx",
+      "title": "<b>app/page.tsx</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/robots.ts",
+      "label": "app/robots.ts",
+      "title": "<b>app/robots.ts</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "app/sitemap.ts",
+      "label": "app/sitemap.ts",
+      "title": "<b>app/sitemap.ts</b><br/>Categoría: app",
+      "color": {
+        "background": "#FFE0B2",
+        "border": "#FF9800"
+      },
+      "shape": "box",
+      "size": 30,
+      "group": "app",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/admin/flash-codes/flash-code-form.tsx",
+      "label": "flash-codes/flash-code-form.tsx",
+      "title": "<b>components/admin/flash-codes/flash-code-form.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/admin/product-form.tsx",
+      "label": "admin/product-form.tsx",
+      "title": "<b>components/admin/product-form.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/auth/turnstile-widget.tsx",
+      "label": "auth/turnstile-widget.tsx",
+      "title": "<b>components/auth/turnstile-widget.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/cart/cart-flash-code-input.tsx",
+      "label": "cart/cart-flash-code-input.tsx",
+      "title": "<b>components/cart/cart-flash-code-input.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/cart/points-redeemer.tsx",
+      "label": "cart/points-redeemer.tsx",
+      "title": "<b>components/cart/points-redeemer.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/catalogo/catalog-filters.tsx",
+      "label": "catalogo/catalog-filters.tsx",
+      "title": "<b>components/catalogo/catalog-filters.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/catalogo/catalog-search.tsx",
+      "label": "catalogo/catalog-search.tsx",
+      "title": "<b>components/catalogo/catalog-search.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/catalogo/supabase-not-configured-banner.tsx",
+      "label": "catalogo/supabase-not-configured-banner.tsx",
+      "title": "<b>components/catalogo/supabase-not-configured-banner.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/layout/footer.tsx",
+      "label": "layout/footer.tsx",
+      "title": "<b>components/layout/footer.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/layout/navbar.tsx",
+      "label": "layout/navbar.tsx",
+      "title": "<b>components/layout/navbar.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/layout/user-menu.tsx",
+      "label": "layout/user-menu.tsx",
+      "title": "<b>components/layout/user-menu.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/product/product-add-to-cart.tsx",
+      "label": "product/product-add-to-cart.tsx",
+      "title": "<b>components/product/product-add-to-cart.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/product/product-card.tsx",
+      "label": "product/product-card.tsx",
+      "title": "<b>components/product/product-card.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/accordion.tsx",
+      "label": "ui/accordion.tsx",
+      "title": "<b>components/ui/accordion.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/alert-dialog.tsx",
+      "label": "ui/alert-dialog.tsx",
+      "title": "<b>components/ui/alert-dialog.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/alert.tsx",
+      "label": "ui/alert.tsx",
+      "title": "<b>components/ui/alert.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/aspect-ratio.tsx",
+      "label": "ui/aspect-ratio.tsx",
+      "title": "<b>components/ui/aspect-ratio.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/avatar.tsx",
+      "label": "ui/avatar.tsx",
+      "title": "<b>components/ui/avatar.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/badge.tsx",
+      "label": "ui/badge.tsx",
+      "title": "<b>components/ui/badge.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/breadcrumb.tsx",
+      "label": "ui/breadcrumb.tsx",
+      "title": "<b>components/ui/breadcrumb.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/button.tsx",
+      "label": "ui/button.tsx",
+      "title": "<b>components/ui/button.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/calendar.tsx",
+      "label": "ui/calendar.tsx",
+      "title": "<b>components/ui/calendar.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/card.tsx",
+      "label": "ui/card.tsx",
+      "title": "<b>components/ui/card.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/carousel.tsx",
+      "label": "ui/carousel.tsx",
+      "title": "<b>components/ui/carousel.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/chart.tsx",
+      "label": "ui/chart.tsx",
+      "title": "<b>components/ui/chart.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/checkbox.tsx",
+      "label": "ui/checkbox.tsx",
+      "title": "<b>components/ui/checkbox.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/collapsible.tsx",
+      "label": "ui/collapsible.tsx",
+      "title": "<b>components/ui/collapsible.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/command.tsx",
+      "label": "ui/command.tsx",
+      "title": "<b>components/ui/command.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/context-menu.tsx",
+      "label": "ui/context-menu.tsx",
+      "title": "<b>components/ui/context-menu.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/dialog.tsx",
+      "label": "ui/dialog.tsx",
+      "title": "<b>components/ui/dialog.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/drawer.tsx",
+      "label": "ui/drawer.tsx",
+      "title": "<b>components/ui/drawer.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/dropdown-menu.tsx",
+      "label": "ui/dropdown-menu.tsx",
+      "title": "<b>components/ui/dropdown-menu.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/form.tsx",
+      "label": "ui/form.tsx",
+      "title": "<b>components/ui/form.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/hover-card.tsx",
+      "label": "ui/hover-card.tsx",
+      "title": "<b>components/ui/hover-card.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/input-otp.tsx",
+      "label": "ui/input-otp.tsx",
+      "title": "<b>components/ui/input-otp.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/input.tsx",
+      "label": "ui/input.tsx",
+      "title": "<b>components/ui/input.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/label.tsx",
+      "label": "ui/label.tsx",
+      "title": "<b>components/ui/label.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/menubar.tsx",
+      "label": "ui/menubar.tsx",
+      "title": "<b>components/ui/menubar.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/navigation-menu.tsx",
+      "label": "ui/navigation-menu.tsx",
+      "title": "<b>components/ui/navigation-menu.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/pagination.tsx",
+      "label": "ui/pagination.tsx",
+      "title": "<b>components/ui/pagination.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/popover.tsx",
+      "label": "ui/popover.tsx",
+      "title": "<b>components/ui/popover.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/progress.tsx",
+      "label": "ui/progress.tsx",
+      "title": "<b>components/ui/progress.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/radio-group.tsx",
+      "label": "ui/radio-group.tsx",
+      "title": "<b>components/ui/radio-group.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/resizable.tsx",
+      "label": "ui/resizable.tsx",
+      "title": "<b>components/ui/resizable.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/scroll-area.tsx",
+      "label": "ui/scroll-area.tsx",
+      "title": "<b>components/ui/scroll-area.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/select.tsx",
+      "label": "ui/select.tsx",
+      "title": "<b>components/ui/select.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/separator.tsx",
+      "label": "ui/separator.tsx",
+      "title": "<b>components/ui/separator.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/sheet.tsx",
+      "label": "ui/sheet.tsx",
+      "title": "<b>components/ui/sheet.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/sidebar.tsx",
+      "label": "ui/sidebar.tsx",
+      "title": "<b>components/ui/sidebar.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/skeleton.tsx",
+      "label": "ui/skeleton.tsx",
+      "title": "<b>components/ui/skeleton.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/slider.tsx",
+      "label": "ui/slider.tsx",
+      "title": "<b>components/ui/slider.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/sonner.tsx",
+      "label": "ui/sonner.tsx",
+      "title": "<b>components/ui/sonner.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/switch.tsx",
+      "label": "ui/switch.tsx",
+      "title": "<b>components/ui/switch.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/table.tsx",
+      "label": "ui/table.tsx",
+      "title": "<b>components/ui/table.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/tabs.tsx",
+      "label": "ui/tabs.tsx",
+      "title": "<b>components/ui/tabs.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/textarea.tsx",
+      "label": "ui/textarea.tsx",
+      "title": "<b>components/ui/textarea.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/toast.tsx",
+      "label": "ui/toast.tsx",
+      "title": "<b>components/ui/toast.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/toaster.tsx",
+      "label": "ui/toaster.tsx",
+      "title": "<b>components/ui/toaster.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/toggle-group.tsx",
+      "label": "ui/toggle-group.tsx",
+      "title": "<b>components/ui/toggle-group.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/toggle.tsx",
+      "label": "ui/toggle.tsx",
+      "title": "<b>components/ui/toggle.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "components/ui/tooltip.tsx",
+      "label": "ui/tooltip.tsx",
+      "title": "<b>components/ui/tooltip.tsx</b><br/>Categoría: components",
+      "color": {
+        "background": "#C8E6C9",
+        "border": "#4CAF50"
+      },
+      "shape": "ellipse",
+      "size": 20,
+      "group": "components",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "hooks/use-mobile.ts",
+      "label": "hooks/use-mobile.ts",
+      "title": "<b>hooks/use-mobile.ts</b><br/>Categoría: hooks",
+      "color": {
+        "background": "#F8BBD0",
+        "border": "#E91E63"
+      },
+      "shape": "diamond",
+      "size": 20,
+      "group": "hooks",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "hooks/use-mounted.ts",
+      "label": "hooks/use-mounted.ts",
+      "title": "<b>hooks/use-mounted.ts</b><br/>Categoría: hooks",
+      "color": {
+        "background": "#F8BBD0",
+        "border": "#E91E63"
+      },
+      "shape": "diamond",
+      "size": 20,
+      "group": "hooks",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "hooks/use-toast.ts",
+      "label": "hooks/use-toast.ts",
+      "title": "<b>hooks/use-toast.ts</b><br/>Categoría: hooks",
+      "color": {
+        "background": "#F8BBD0",
+        "border": "#E91E63"
+      },
+      "shape": "diamond",
+      "size": 20,
+      "group": "hooks",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "lib/auth/admin-checks.ts",
+      "label": "auth/admin-checks.ts",
+      "title": "<b>lib/auth/admin-checks.ts</b><br/>Categoría: lib",
+      "color": {
+        "background": "#BBDEFB",
+        "border": "#2196F3"
+      },
+      "shape": "diamond",
+      "size": 25,
+      "group": "lib",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "lib/auth/clerk-server.ts",
+      "label": "auth/clerk-server.ts",
+      "title": "<b>lib/auth/clerk-server.ts</b><br/>Categoría: lib",
+      "color": {
+        "background": "#BBDEFB",
+        "border": "#2196F3"
+      },
+      "shape": "diamond",
+      "size": 25,
+      "group": "lib",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "lib/auth/require-admin.ts",
+      "label": "auth/require-admin.ts",
+      "title": "<b>lib/auth/require-admin.ts</b><br/>Categoría: lib",
+      "color": {
+        "background": "#BBDEFB",
+        "border": "#2196F3"
+      },
+      "shape": "diamond",
+      "size": 25,
+      "group": "lib",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "lib/auth/require-user.ts",
+      "label": "auth/require-user.ts",
+      "title": "<b>lib/auth/require-user.ts</b><br/>Categoría: lib",
+      "color": {
+        "background": "#BBDEFB",
+        "border": "#2196F3"
+      },
+      "shape": "diamond",
+      "size": 25,
+      "group": "lib",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "lib/auth/turnstile.ts",
+      "label": "auth/turnstile.ts",
+      "title": "<b>lib/auth/turnstile.ts</b><br/>Categoría: lib",
+      "color": {
+        "background": "#BBDEFB",
+        "border": "#2196F3"
+      },
+      "shape": "diamond",
+      "size": 25,
+      "group": "lib",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "lib/constants.ts",
+      "label": "lib/constants.ts",
+      "title": "<b>lib/constants.ts</b><br/>Categoría: lib",
+      "color": {
+        "background": "#BBDEFB",
+        "border": "#2196F3"
+      },
+      "shape": "diamond",
+      "size": 25,
+      "group": "lib",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "lib/db/neon.ts",
+      "label": "db/neon.ts",
+      "title": "<b>lib/db/neon.ts</b><br/>Categoría: lib",
+      "color": {
+        "background": "#BBDEFB",
+        "border": "#2196F3"
+      },
+      "shape": "diamond",
+      "size": 25,
+      "group": "lib",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "lib/db.ts",
+      "label": "lib/db.ts",
+      "title": "<b>lib/db.ts</b><br/>Categoría: lib",
+      "color": {
+        "background": "#BBDEFB",
+        "border": "#2196F3"
+      },
+      "shape": "diamond",
+      "size": 25,
+      "group": "lib",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "lib/email/brevo.ts",
+      "label": "email/brevo.ts",
+      "title": "<b>lib/email/brevo.ts</b><br/>Categoría: lib",
+      "color": {
+        "background": "#BBDEFB",
+        "border": "#2196F3"
+      },
+      "shape": "diamond",
+      "size": 25,
+      "group": "lib",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "lib/email/index.ts",
+      "label": "email/index.ts",
+      "title": "<b>lib/email/index.ts</b><br/>Categoría: lib",
+      "color": {
+        "background": "#BBDEFB",
+        "border": "#2196F3"
+      },
+      "shape": "diamond",
+      "size": 25,
+      "group": "lib",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "lib/format.ts",
+      "label": "lib/format.ts",
+      "title": "<b>lib/format.ts</b><br/>Categoría: lib",
+      "color": {
+        "background": "#BBDEFB",
+        "border": "#2196F3"
+      },
+      "shape": "diamond",
+      "size": 25,
+      "group": "lib",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "lib/orders-neon.ts",
+      "label": "lib/orders-neon.ts",
+      "title": "<b>lib/orders-neon.ts</b><br/>Categoría: lib",
+      "color": {
+        "background": "#BBDEFB",
+        "border": "#2196F3"
+      },
+      "shape": "diamond",
+      "size": 25,
+      "group": "lib",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "lib/orders.ts",
+      "label": "lib/orders.ts",
+      "title": "<b>lib/orders.ts</b><br/>Categoría: lib",
+      "color": {
+        "background": "#BBDEFB",
+        "border": "#2196F3"
+      },
+      "shape": "diamond",
+      "size": 25,
+      "group": "lib",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "lib/payments/kushki.ts",
+      "label": "payments/kushki.ts",
+      "title": "<b>lib/payments/kushki.ts</b><br/>Categoría: lib",
+      "color": {
+        "background": "#BBDEFB",
+        "border": "#2196F3"
+      },
+      "shape": "diamond",
+      "size": 25,
+      "group": "lib",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "lib/queries/products-neon.ts",
+      "label": "queries/products-neon.ts",
+      "title": "<b>lib/queries/products-neon.ts</b><br/>Categoría: lib",
+      "color": {
+        "background": "#BBDEFB",
+        "border": "#2196F3"
+      },
+      "shape": "diamond",
+      "size": 25,
+      "group": "lib",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "lib/queries/products.ts",
+      "label": "queries/products.ts",
+      "title": "<b>lib/queries/products.ts</b><br/>Categoría: lib",
+      "color": {
+        "background": "#BBDEFB",
+        "border": "#2196F3"
+      },
+      "shape": "diamond",
+      "size": 25,
+      "group": "lib",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "lib/supabase/admin.ts",
+      "label": "supabase/admin.ts",
+      "title": "<b>lib/supabase/admin.ts</b><br/>Categoría: lib",
+      "color": {
+        "background": "#BBDEFB",
+        "border": "#2196F3"
+      },
+      "shape": "diamond",
+      "size": 25,
+      "group": "lib",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "lib/supabase/client.ts",
+      "label": "supabase/client.ts",
+      "title": "<b>lib/supabase/client.ts</b><br/>Categoría: lib",
+      "color": {
+        "background": "#BBDEFB",
+        "border": "#2196F3"
+      },
+      "shape": "diamond",
+      "size": 25,
+      "group": "lib",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "lib/supabase/configured.ts",
+      "label": "supabase/configured.ts",
+      "title": "<b>lib/supabase/configured.ts</b><br/>Categoría: lib",
+      "color": {
+        "background": "#BBDEFB",
+        "border": "#2196F3"
+      },
+      "shape": "diamond",
+      "size": 25,
+      "group": "lib",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "lib/supabase/server.ts",
+      "label": "supabase/server.ts",
+      "title": "<b>lib/supabase/server.ts</b><br/>Categoría: lib",
+      "color": {
+        "background": "#BBDEFB",
+        "border": "#2196F3"
+      },
+      "shape": "diamond",
+      "size": 25,
+      "group": "lib",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "lib/utils.ts",
+      "label": "lib/utils.ts",
+      "title": "<b>lib/utils.ts</b><br/>Categoría: lib",
+      "color": {
+        "background": "#BBDEFB",
+        "border": "#2196F3"
+      },
+      "shape": "diamond",
+      "size": 25,
+      "group": "lib",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "middleware.ts",
+      "label": "middleware.ts",
+      "title": "<b>middleware.ts</b><br/>Categoría: middleware.ts",
+      "color": {
+        "background": "#F5F5F5",
+        "border": "#9E9E9E"
+      },
+      "shape": "diamond",
+      "size": 20,
+      "group": "middleware.ts",
+      "font": {
+        "size": 11
+      }
+    },
+    {
+      "id": "store/cart.ts",
+      "label": "store/cart.ts",
+      "title": "<b>store/cart.ts</b><br/>Categoría: store",
+      "color": {
+        "background": "#E1BEE7",
+        "border": "#9C27B0"
+      },
+      "shape": "diamond",
+      "size": 20,
+      "group": "store",
+      "font": {
+        "size": 11
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "app/admin/flash-codes/new/page.tsx",
+      "to": "lib/auth/require-admin.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/flash-codes/new/page.tsx",
+      "to": "components/admin/flash-codes/flash-code-form.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/flash-codes/page.tsx",
+      "to": "lib/auth/require-admin.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/flash-codes/page.tsx",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/flash-codes/page.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/flash-codes/page.tsx",
+      "to": "components/ui/card.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/flash-codes/page.tsx",
+      "to": "components/ui/badge.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/flash-codes/page.tsx",
+      "to": "lib/format.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/flash-codes/[id]/page.tsx",
+      "to": "lib/auth/require-admin.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/flash-codes/[id]/page.tsx",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/flash-codes/[id]/page.tsx",
+      "to": "components/admin/flash-codes/flash-code-form.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/metrics/page.tsx",
+      "to": "lib/auth/require-admin.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/metrics/page.tsx",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/metrics/page.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/metrics/page.tsx",
+      "to": "components/ui/card.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/metrics/page.tsx",
+      "to": "lib/format.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/orders/page.tsx",
+      "to": "lib/auth/require-admin.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/orders/page.tsx",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/orders/page.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/orders/page.tsx",
+      "to": "components/ui/card.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/orders/page.tsx",
+      "to": "components/ui/badge.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/orders/page.tsx",
+      "to": "lib/format.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/orders/[id]/page.tsx",
+      "to": "lib/auth/require-admin.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/orders/[id]/page.tsx",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/orders/[id]/page.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/orders/[id]/page.tsx",
+      "to": "components/ui/card.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/orders/[id]/page.tsx",
+      "to": "components/ui/badge.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/orders/[id]/page.tsx",
+      "to": "components/ui/separator.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/orders/[id]/page.tsx",
+      "to": "lib/format.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/page.tsx",
+      "to": "lib/auth/require-admin.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/page.tsx",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/page.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/page.tsx",
+      "to": "components/ui/card.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/page.tsx",
+      "to": "components/ui/badge.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/page.tsx",
+      "to": "lib/format.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/products/new/page.tsx",
+      "to": "lib/auth/require-admin.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/products/new/page.tsx",
+      "to": "components/admin/product-form.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/products/[id]/page.tsx",
+      "to": "lib/auth/require-admin.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/products/[id]/page.tsx",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/admin/products/[id]/page.tsx",
+      "to": "components/admin/product-form.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/api/admin/products/route.ts",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/api/admin/products/route.ts",
+      "to": "lib/format.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/api/admin/products/[id]/route.ts",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/api/admin/products/[id]/route.ts",
+      "to": "lib/auth/admin-checks.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/api/admin/products/[id]/route.ts",
+      "to": "lib/format.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/api/cron/expire-orders/route.ts",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/api/flash/validate/route.ts",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/api/flash/validate/route.ts",
+      "to": "lib/auth/turnstile.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/api/flash-codes/route.ts",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/api/flash-codes/route.ts",
+      "to": "lib/auth/admin-checks.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/api/flash-codes/route.ts",
+      "to": "lib/format.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/api/flash-codes/[id]/route.ts",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/api/flash-codes/[id]/route.ts",
+      "to": "lib/auth/admin-checks.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/api/orders/route.ts",
+      "to": "lib/orders-neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/api/orders/route.ts",
+      "to": "lib/auth/turnstile.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/api/payments/create/route.ts",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/api/payments/create/route.ts",
+      "to": "lib/payments/kushki.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/api/payments/create/route.ts",
+      "to": "lib/orders-neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/api/payments/webhook/route.ts",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/api/payments/webhook/route.ts",
+      "to": "lib/orders-neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/api/payments/webhook/route.ts",
+      "to": "lib/payments/kushki.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/api/user/points/route.ts",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/carrito/page.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/carrito/page.tsx",
+      "to": "components/ui/card.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/carrito/page.tsx",
+      "to": "components/ui/separator.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/carrito/page.tsx",
+      "to": "components/ui/badge.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/carrito/page.tsx",
+      "to": "lib/format.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/carrito/page.tsx",
+      "to": "lib/constants.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/carrito/page.tsx",
+      "to": "store/cart.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/carrito/page.tsx",
+      "to": "components/cart/cart-flash-code-input.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/carrito/page.tsx",
+      "to": "hooks/use-mounted.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/catalogo/page.tsx",
+      "to": "components/product/product-card.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/catalogo/page.tsx",
+      "to": "components/catalogo/catalog-search.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/catalogo/page.tsx",
+      "to": "components/catalogo/catalog-filters.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/catalogo/page.tsx",
+      "to": "components/catalogo/supabase-not-configured-banner.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/catalogo/page.tsx",
+      "to": "components/ui/badge.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/catalogo/page.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/catalogo/page.tsx",
+      "to": "lib/queries/products.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/catalogo/page.tsx",
+      "to": "lib/constants.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/catalogo/page.tsx",
+      "to": "lib/supabase/configured.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/checkout/cancelled/page.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/checkout/cancelled/page.tsx",
+      "to": "components/ui/card.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/checkout/cancelled/page.tsx",
+      "to": "lib/constants.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/checkout/page.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/checkout/page.tsx",
+      "to": "components/ui/card.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/checkout/page.tsx",
+      "to": "components/ui/input.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/checkout/page.tsx",
+      "to": "components/ui/label.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/checkout/page.tsx",
+      "to": "components/ui/separator.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/checkout/page.tsx",
+      "to": "components/ui/badge.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/checkout/page.tsx",
+      "to": "lib/format.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/checkout/page.tsx",
+      "to": "lib/constants.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/checkout/page.tsx",
+      "to": "store/cart.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/checkout/page.tsx",
+      "to": "hooks/use-mounted.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/checkout/page.tsx",
+      "to": "components/cart/cart-flash-code-input.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/checkout/page.tsx",
+      "to": "components/cart/points-redeemer.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/checkout/page.tsx",
+      "to": "components/auth/turnstile-widget.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/checkout/pending/page.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/checkout/pending/page.tsx",
+      "to": "components/ui/card.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/checkout/pending/page.tsx",
+      "to": "lib/constants.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/checkout/success/page.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/checkout/success/page.tsx",
+      "to": "components/ui/card.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/checkout/success/page.tsx",
+      "to": "components/ui/badge.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/checkout/success/page.tsx",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/checkout/success/page.tsx",
+      "to": "lib/format.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/checkout/success/page.tsx",
+      "to": "lib/constants.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/cuenta/ordenes/page.tsx",
+      "to": "lib/auth/require-user.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/cuenta/ordenes/page.tsx",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/cuenta/ordenes/page.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/cuenta/ordenes/page.tsx",
+      "to": "components/ui/card.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/cuenta/ordenes/page.tsx",
+      "to": "components/ui/badge.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/cuenta/ordenes/page.tsx",
+      "to": "lib/format.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/cuenta/ordenes/[id]/page.tsx",
+      "to": "lib/auth/require-user.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/cuenta/ordenes/[id]/page.tsx",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/cuenta/ordenes/[id]/page.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/cuenta/ordenes/[id]/page.tsx",
+      "to": "components/ui/card.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/cuenta/ordenes/[id]/page.tsx",
+      "to": "components/ui/badge.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/cuenta/ordenes/[id]/page.tsx",
+      "to": "components/ui/separator.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/cuenta/ordenes/[id]/page.tsx",
+      "to": "lib/format.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/cuenta/page.tsx",
+      "to": "lib/auth/require-user.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/cuenta/page.tsx",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/cuenta/page.tsx",
+      "to": "components/ui/card.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/cuenta/page.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/cuenta/page.tsx",
+      "to": "components/ui/badge.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/cuenta/page.tsx",
+      "to": "lib/format.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/cuenta/page.tsx",
+      "to": "lib/constants.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/cuenta/puntos/page.tsx",
+      "to": "lib/auth/require-user.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/cuenta/puntos/page.tsx",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/cuenta/puntos/page.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/cuenta/puntos/page.tsx",
+      "to": "components/ui/card.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/cuenta/puntos/page.tsx",
+      "to": "components/ui/badge.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/cuenta/puntos/page.tsx",
+      "to": "components/ui/separator.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/cuenta/puntos/page.tsx",
+      "to": "lib/format.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/cuenta/puntos/page.tsx",
+      "to": "lib/constants.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/flash/page.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/flash/page.tsx",
+      "to": "components/ui/card.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/flash/page.tsx",
+      "to": "components/ui/input.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/flash/page.tsx",
+      "to": "components/ui/label.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/flash/page.tsx",
+      "to": "lib/constants.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/flash/[code]/page.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/flash/[code]/page.tsx",
+      "to": "components/ui/card.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/flash/[code]/page.tsx",
+      "to": "components/ui/badge.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/flash/[code]/page.tsx",
+      "to": "components/ui/separator.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/flash/[code]/page.tsx",
+      "to": "lib/format.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/flash/[code]/page.tsx",
+      "to": "lib/constants.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/flash/[code]/page.tsx",
+      "to": "lib/queries/products.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/flash/[code]/page.tsx",
+      "to": "lib/supabase/server.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/flash/[code]/page.tsx",
+      "to": "lib/supabase/configured.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/flash/[code]/page.tsx",
+      "to": "components/catalogo/supabase-not-configured-banner.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/layout.tsx",
+      "to": "components/ui/toaster.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/layout.tsx",
+      "to": "components/layout/navbar.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/layout.tsx",
+      "to": "components/layout/footer.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/layout.tsx",
+      "to": "lib/constants.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/p/[slug]/page.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/p/[slug]/page.tsx",
+      "to": "components/ui/badge.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/p/[slug]/page.tsx",
+      "to": "components/ui/card.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/p/[slug]/page.tsx",
+      "to": "components/ui/separator.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/p/[slug]/page.tsx",
+      "to": "lib/queries/products.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/p/[slug]/page.tsx",
+      "to": "components/product/product-add-to-cart.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/p/[slug]/page.tsx",
+      "to": "lib/constants.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/p/[slug]/page.tsx",
+      "to": "lib/supabase/configured.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/p/[slug]/page.tsx",
+      "to": "components/catalogo/supabase-not-configured-banner.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/page.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/page.tsx",
+      "to": "components/ui/card.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/page.tsx",
+      "to": "components/ui/badge.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/page.tsx",
+      "to": "lib/constants.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/robots.ts",
+      "to": "lib/constants.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/sitemap.ts",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "app/sitemap.ts",
+      "to": "lib/constants.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/admin/flash-codes/flash-code-form.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/admin/flash-codes/flash-code-form.tsx",
+      "to": "components/ui/card.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/admin/flash-codes/flash-code-form.tsx",
+      "to": "components/ui/input.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/admin/flash-codes/flash-code-form.tsx",
+      "to": "components/ui/label.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/admin/flash-codes/flash-code-form.tsx",
+      "to": "components/ui/select.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/admin/flash-codes/flash-code-form.tsx",
+      "to": "components/ui/switch.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/admin/flash-codes/flash-code-form.tsx",
+      "to": "components/ui/badge.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/admin/flash-codes/flash-code-form.tsx",
+      "to": "lib/format.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/admin/product-form.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/admin/product-form.tsx",
+      "to": "components/ui/card.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/admin/product-form.tsx",
+      "to": "components/ui/input.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/admin/product-form.tsx",
+      "to": "components/ui/label.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/admin/product-form.tsx",
+      "to": "components/ui/textarea.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/admin/product-form.tsx",
+      "to": "components/ui/select.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/admin/product-form.tsx",
+      "to": "components/ui/switch.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/admin/product-form.tsx",
+      "to": "lib/format.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/admin/product-form.tsx",
+      "to": "lib/constants.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/cart/cart-flash-code-input.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/cart/cart-flash-code-input.tsx",
+      "to": "components/ui/input.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/cart/cart-flash-code-input.tsx",
+      "to": "components/ui/label.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/cart/cart-flash-code-input.tsx",
+      "to": "store/cart.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/cart/cart-flash-code-input.tsx",
+      "to": "lib/format.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/cart/cart-flash-code-input.tsx",
+      "to": "components/auth/turnstile-widget.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/cart/points-redeemer.tsx",
+      "to": "components/ui/card.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/cart/points-redeemer.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/cart/points-redeemer.tsx",
+      "to": "components/ui/label.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/cart/points-redeemer.tsx",
+      "to": "components/ui/input.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/cart/points-redeemer.tsx",
+      "to": "components/ui/separator.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/cart/points-redeemer.tsx",
+      "to": "lib/format.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/cart/points-redeemer.tsx",
+      "to": "lib/constants.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/catalogo/catalog-filters.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/catalogo/catalog-filters.tsx",
+      "to": "components/ui/label.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/catalogo/catalog-filters.tsx",
+      "to": "components/ui/input.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/catalogo/catalog-filters.tsx",
+      "to": "components/ui/select.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/catalogo/catalog-filters.tsx",
+      "to": "lib/queries/products.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/catalogo/catalog-search.tsx",
+      "to": "components/ui/input.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/catalogo/catalog-search.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/catalogo/supabase-not-configured-banner.tsx",
+      "to": "components/ui/card.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/layout/footer.tsx",
+      "to": "lib/constants.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/layout/navbar.tsx",
+      "to": "lib/constants.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/layout/navbar.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/layout/navbar.tsx",
+      "to": "components/ui/sheet.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/layout/navbar.tsx",
+      "to": "store/cart.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/layout/navbar.tsx",
+      "to": "hooks/use-mounted.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/layout/navbar.tsx",
+      "to": "components/layout/user-menu.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/layout/user-menu.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/layout/user-menu.tsx",
+      "to": "components/ui/badge.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/layout/user-menu.tsx",
+      "to": "components/ui/dropdown-menu.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/layout/user-menu.tsx",
+      "to": "lib/constants.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/product/product-add-to-cart.tsx",
+      "to": "store/cart.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/product/product-add-to-cart.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/product/product-add-to-cart.tsx",
+      "to": "lib/format.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/product/product-add-to-cart.tsx",
+      "to": "lib/constants.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/product/product-card.tsx",
+      "to": "components/ui/card.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/product/product-card.tsx",
+      "to": "components/ui/badge.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/product/product-card.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/product/product-card.tsx",
+      "to": "lib/format.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/product/product-card.tsx",
+      "to": "lib/constants.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/product/product-card.tsx",
+      "to": "store/cart.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/accordion.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/alert-dialog.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/alert-dialog.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/alert.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/avatar.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/badge.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/breadcrumb.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/button.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/calendar.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/calendar.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/card.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/carousel.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/carousel.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/chart.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/checkbox.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/command.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/command.tsx",
+      "to": "components/ui/dialog.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/context-menu.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/dialog.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/drawer.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/dropdown-menu.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/form.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/form.tsx",
+      "to": "components/ui/label.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/hover-card.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/input-otp.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/input.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/label.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/menubar.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/navigation-menu.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/pagination.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/pagination.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/popover.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/progress.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/radio-group.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/resizable.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/scroll-area.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/select.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/separator.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/sheet.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/sidebar.tsx",
+      "to": "hooks/use-mobile.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/sidebar.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/sidebar.tsx",
+      "to": "components/ui/button.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/sidebar.tsx",
+      "to": "components/ui/input.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/sidebar.tsx",
+      "to": "components/ui/separator.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/sidebar.tsx",
+      "to": "components/ui/sheet.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/sidebar.tsx",
+      "to": "components/ui/skeleton.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/sidebar.tsx",
+      "to": "components/ui/tooltip.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/skeleton.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/slider.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/switch.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/table.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/tabs.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/textarea.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/toast.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/toaster.tsx",
+      "to": "hooks/use-toast.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/toaster.tsx",
+      "to": "components/ui/toast.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/toggle-group.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/toggle-group.tsx",
+      "to": "components/ui/toggle.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/toggle.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "components/ui/tooltip.tsx",
+      "to": "lib/utils.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "hooks/use-toast.ts",
+      "to": "components/ui/toast.tsx",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "lib/auth/admin-checks.ts",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "lib/auth/require-admin.ts",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "lib/auth/require-user.ts",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "lib/db.ts",
+      "to": "lib/supabase/client.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "lib/db.ts",
+      "to": "lib/supabase/server.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "lib/db.ts",
+      "to": "lib/supabase/admin.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "lib/format.ts",
+      "to": "lib/constants.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "lib/orders-neon.ts",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "lib/orders-neon.ts",
+      "to": "lib/constants.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "lib/payments/kushki.ts",
+      "to": "lib/constants.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "lib/queries/products-neon.ts",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "lib/supabase/admin.ts",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "lib/supabase/admin.ts",
+      "to": "lib/auth/clerk-server.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "lib/supabase/configured.ts",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "lib/supabase/server.ts",
+      "to": "lib/db/neon.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "lib/supabase/server.ts",
+      "to": "lib/auth/clerk-server.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    },
+    {
+      "from": "store/cart.ts",
+      "to": "lib/constants.ts",
+      "arrows": "to",
+      "color": {
+        "color": "#90A4AE",
+        "opacity": 0.6
+      },
+      "width": 1,
+      "smooth": {
+        "type": "curvedCW",
+        "roundness": 0.1
+      }
+    }
+  ],
+  "routeData": [
+    {
+      "id": "admin",
+      "label": "/admin",
+      "group": "route"
+    },
+    {
+      "id": "admin/flash-codes",
+      "label": "/admin/flash-codes",
+      "group": "route"
+    },
+    {
+      "id": "admin/flash-codes/new",
+      "label": "/admin/flash-codes/new",
+      "group": "route"
+    },
+    {
+      "id": "admin/flash-codes/:id",
+      "label": "/admin/flash-codes/:id",
+      "group": "route"
+    },
+    {
+      "id": "admin/login",
+      "label": "/admin/login",
+      "group": "route"
+    },
+    {
+      "id": "admin/metrics",
+      "label": "/admin/metrics",
+      "group": "route"
+    },
+    {
+      "id": "admin/orders",
+      "label": "/admin/orders",
+      "group": "route"
+    },
+    {
+      "id": "admin/orders/:id",
+      "label": "/admin/orders/:id",
+      "group": "route"
+    },
+    {
+      "id": "admin/products/new",
+      "label": "/admin/products/new",
+      "group": "route"
+    },
+    {
+      "id": "admin/products/:id",
+      "label": "/admin/products/:id",
+      "group": "route"
+    },
+    {
+      "id": "carrito",
+      "label": "/carrito",
+      "group": "route"
+    },
+    {
+      "id": "catalogo",
+      "label": "/catalogo",
+      "group": "route"
+    },
+    {
+      "id": "checkout",
+      "label": "/checkout",
+      "group": "route"
+    },
+    {
+      "id": "checkout/cancelled",
+      "label": "/checkout/cancelled",
+      "group": "route"
+    },
+    {
+      "id": "checkout/pending",
+      "label": "/checkout/pending",
+      "group": "route"
+    },
+    {
+      "id": "checkout/success",
+      "label": "/checkout/success",
+      "group": "route"
+    },
+    {
+      "id": "cuenta",
+      "label": "/cuenta",
+      "group": "route"
+    },
+    {
+      "id": "cuenta/login",
+      "label": "/cuenta/login",
+      "group": "route"
+    },
+    {
+      "id": "cuenta/ordenes",
+      "label": "/cuenta/ordenes",
+      "group": "route"
+    },
+    {
+      "id": "cuenta/ordenes/:id",
+      "label": "/cuenta/ordenes/:id",
+      "group": "route"
+    },
+    {
+      "id": "cuenta/puntos",
+      "label": "/cuenta/puntos",
+      "group": "route"
+    },
+    {
+      "id": "flash",
+      "label": "/flash",
+      "group": "route"
+    },
+    {
+      "id": "flash/:code",
+      "label": "/flash/:code",
+      "group": "route"
+    },
+    {
+      "id": "p/:slug",
+      "label": "/p/:slug",
+      "group": "route"
+    }
+  ],
+  "routeEdges": [
+    {
+      "from": "admin",
+      "to": "admin/flash-codes"
+    },
+    {
+      "from": "admin/flash-codes",
+      "to": "admin/flash-codes/new"
+    },
+    {
+      "from": "admin/flash-codes",
+      "to": "admin/flash-codes/:id"
+    },
+    {
+      "from": "admin",
+      "to": "admin/login"
+    },
+    {
+      "from": "admin",
+      "to": "admin/metrics"
+    },
+    {
+      "from": "admin",
+      "to": "admin/orders"
+    },
+    {
+      "from": "admin/orders",
+      "to": "admin/orders/:id"
+    },
+    {
+      "from": "admin/products",
+      "to": "admin/products/new"
+    },
+    {
+      "from": "admin/products",
+      "to": "admin/products/:id"
+    },
+    {
+      "from": "checkout",
+      "to": "checkout/cancelled"
+    },
+    {
+      "from": "checkout",
+      "to": "checkout/pending"
+    },
+    {
+      "from": "checkout",
+      "to": "checkout/success"
+    },
+    {
+      "from": "cuenta",
+      "to": "cuenta/login"
+    },
+    {
+      "from": "cuenta",
+      "to": "cuenta/ordenes"
+    },
+    {
+      "from": "cuenta/ordenes",
+      "to": "cuenta/ordenes/:id"
+    },
+    {
+      "from": "cuenta",
+      "to": "cuenta/puntos"
+    },
+    {
+      "from": "flash",
+      "to": "flash/:code"
+    },
+    {
+      "from": "p",
+      "to": "p/:slug"
+    }
+  ]
+};
+    let network = null;
+    let currentTab = 'deps';
+    
+    const categoryColors = {
+      'app': { background: '#FFE0B2', border: '#FF9800', shape: 'box' },
+      'components': { background: '#C8E6C9', border: '#4CAF50', shape: 'ellipse' },
+      'lib': { background: '#BBDEFB', border: '#2196F3', shape: 'diamond' },
+      'store': { background: '#E1BEE7', border: '#9C27B0', shape: 'star' },
+      'hooks': { background: '#F8BBD0', border: '#E91E63', shape: 'triangle' },
+      'types': { background: '#B2DFDB', border: '#009688', shape: 'square' }
+    };
+    
+    function buildDependencyNetwork() {
+      const nodes = new vis.DataSet(DATA.nodes.map(n => ({
+        ...n,
+        shape: categoryColors[n.group]?.shape || 'dot',
+        color: {
+          background: categoryColors[n.group]?.background || '#F5F5F5',
+          border: categoryColors[n.group]?.border || '#9E9E9E'
+        }
+      })));
+      
+      const edges = new vis.DataSet(DATA.edges);
+      
+      const options = {
+        physics: {
+          stabilization: { iterations: 100 },
+          solver: 'forceAtlas2Based',
+          forceAtlas2Based: {
+            gravitationalConstant: -40,
+            centralGravity: 0.005,
+            springLength: 180,
+            springConstant: 0.02,
+            damping: 0.4
+          }
+        },
+        layout: { improvedLayout: true },
+        edges: {
+          smooth: { type: 'curvedCW', roundness: 0.15 },
+          arrows: { to: { enabled: true, scaleFactor: 0.6 } }
+        },
+        interaction: {
+          hover: true,
+          tooltipDelay: 200,
+          navigationButtons: true,
+          keyboard: true
+        },
+        nodes: {
+          font: { size: 11, face: 'Inter, Arial' },
+          borderWidth: 1.5,
+          borderWidthSelected: 3,
+          shadow: { enabled: true, size: 3 }
+        }
+      };
+      
+      return { nodes, edges, options };
+    }
+    
+    function buildRouteNetwork() {
+      const routeNodes = DATA.routeData.map(r => ({
+        id: r.id,
+        label: r.label,
+        shape: 'box',
+        color: {
+          background: r.id.includes(':') ? '#FCE4EC' : '#E8F5E9',
+          border: r.id.includes(':') ? '#E91E63' : '#4CAF50'
+        },
+        font: { size: 12 }
+      }));
+      
+      // Route edges
+      const routeEdges = [];
+      for (const r of DATA.routeData) {
+        const parts = r.id.split('/');
+        if (parts.length > 1) {
+          const parent = parts.slice(0, -1).join('/');
+          routeEdges.push({
+            from: parent,
+            to: r.id,
+            arrows: 'to',
+            color: { color: '#90A4AE' },
+            width: 1.5
+          });
+        }
+      }
+      
+      // Add root
+      routeNodes.unshift({
+        id: '',
+        label: '🏠 / (Landing)',
+        shape: 'box',
+        color: { background: '#FFF3E0', border: '#FF9800' },
+        font: { size: 14, face: 'Inter, Arial' }
+      });
+      
+      // Connect root to first-level routes
+      for (const r of DATA.routeData) {
+        if (!r.id.includes('/')) {
+          routeEdges.push({
+            from: '',
+            to: r.id,
+            arrows: 'to',
+            color: { color: '#FF9800' },
+            width: 2
+          });
+        }
+      }
+      
+      const nodes = new vis.DataSet(routeNodes);
+      const edges = new vis.DataSet(routeEdges);
+      
+      const options = {
+        physics: {
+          solver: 'hierarchicalRepulsion',
+          hierarchicalRepulsion: { nodeDistance: 120 }
+        },
+        layout: {
+          hierarchical: {
+            enabled: true,
+            direction: 'UD',
+            sortMethod: 'directed',
+            levelSeparation: 60,
+            nodeSpacing: 120
+          }
+        },
+        edges: {
+          smooth: true,
+          arrows: { to: { enabled: true, scaleFactor: 0.8 } }
+        },
+        interaction: {
+          hover: true,
+          navigationButtons: true,
+          keyboard: true
+        },
+        nodes: {
+          font: { size: 12, face: 'Inter, Arial' },
+          borderWidth: 2,
+          shadow: { enabled: true }
+        }
+      };
+      
+      return { nodes, edges, options };
+    }
+    
+    function buildUINetwork() {
+      // Find pages and UI components
+      const uiNodes = [];
+      const uiEdges = [];
+      
+      // UI components
+      const uiComponents = {};
+      const pages = [];
+      
+      DATA.nodes.forEach(n => {
+        if (n.id.includes('components/ui/')) {
+          const name = n.id.split('/').pop();
+          uiComponents[n.id] = true;
+          uiNodes.push({
+            id: n.id,
+            label: name,
+            shape: 'ellipse',
+            color: { background: '#FFF8E1', border: '#F9A825' },
+            font: { size: 10 },
+            group: 'ui'
+          });
+        } else if (n.id.includes('/page.')) {
+          const route = n.id.replace(/^app//, '').replace(//page.(tsx|ts)$/, '') || '/';
+          pages.push(n.id);
+          uiNodes.push({
+            id: n.id,
+            label: route,
+            shape: 'box',
+            color: { background: '#E8F5E9', border: '#4CAF50' },
+            font: { size: 11 },
+            group: 'page'
+          });
+        }
+      });
+      
+      // Connect pages to UI components they use
+      DATA.edges.forEach(e => {
+        if (pages.includes(e.from) && DATA.nodes.some(n => n.id === e.to && n.id.includes('components/ui/'))) {
+          uiEdges.push({
+            from: e.from,
+            to: e.to,
+            arrows: 'to',
+            color: { color: '#F9A825', opacity: 0.5 },
+            width: 1,
+            style: 'dashed'
+          });
+        }
+      });
+      
+      const nodes = new vis.DataSet(uiNodes);
+      const edges = new vis.DataSet(uiEdges);
+      
+      const options = {
+        physics: {
+          solver: 'forceAtlas2Based',
+          forceAtlas2Based: {
+            gravitationalConstant: -50,
+            springLength: 150,
+            springConstant: 0.03
+          }
+        },
+        edges: {
+          smooth: { type: 'curvedCW' },
+          arrows: { to: { enabled: true, scaleFactor: 0.6 } }
+        },
+        interaction: {
+          hover: true,
+          navigationButtons: true,
+          keyboard: true
+        },
+        nodes: {
+          font: { size: 11, face: 'Inter, Arial' },
+          borderWidth: 1.5,
+          shadow: { enabled: true }
+        }
+      };
+      
+      return { nodes, edges, options };
+    }
+    
+    function switchTab(tab, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentTab = tab;
+      
+      let data;
+      if (tab === 'deps') data = buildDependencyNetwork();
+      else if (tab === 'routes') data = buildRouteNetwork();
+      else data = buildUINetwork();
+      
+      network.setData(data);
+      network.setOptions(data.options);
+      network.fit({ animation: true });
+    }
+    
+    function resetView() {
+      network.fit({ animation: true });
+    }
+    
+    function fitView() {
+      network.fit({ animation: { duration: 500, easingFunction: 'easeInOutQuad' } });
+    }
+    
+    function closeInfo() {
+      document.getElementById('info-panel').style.display = 'none';
+    }
+    
+    // Initialize
+    const container = document.getElementById('mynetwork');
+    const initialData = buildDependencyNetwork();
+    
+    network = new vis.Network(container, initialData, initialData.options);
+    
+    network.on('click', function(params) {
+      if (params.nodes.length > 0) {
+        const nodeId = params.nodes[0];
+        const node = DATA.nodes.find(n => n.id === nodeId);
+        if (node) {
+          document.getElementById('info-title').textContent = node.label;
+          document.getElementById('info-path').textContent = nodeId;
+          
+          // Find dependencies
+          const deps = DATA.edges.filter(e => e.from === nodeId).map(e => {
+            const target = DATA.nodes.find(n => n.id === e.to);
+            return target ? target.label : e.to;
+          }).join(', ');
+          document.getElementById('info-deps').textContent = deps ? '→ ' + deps : 'Sin dependencias directas';
+          document.getElementById('info-panel').style.display = 'block';
+        }
+      }
+    });
+    
+    network.on('doubleClick', function() {
+      closeInfo();
+    });
+    
+    window.addEventListener('resize', () => {
+      network.fit({ animation: false });
+    });
+  </script>
+</body>
+</html>
