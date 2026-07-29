@@ -1,6 +1,7 @@
 import { SignIn } from '@clerk/nextjs'
 
 export const metadata = { title: 'Admin · Munay' }
+export const dynamic = 'force-dynamic'
 
 export default function AdminLoginPage() {
   return (
