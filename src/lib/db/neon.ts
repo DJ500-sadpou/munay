@@ -57,8 +57,8 @@ export async function query<T = any>(text: string, params?: any[]): Promise<T[]>
   if (!isDbConfigured()) return []
   // neon() retorna función que acepta tanto tagged template como (text, params).
   // El tipo oficial solo expone tagged template, hacemos cast para la firma string.
-  const sql = getSql() as unknown as (text: string, ...params: any[]) => Promise<any[]>
-  const rows = await sql(text, ...(params ?? []))
+  const sql = getSql() as unknown as (text: string, params?: any[]) => Promise<any[]>
+  const rows = await sql(text, params ?? [])
   return rows as T[]
 }
 
