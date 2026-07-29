@@ -58,13 +58,14 @@ export const metadata: Metadata = {
   },
   description: SITE.description,
   keywords: [
-    "tienda mística",
+    "ropa",
+    "ropa usada",
+    "ropa nueva",
     "Ibarra",
     "Ecuador",
-    "mineralería",
-    "ceremonial",
-    "munay",
     "segunda mano",
+    "tienda de ropa",
+    "munay",
   ],
   authors: [{ name: SITE.name }],
   openGraph: {

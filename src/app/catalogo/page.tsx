@@ -18,7 +18,7 @@ import { isSupabaseConfigured } from '@/lib/supabase/configured'
 
 export const metadata = {
   title: 'Catálogo',
-  description: 'Explora las piezas disponibles en la tienda mística Munay (Ibarra, Ecuador).',
+  description: 'Explora las prendas disponibles en Munay — ropa nueva y de segunda mano en Ibarra, Ecuador.',
 }
 
 interface PageProps {
@@ -60,12 +60,11 @@ export default async function CatalogoPage({ searchParams }: PageProps) {
     <div className="container mx-auto px-4 py-10">
       {/* Header */}
       <div className="mb-6">
-        <Badge variant="secondary" className="mb-2">Fase 2 · datos en vivo de Supabase</Badge>
         <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
           Catálogo
         </h1>
         <p className="mt-2 text-muted-foreground">
-          Piezas únicas con historia · precios en USD · envíos desde Ibarra.
+          Prendas nuevas y de segunda mano · precios en USD · envíos desde Ibarra.
         </p>
       </div>
 

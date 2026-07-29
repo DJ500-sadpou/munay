@@ -4,9 +4,9 @@
 
 export const SITE = {
   name: 'Munay',
-  tagline: 'Tienda mística · Ibarra, Ecuador',
+  tagline: 'Tu tienda de ropa nueva y de segunda · Ibarra, Ecuador',
   description:
-    'Objetos ceremoniales, mineralería y piezas únicas con historia. ' +
+    'Ropa nueva y de segunda mano, seleccionada con cuidado. ' +
     'Envíos en Ibarra y todo Ecuador.',
   url: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://munay.example.com',
   locale: 'es-EC',

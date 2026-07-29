@@ -1,10 +1,9 @@
 /**
- * Landing page — Munay en construcción.
+ * Landing page — Munay, tu tienda de ropa de confianza.
  *
- * Muestra un resumen general de lo que será la tienda y un aviso
- * de que el sitio está en mantenimiento. Las rutas funcionales
- * (/catalogo, /carrito, /checkout, etc.) siguen operativas.
- * La página de avances del proyecto se movió a /info.
+ * Ropa nueva y de segunda mano, seleccionada con cuidado.
+ * Envíos en Ibarra y todo Ecuador.
+ * Las rutas funcionales (/catalogo, /carrito, /checkout, etc.) siguen operativas.
  */
 
 import Link from 'next/link'
@@ -17,13 +16,15 @@ import {
   CreditCard,
   User,
   ShieldCheck,
-  Leaf,
-  Gem,
-  Heart,
+  Shirt,
+  RefreshCw,
+  HeartHandshake,
   Clock,
   Construction,
   MapPin,
   Mail,
+  Store,
+  Tag,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -32,24 +33,24 @@ import { SITE, ROUTES } from '@/lib/constants'
 
 const VALUES = [
   {
-    icon: Gem,
-    title: 'Piezas únicas',
-    desc: 'Objetos ceremoniales, mineralería y artesanías seleccionadas a mano, cada una con su propia historia.',
+    icon: Shirt,
+    title: 'Ropa seleccionada',
+    desc: 'Prendas nuevas y de segunda mano, elegidas una por una para garantizar calidad y estilo.',
   },
   {
-    icon: Heart,
-    title: 'Hecho con intención',
-    desc: 'Cada pieza es elegida con cuidado, respetando las tradiciones y el origen de cada objeto.',
+    icon: RefreshCw,
+    title: 'Segunda mano de confianza',
+    desc: 'Cada prenda usada es revisada, limpiada y fotografiada. Como nueva, pero más sostenible.',
   },
   {
-    icon: Leaf,
-    title: 'Consciente',
-    desc: 'Segunda mano y piezas restauradas. Consumo responsable que honra el pasado de cada objeto.',
+    icon: Tag,
+    title: 'Precios justos',
+    desc: 'Ropa de calidad a precios accesibles. Renueva tu guardarropa sin gastar de más.',
   },
   {
-    icon: User,
-    title: 'Comunidad',
-    desc: 'Un espacio para coleccionistas, sanadores y buscadores de lo auténtico en Ibarra y Ecuador.',
+    icon: HeartHandshake,
+    title: 'Hecho en Ibarra',
+    desc: 'Tienda local con envíos en Ibarra y todo Ecuador. Atención personalizada y cercana.',
   },
 ]
 
@@ -71,15 +72,14 @@ export default function Home() {
 
       {/* HERO */}
       <section className="relative overflow-hidden border-b border-border/60">
-        {/* Decorative gradient blobs */}
         <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-primary/5 blur-3xl" aria-hidden />
         <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-accent/5 blur-3xl" aria-hidden />
 
         <div className="container mx-auto px-4 py-20 sm:py-28 md:py-36 relative z-10">
           <div className="mx-auto max-w-3xl text-center">
             <Badge variant="secondary" className="mb-4">
-              <Clock className="mr-1 h-3 w-3" aria-hidden />
-              Sitio en mantenimiento
+              <Store className="mr-1 h-3 w-3" aria-hidden />
+              Tienda de ropa nueva y de segunda
             </Badge>
             <h1 className="font-display text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-7xl">
               {SITE.name}
@@ -94,14 +94,14 @@ export default function Home() {
               <Button asChild size="lg">
                 <Link href={ROUTES.catalogo}>
                   <Package className="mr-2 h-4 w-4" aria-hidden />
-                  Explorar catálogo
+                  Ver catálogo
                   <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline">
                 <Link href="/flash">
                   <Zap className="mr-2 h-4 w-4" aria-hidden />
-                  Códigos flash
+                  Ofertas flash
                 </Link>
               </Button>
             </div>
@@ -109,15 +109,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* VALUES / VISIÓN */}
+      {/* VALUES */}
       <section className="border-b border-border/60 bg-secondary/20">
         <div className="container mx-auto px-4 py-16">
           <div className="mx-auto max-w-2xl text-center mb-12">
-            <Badge variant="outline" className="mb-3">Próximamente</Badge>
-            <h2 className="font-display text-3xl font-semibold">Un espacio para lo sagrado</h2>
+            <h2 className="font-display text-3xl font-semibold">Por qué Munay</h2>
             <p className="mt-3 text-muted-foreground">
-              Munay nace como un puente entre quienes buscan objetos con significado y quienes
-              crean, restauran y curan a través de ellos.
+              Ropa que cuida tu estilo, tu bolsillo y el planeta.
             </p>
           </div>
 
@@ -147,95 +145,28 @@ export default function Home() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
-          {/* Catálogo */}
-          <Link href={ROUTES.catalogo} className="group block">
-            <Card className="border-border/60 hover:border-primary/40 transition-all hover:shadow-md h-full">
-              <CardContent className="flex items-start gap-4 p-5">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
-                  <Package className="h-5 w-5" aria-hidden />
-                </span>
-                <div>
-                  <h3 className="font-medium group-hover:text-primary transition-colors">Catálogo</h3>
-                  <p className="text-sm text-muted-foreground mt-1">Explora piezas con filtros y búsqueda</p>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-
-          {/* Carrito */}
-          <Link href={ROUTES.carrito} className="group block">
-            <Card className="border-border/60 hover:border-primary/40 transition-all hover:shadow-md h-full">
-              <CardContent className="flex items-start gap-4 p-5">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
-                  <ShoppingCart className="h-5 w-5" aria-hidden />
-                </span>
-                <div>
-                  <h3 className="font-medium group-hover:text-primary transition-colors">Carrito</h3>
-                  <p className="text-sm text-muted-foreground mt-1">Agrega piezas y aplica códigos flash</p>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-
-          {/* Checkout */}
-          <Link href={ROUTES.checkout} className="group block">
-            <Card className="border-border/60 hover:border-primary/40 transition-all hover:shadow-md h-full">
-              <CardContent className="flex items-start gap-4 p-5">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
-                  <CreditCard className="h-5 w-5" aria-hidden />
-                </span>
-                <div>
-                  <h3 className="font-medium group-hover:text-primary transition-colors">Checkout</h3>
-                  <p className="text-sm text-muted-foreground mt-1">Compra con pago seguro</p>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-
-          {/* Flash */}
-          <Link href="/flash" className="group block">
-            <Card className="border-border/60 hover:border-primary/40 transition-all hover:shadow-md h-full">
-              <CardContent className="flex items-start gap-4 p-5">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
-                  <Zap className="h-5 w-5" aria-hidden />
-                </span>
-                <div>
-                  <h3 className="font-medium group-hover:text-primary transition-colors">Ofertas flash</h3>
-                  <p className="text-sm text-muted-foreground mt-1">Descuentos por tiempo limitado</p>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-
-          {/* Cuenta */}
-          <Link href="/cuenta" className="group block">
-            <Card className="border-border/60 hover:border-primary/40 transition-all hover:shadow-md h-full">
-              <CardContent className="flex items-start gap-4 p-5">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
-                  <User className="h-5 w-5" aria-hidden />
-                </span>
-                <div>
-                  <h3 className="font-medium group-hover:text-primary transition-colors">Mi cuenta</h3>
-                  <p className="text-sm text-muted-foreground mt-1">Historial de órdenes y puntos</p>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-
-          {/* Admin */}
-          <Link href="/admin" className="group block">
-            <Card className="border-border/60 hover:border-primary/40 transition-all hover:shadow-md h-full">
-              <CardContent className="flex items-start gap-4 p-5">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
-                  <ShieldCheck className="h-5 w-5" aria-hidden />
-                </span>
-                <div>
-                  <h3 className="font-medium group-hover:text-primary transition-colors">Panel admin</h3>
-                  <p className="text-sm text-muted-foreground mt-1">Gestión de productos y órdenes</p>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
+          {[
+            { href: ROUTES.catalogo, icon: Package, title: 'Catálogo', desc: 'Explora prendas con filtros y búsqueda' },
+            { href: ROUTES.carrito, icon: ShoppingCart, title: 'Carrito', desc: 'Agrega prendas y aplica promociones' },
+            { href: ROUTES.checkout, icon: CreditCard, title: 'Checkout', desc: 'Compra con pago seguro' },
+            { href: '/flash', icon: Zap, title: 'Ofertas flash', desc: 'Descuentos por tiempo limitado' },
+            { href: '/cuenta', icon: User, title: 'Mi cuenta', desc: 'Historial de pedidos y puntos' },
+            { href: '/admin', icon: ShieldCheck, title: 'Panel admin', desc: 'Gestión de productos y pedidos' },
+          ].map((l) => (
+            <Link key={l.href} href={l.href} className="group block">
+              <Card className="border-border/60 hover:border-primary/40 transition-all hover:shadow-md h-full">
+                <CardContent className="flex items-start gap-4 p-5">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+                    <l.icon className="h-5 w-5" aria-hidden />
+                  </span>
+                  <div>
+                    <h3 className="font-medium group-hover:text-primary transition-colors">{l.title}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">{l.desc}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
         </div>
       </section>
 

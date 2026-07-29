@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import Image from 'next/image'
 import { Sparkles, ArrowLeft, ShieldCheck, Truck, Tag } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -37,6 +37,12 @@ interface PageProps {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
+
+  // 🎁 Mystery Box: no generar metadata
+  if (slug === 'mystery-box') {
+    return { title: 'Producto no encontrado', robots: { index: false, follow: false } }
+  }
+
   const product = await getProductBySlug(slug)
   if (!product) {
     return {
@@ -69,6 +75,11 @@ export default async function ProductDetailPage({ params, searchParams }: PagePr
   const { slug } = await params
   const sp = await searchParams
   const filters = parseFiltersFromSearchParams(sp)
+
+  // 🎁 Mystery Box: no permitir acceso directo
+  if (slug === 'mystery-box') {
+    redirect('/catalogo')
+  }
 
   const product = await getProductBySlug(slug)
 
