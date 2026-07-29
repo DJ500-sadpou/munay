@@ -26,7 +26,11 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
     const email = user.emailAddresses?.[0]?.emailAddress ?? ''
     return { id: userId, email }
-  } catch {
+  } catch (err) {
+    // Si no hay sesión, Clerk lanza 'Unauthorized' — es normal, no loggear.
+    if (err instanceof Error && err.message?.includes('Unauthorized')) return null
+    // Otros errores (config, rate-limit, etc.) sí merecen log.
+    console.error('[auth] getCurrentUser error:', err)
     return null
   }
 }
