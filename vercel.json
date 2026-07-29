@@ -4,10 +4,5 @@
       "path": "/api/cron/expire-orders",
       "schedule": "*/15 * * * *"
     }
-  ],
-  "functions": {
-    "api/cron/expire-orders": {
-      "maxDuration": 60
-    }
-  }
+  ]
 }
