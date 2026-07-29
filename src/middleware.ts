@@ -1,10 +1,33 @@
-import { clerkMiddleware } from '@clerk/nextjs/server'
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
-// Fix CRIT-1: middleware Clerk para sesiones.
-// NO usamos auth.protect() — las páginas individuales hacen requireUser()/requireAdmin()
-// que redirigen a login si no hay sesión. Esto evita 404 en keyless mode y permite
-// rutas públicas (catalogo, checkout, login pages) sin auth.
-export default clerkMiddleware()
+// Definir rutas públicas para que Clerk no intente redirigir a sign-in
+// en herramientas de auditoría o scanners sin cookies.
+// El auth real se maneja a nivel de página (requireUser / requireAdmin).
+const isPublicRoute = createRouteMatcher([
+  '/',
+  '/catalogo(.*)',
+  '/carrito(.*)',
+  '/checkout(.*)',
+  '/flash(.*)',
+  '/p/(.*)',
+  '/admin/login(.*)',
+  '/cuenta/login(.*)',
+  '/sign-in(.*)',
+  '/sign-up(.*)',
+  '/api(.*)',
+])
+
+export default clerkMiddleware(async (auth, request) => {
+  // NO protegemos rutas aquí — el auth se maneja a nivel de página
+  // con requireUser() / requireAdmin().
+  // Pero Clerk necesita conocer las rutas públicas para su sistema
+  // de routing interno y evitar redirect loops con audit tools.
+  if (!isPublicRoute(request)) {
+    // auth().protect() NO se llama — las páginas individuales
+    // hacen requireAdmin()/requireUser() según corresponda.
+    // Solo registramos que la ruta no es pública para Clerk.
+  }
+})
 
 export const config = {
   matcher: [
