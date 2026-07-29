@@ -100,7 +100,7 @@ Esto es esperado — el esquema usa `GRANT ... TO authenticated` (rol de Supabas
 **Verifica:**
 ```sql
 SELECT count(*) FROM products;  -- Debe retornar 5 (seed)
-SELECT count(*) FROM flash_codes;  -- Debe retornar 3 (MUNAY10, MISTICO25, SECRETO)
+SELECT count(*) FROM flash_codes;  -- Debe retornar 3 (MUNAY10, MUNAY25, SECRETO)
 ```
 
 ### B.3. Verificar conexión

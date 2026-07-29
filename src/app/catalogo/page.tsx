@@ -156,7 +156,7 @@ export default async function CatalogoPage({ searchParams }: PageProps) {
               ) : (
                 <>
                   <Package className="h-10 w-10 text-muted-foreground" aria-hidden />
-                  <p className="text-muted-foreground">No hay piezas disponibles con esos filtros.</p>
+                  <p className="text-muted-foreground">No hay prendas disponibles con esos filtros.</p>
                 </>
               )}
             </div>

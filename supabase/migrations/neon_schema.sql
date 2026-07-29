@@ -564,20 +564,20 @@ grant execute on function public.refund_order(uuid, text) to authenticated;
 -- =============================================================
 insert into public.products (slug, title, description, price_cents, currency, condition, grading, active)
 values
-  ('amazonita-pulida', 'Amazonita pulida — ejemplar de 320 g', 'Ejemplar de amazonita natural pulida con tonos verde-azul característicos. Pieza única.', 1800, 'USD', 'used', 'excelente', true),
-  ('cuenco-ceremonial-ceramica-negra', 'Cuenco ceremonial de cerámica negra', 'Cuenco de cerámica negra artesanal. Diámetro: 14 cm.', 4500, 'USD', 'used', 'buena', true),
-  ('palo-santo-kg', 'Palo santo — paquete de 1 kg', 'Leña de palo santo cosechada sosteniblemente en Ecuador.', 2500, 'USD', 'new', null, true),
-  ('colgante-cuarzo-cristal', 'Colgante de cuarzo cristal en hilo encerado', 'Cuarzo cristal natural montado en hilo encerado ajustable.', 1200, 'USD', 'new', null, true),
-  ('kit-exclusivo-coleccionista', 'Kit exclusivo (oculto)', 'Kit curado para coleccionistas. Solo accesible con código SECRETO.', 9900, 'USD', 'used', 'excelente', false)
+  ('amazonita-pulida', 'Camiseta artesanal de algodón orgánico — talla M', 'Camiseta de algodón orgánico 100%, tejida a mano por artesanos locales. Corte recto, talla M. Color: crudo natural.', 300, 'USD', 'new', null, true),
+  ('cuenco-ceremonial-ceramica-negra', 'Chaqueta vaquera vintage — talla L', 'Chaqueta vaquera de segunda mano en buen estado. Auténtico denim de los años 90. Talla L, corte clásico.', 700, 'USD', 'used', 'buena', true),
+  ('palo-santo-kg', 'Pantalón de lino ecológico — talla 40', 'Pantalón de lino 100% ecológico. Fresco, ligero y transpirable. Talla 40 (M). Corte recto, color: beige natural.', 560, 'USD', 'new', null, true),
+  ('colgante-cuarzo-cristal', 'Gorro tejido a mano — lana merina', 'Gorro de lana merina 100%, tejido a mano. Talla única, diseño clásico. Color: gris perla. Hecho por artesanas locales.', 200, 'USD', 'new', null, true),
+  ('mystery-box', '🎁 Mystery Box — Sorpresa', 'Una selección sorpresa de prendas seleccionadas especialmente para ti. ¿Qué habrá dentro?', 0, 'USD', 'new', null, true)
 on conflict (slug) do nothing;
 
 insert into public.inventory (product_id, stock, reserved)
 select id, case slug
-  when 'amazonita-pulida' then 3
-  when 'cuenco-ceremonial-ceramica-negra' then 1
-  when 'palo-santo-kg' then 24
-  when 'colgante-cuarzo-cristal' then 8
-  when 'kit-exclusivo-coleccionista' then 2
+  when 'amazonita-pulida' then 20
+  when 'cuenco-ceremonial-ceramica-negra' then 5
+  when 'palo-santo-kg' then 15
+  when 'colgante-cuarzo-cristal' then 25
+  when 'mystery-box' then 50
 end, 0
 from public.products
 on conflict (product_id) do nothing;
@@ -585,10 +585,10 @@ on conflict (product_id) do nothing;
 insert into public.flash_codes (code, type, discount_percent, discount_cents, starts_at, ends_at, max_uses, uses_count, active)
 values
   ('MUNAY10', 'discount', 10, null, now(), now() + interval '90 days', 100, 0, true),
-  ('MISTICO25', 'discount', 25, null, now(), now() + interval '30 days', 50, 0, true),
+  ('MUNAY25', 'discount', 25, null, now(), now() + interval '30 days', 50, 0, true),
   ('SECRETO', 'unlock', null, null, now(), now() + interval '180 days', 10, 0, true)
 on conflict (code) do nothing;
 
 insert into public.flash_code_products (code, product_id)
-select 'SECRETO', p.id from public.products p where p.slug = 'kit-exclusivo-coleccionista'
+select 'SECRETO', p.id from public.products p where p.slug = 'mystery-box'
 on conflict do nothing;

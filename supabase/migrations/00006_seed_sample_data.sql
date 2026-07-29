@@ -8,60 +8,46 @@
 insert into public.products (slug, title, description, price_cents, currency, condition, grading, active)
 values
   (
-    'amazonita-pulida',
-    'Amazonita pulida — ejemplar de 320 g',
-    'Ejemplar de amazonita natural pulida con tonos verde-azul característicos. Pieza única seleccionada a mano, ideal para colección o trabajo ceremonial. Peso: 320 g · Medida aprox: 7 × 5 × 3 cm.',
-    1800, 'USD', 'used', 'excelente', true
+    'camiseta-algodon-organico',
+    'Camiseta artesanal de algodón orgánico — talla M',
+    'Camiseta de algodón orgánico 100%, tejida a mano por artesanos locales. Corte recto, talla M. Color: crudo natural.',
+    300, 'USD', 'new', null, true
   ),
   (
-    'cuenco-ceremonial-ceramica-negra',
-    'Cuenco ceremonial de cerámica negra',
-    'Cuenco de cerámica negra de origen artesanal. Pieza usada con signos de uso anteriores que no afectan su función. Diámetro: 14 cm · Altura: 7 cm.',
-    4500, 'USD', 'used', 'buena', true
+    'chaqueta-vaquera-vintage',
+    'Chaqueta vaquera vintage — talla L',
+    'Chaqueta vaquera de segunda mano en buen estado. Auténtico denim de los años 90. Talla L, corte clásico.',
+    700, 'USD', 'used', 'buena', true
   ),
   (
-    'palo-santo-kg',
-    'Palo santo — paquete de 1 kg (origen Ecuador)',
-    'Leña de palo santo (Bursera graveolens) cosechada de forma sostenible en la costa ecuatoriana. Paquete de 1 kg aprox., trozos seleccionados para sahumerio.',
-    2500, 'USD', 'new', null, true
+    'pantalon-lino-ecologico',
+    'Pantalón de lino ecológico — talla 40',
+    'Pantalón de lino 100% ecológico. Fresco, ligero y transpirable. Talla 40 (M). Corte recto, cintura elástica. Color: beige natural.',
+    560, 'USD', 'new', null, true
   ),
   (
-    'colgante-cuarzo-cristal',
-    'Colgante de cuarzo cristal en hilo encerado',
-    'Colgante de cuarzo cristal natural montado en hilo encerado ajustable. Pieza única.',
-    1200, 'USD', 'new', null, true
+    'gorro-lana-merina',
+    'Gorro tejido a mano — lana merina',
+    'Gorro de lana merina 100%, tejido a mano. Talla única, diseño clásico. Color: gris perla.',
+    200, 'USD', 'new', null, true
   ),
+  -- Producto oculto (solo accesible por flash code 'unlock')
   (
-    'tapiz-tejido-a-mano-imbabura',
-    'Tapiz tejido a mano — Imbabura (60×90 cm)',
-    'Tapiz tejido a mano en lana por artesanos de Imbabura. Diseño tradicional con simbología andina.',
-    6500, 'USD', 'used', 'excelente', true
-  ),
-  (
-    'kit-iniciacion-tarot',
-    'Kit de iniciación al tarot (mazo + guía + bolsa)',
-    'Kit completo: mazo de tarot de 78 cartas, guía de interpretación y bolsa de tela para guardar.',
-    3800, 'USD', 'new', null, true
-  ),
-  -- Producto oculto del catálogo público (solo accesible por flash code 'unlock')
-  (
-    'kit-exclusivo-coleccionista',
-    'Kit exclusivo (oculto del catálogo público)',
-    'Kit curado para coleccionistas: mineralería selecta + piece ceremonial única. Solo accesible con código SECRETO.',
-    9900, 'USD', 'used', 'excelente', false
+    'mystery-box',
+    '🎁 Mystery Box — Sorpresa',
+    '¿Qué hay dentro? Una selección sorpresa de prendas seleccionadas especialmente para ti. Disponible pronto.',
+    0, 'USD', 'new', null, true
   )
 on conflict (slug) do nothing;
 
 -- Inventario -------------------------------------------------
 insert into public.inventory (product_id, stock, reserved)
 select id, case slug
-  when 'amazonita-pulida' then 3
-  when 'cuenco-ceremonial-ceramica-negra' then 1
-  when 'palo-santo-kg' then 24
-  when 'colgante-cuarzo-cristal' then 8
-  when 'tapiz-tejido-a-mano-imbabura' then 0
-  when 'kit-iniciacion-tarot' then 5
-  when 'kit-exclusivo-coleccionista' then 2
+  when 'camiseta-algodon-organico' then 10
+  when 'chaqueta-vaquera-vintage' then 3
+  when 'pantalon-lino-ecologico' then 8
+  when 'gorro-lana-merina' then 15
+  when 'mystery-box' then 99
 end, 0
 from public.products
 on conflict (product_id) do nothing;
@@ -70,7 +56,7 @@ on conflict (product_id) do nothing;
 insert into public.flash_codes (code, type, discount_percent, discount_cents, starts_at, ends_at, max_uses, uses_count, active)
 values
   ('MUNAY10', 'discount', 10, null, now(), now() + interval '90 days', 100, 0, true),
-  ('MISTICO25', 'discount', 25, null, now(), now() + interval '30 days', 50, 0, true),
+  ('MUNAY25', 'discount', 25, null, now(), now() + interval '30 days', 50, 0, true),
   ('SECRETO', 'unlock', null, null, now(), now() + interval '180 days', 10, 0, true)
 on conflict (code) do nothing;
 
@@ -78,5 +64,5 @@ on conflict (code) do nothing;
 insert into public.flash_code_products (code, product_id)
 select 'SECRETO', p.id
 from public.products p
-where p.slug = 'kit-exclusivo-coleccionista'
+where p.slug = 'mystery-box'
 on conflict do nothing;

@@ -3,8 +3,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* ===========================================================
-   MUNAY — Paleta mística (tierra cálida + contraste oscuro)
+/* ===========================================================    MUNAY — Paleta de marca (tierra cálida + neutro)
    Inspirada en cerámica andina, ocre, terracota y obsidiana.
    =========================================================== */
 
@@ -69,7 +68,7 @@
   --muted: oklch(0.93 0.02 70);
   --muted-foreground: oklch(0.50 0.03 55);
 
-  --accent: oklch(0.78 0.16 75);               /* ámbar dorado místico */
+  --accent: oklch(0.78 0.16 75);               /* ámbar dorado — color de acento */
   --accent-foreground: oklch(0.25 0.04 45);
 
   --destructive: oklch(0.55 0.22 27);
@@ -80,7 +79,7 @@
   --chart-1: oklch(0.55 0.18 38);              /* terracota */
   --chart-2: oklch(0.70 0.15 75);              /* ámbar */
   --chart-3: oklch(0.45 0.08 145);             /* musgo */
-  --chart-4: oklch(0.40 0.10 290);             /* violeta místico */
+  --chart-4: oklch(0.40 0.10 290);             /* violeta oscuro — gráficos */
   --chart-5: oklch(0.35 0.05 50);              /* café oscuro */
 
   --sidebar: oklch(0.96 0.02 70);
@@ -158,7 +157,7 @@
   }
   body > * { position: relative; z-index: 1; }
 
-  /* Tipografía display para títulos místicos */
+  /* Tipografía display para títulos destacados */
   h1, h2, h3 {
     letter-spacing: -0.015em;
   }

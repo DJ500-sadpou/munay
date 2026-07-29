@@ -1,8 +1,8 @@
 {
-  "name": "munay-mistica",
+  "name": "munay",
   "version": "1.0.0",
   "private": true,
-  "description": "Tienda mística Munay (Ibarra, Ecuador) — Next.js + Supabase + Kushki. Completo (Fase 5/5).",
+  "description": "Munay — Ropa nueva y de segunda mano. Next.js + Neon + Clerk + Vercel.",
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",

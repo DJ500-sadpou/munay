@@ -51,7 +51,7 @@ export function CatalogSearch({ initialValue = '' }: { initialValue?: string }) 
           name="q"
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder="Buscar piezas o ingresar código flash (ej. MUNAY10)…"
+          placeholder="Buscar prendas o ingresar código flash (ej. MUNAY10)…"
           className="pl-10 pr-24"
           autoComplete="off"
           aria-label="Buscar en el catálogo"

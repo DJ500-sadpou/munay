@@ -1,7 +1,7 @@
 -- =============================================================
 -- Migración 00001 — Esquema base: productos, imágenes, inventario,
 -- flash codes.
--- Proyecto: Munay (tienda mística, Ibarra, Ecuador)
+-- Proyecto: Munay — Ropa nueva y de segunda (Ibarra, Ecuador)
 -- Stack: Supabase Postgres + RLS
 -- =============================================================
 
@@ -87,7 +87,7 @@ create table if not exists public.flash_code_products (
 );
 
 -- Comments (documentación visible en Supabase Dashboard) ----
-comment on table public.products is 'Catálogo público de piezas (místicas, usadas y nuevas).';
+comment on table public.products is 'Catálogo público de prendas (nuevas y usadas).';
 comment on table public.product_images is 'Imágenes por producto, ordenadas por sort.';
 comment on table public.inventory is 'Stock y unidades reservadas (no confirmadas) por producto.';
 comment on table public.flash_codes is 'Códigos de oferta flash: discount (% o monto fijo) o unlock (pieza oculta).';

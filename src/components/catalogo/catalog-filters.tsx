@@ -51,7 +51,7 @@ export function CatalogFilters({ filters, totalCount, flashCodeActive }: Props) 
           Filtros
         </h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          {totalCount} {totalCount === 1 ? 'pieza' : 'piezas'} encontradas
+          {totalCount} {totalCount === 1 ? 'prenda' : 'prendas'} encontradas
         </p>
       </div>
 

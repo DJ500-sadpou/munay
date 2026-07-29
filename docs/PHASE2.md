@@ -35,8 +35,8 @@ panel admin básico. Sin pagos todavía (Fase 3).
 
 **Ejemplos:**
 - Escribes `MUNAY10` → te lleva a `/flash/MUNAY10`.
-- Escribes `amazonita` → filtra catálogo.
-- Escribes `palo santo` → filtra catálogo (tiene espacio, no es código).
+- Escribes `camiseta` → filtra el catálogo.
+- Escribes `chaqueta vaquera` → filtra el catálogo (tiene espacio, no es código).
 
 ### 3. Detalle de producto (`/p/[slug]`)
 
@@ -133,8 +133,8 @@ La migración `00006_seed_sample_data.sql` crea:
 | Código | Tipo | Descuento | Comportamiento |
 |--------|------|-----------|----------------|
 | `MUNAY10` | discount | 10% | Aplica a TODAS las piezas del catálogo |
-| `MISTICO25` | discount | 25% | Aplica a TODAS las piezas del catálogo |
-| `SECRETO` | unlock | — | Revela 1 pieza oculta (`kit-exclusivo-coleccionista`) |
+| `MUNAY25` | discount | 25% | Aplica a TODAS las prendas del catálogo |
+| `SECRETO` | unlock | — | Revela 1 prenda oculta (`mystery-box`) |
 
 **Para probar:**
 1. En el buscador del catálogo, escribe `MUNAY10` → te lleva a `/flash/MUNAY10`.

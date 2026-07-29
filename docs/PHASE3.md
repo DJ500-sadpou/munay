@@ -201,7 +201,7 @@ Acredita puntos al customer de una orden paid. **Idempotente**: si ya existe tx 
 ### Códigos flash de prueba (seed)
 
 - `MUNAY10` → 10% descuento en todo el catálogo.
-- `MISTICO25` → 25% descuento.
+- `MUNAY25` → 25% descuento.
 - `SECRETO` → desbloquea pieza oculta.
 
 ---

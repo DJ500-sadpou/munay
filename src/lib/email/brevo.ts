@@ -113,7 +113,7 @@ export async function sendOrderConfirmationEmail(data: OrderConfirmationEmailDat
     <div style="font-family:Georgia,serif;max-width:560px;margin:0 auto;background:#faf7f2;padding:32px;color:#2a1f15;">
       <div style="text-align:center;margin-bottom:24px;">
         <h1 style="font-size:28px;color:#7a3a1f;margin:0;">Munay</h1>
-        <p style="font-size:13px;color:#7a6a5a;margin:4px 0 0;">Tienda mística · Ibarra, Ecuador</p>
+        <p style="font-size:13px;color:#7a6a5a;margin:4px 0 0;">Ropa nueva y de segunda · Ibarra, Ecuador</p>
       </div>
       <h2 style="font-size:20px;color:#2a1f15;">¡Gracias por tu compra, ${escapeHtml(data.customerName ?? '')}!</h2>
       <p style="color:#5a4a3a;">Tu pago fue confirmado. Aquí están los detalles:</p>

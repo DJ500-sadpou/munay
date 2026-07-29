@@ -31,7 +31,7 @@ export default function FlashCodeEntryPage() {
             Ofertas flash
           </h1>
           <p className="mt-2 text-muted-foreground">
-            ¿Tienes un código secreto? Ingrésalo para desbloquear piezas únicas.
+            ¿Tienes un código secreto? Ingrésalo para desbloquear ofertas y prendas exclusivas.
           </p>
         </div>
 

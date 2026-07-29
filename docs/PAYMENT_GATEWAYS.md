@@ -143,12 +143,12 @@ PAYPAL_WEBHOOK_ID=...
 
 **Kushki como proveedor principal** porque:
 1. Mejor cobertura de tarjetas locales (cliente final no necesita cuenta PayPal).
-2. Checkout embebido → UX más mística/coherente con la marca (sin redirecciones).
+2. Checkout embebido → UX más fluida/coherente con la marca (sin redirecciones).
 3. Tokenización abre la puerta a "pagar con 1 click" en fases posteriores.
 4. Webhooks firmados → seguridad verificable.
 
 **PayPal como fallback** (activable vía `PAYMENT_PROVIDER=paypal`) para clientes
-internacionales que compren piezas únicas desde fuera de Ecuador.
+internacionales que compren desde fuera de Ecuador.
 
 ---
 

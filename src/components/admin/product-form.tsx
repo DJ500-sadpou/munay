@@ -137,7 +137,7 @@ export function ProductForm({ product }: Props) {
                 onChange={(e) => handleTitleChange(e.target.value)}
                 required
                 maxLength={200}
-                placeholder="Ej: Amazonita pulida — 320 g"
+                placeholder="Ej: Camiseta de algodón orgánico — talla M"
               />
             </div>
 
@@ -150,7 +150,7 @@ export function ProductForm({ product }: Props) {
                 required
                 maxLength={120}
                 className="font-mono"
-                placeholder="amazonita-pulida"
+                placeholder="camiseta-algodon-organico"
               />
               <p className="text-xs text-muted-foreground">
                 Se usará en la URL: <code>/p/{`{slug}`}</code>

@@ -12,7 +12,7 @@ export const SITE = {
   locale: 'es-EC',
   currency: 'USD' as const,
   // Para emails transaccionales y contacto
-  email: 'hola@munay.example.com',
+  email: 'contacto@munay.ec',
   whatsapp: '+593 99 000 0000',
   city: 'Ibarra, Imbabura, Ecuador',
 } as const
