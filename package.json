@@ -62,7 +62,6 @@
     "input-otp": "^1.4.2",
     "lucide-react": "^0.525.0",
     "next": "^16.1.1",
-    "next-auth": "^4.24.11",
     "next-themes": "^0.4.6",
     "nodemailer": "^9.0.3",
     "nodemailer-brevo-transport": "^2.2.1",
