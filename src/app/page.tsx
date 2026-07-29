@@ -1,3 +1,12 @@
+/**
+ * Landing page — Munay en construcción.
+ *
+ * Muestra un resumen general de lo que será la tienda y un aviso
+ * de que el sitio está en mantenimiento. Las rutas funcionales
+ * (/catalogo, /carrito, /checkout, etc.) siguen operativas.
+ * La página de avances del proyecto se movió a /info.
+ */
+
 import Link from 'next/link'
 import {
   Sparkles,
@@ -6,122 +15,93 @@ import {
   ShoppingCart,
   Zap,
   CreditCard,
-  Database,
-  ShieldCheck,
-  CheckCircle2,
-  Circle,
-  Lock,
-  Receipt,
-  Webhook,
   User,
-  Gift,
-  BarChart3,
-  Mail,
+  ShieldCheck,
+  Leaf,
+  Gem,
+  Heart,
   Clock,
+  Construction,
+  MapPin,
+  Mail,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { SITE, ROUTES } from '@/lib/constants'
 
-const ROUTES_OVERVIEW = [
-  { href: ROUTES.home, label: 'Inicio', desc: 'Landing + checklist final', icon: Sparkles, status: 'listo' },
-  { href: ROUTES.catalogo, label: '/catalogo', desc: 'Catálogo en vivo con filtros y búsqueda inteligente', icon: Package, status: 'en vivo' },
-  { href: ROUTES.carrito, label: '/carrito', desc: 'Carrito persistente + aplicar código flash', icon: ShoppingCart, status: 'en vivo' },
-  { href: ROUTES.checkout, label: '/checkout', desc: 'Crear orden + pago + redimir puntos + Turnstile', icon: CreditCard, status: 'en vivo' },
-  { href: '/cuenta', label: '/cuenta', desc: 'Mi cuenta: historial, puntos, perfil', icon: User, status: 'en vivo' },
-  { href: '/cuenta/puntos', label: '/cuenta/puntos', desc: 'Ledger de puntos con saldo y movimientos', icon: Gift, status: 'en vivo' },
-  { href: '/flash/MUNAY10', label: '/flash/[code]', desc: 'Validación real + producto concreto', icon: Zap, status: 'en vivo' },
-  { href: '/admin', label: '/admin', desc: 'Panel admin completo (productos + órdenes + flash + métricas)', icon: Lock, status: 'en vivo' },
-  { href: '/admin/metrics', label: '/admin/metrics', desc: 'Ventas por día + productos top + KPIs', icon: BarChart3, status: 'en vivo' },
-  { href: '/sitemap.xml', label: '/sitemap.xml', desc: 'Sitemap dinámico con productos', icon: Database, status: 'en vivo' },
-]
-
-const FASE5_FEATURES = [
+const VALUES = [
   {
-    icon: ShieldCheck,
-    title: 'Cloudflare Turnstile',
-    desc: 'Verificación anti-bot en checkout y validación de flash codes. Widget cliente + verificación server-side con HMAC.',
+    icon: Gem,
+    title: 'Piezas únicas',
+    desc: 'Objetos ceremoniales, mineralería y artesanías seleccionadas a mano, cada una con su propia historia.',
   },
   {
-    icon: Database,
-    title: 'Auditoría completa',
-    desc: 'Tabla audit_log + trigger que registra cambios de status en orders. Función refund_order revierte puntos automáticamente.',
+    icon: Heart,
+    title: 'Hecho con intención',
+    desc: 'Cada pieza es elegida con cuidado, respetando las tradiciones y el origen de cada objeto.',
   },
   {
-    icon: Clock,
-    title: 'Cron de limpieza',
-    desc: 'Endpoint /api/cron/expire-orders cancela órdenes pendientes >30 min y libera inventario. Configurado en vercel.json.',
+    icon: Leaf,
+    title: 'Consciente',
+    desc: 'Segunda mano y piezas restauradas. Consumo responsable que honra el pasado de cada objeto.',
   },
   {
-    icon: Mail,
-    title: 'Emails transaccionales',
-    desc: 'Confirmación de orden con diseño branded (vía Resend en prod, log a consola en dev). Email de reembolso también.',
+    icon: User,
+    title: 'Comunidad',
+    desc: 'Un espacio para coleccionistas, sanadores y buscadores de lo auténtico en Ibarra y Ecuador.',
   },
-  {
-    icon: Sparkles,
-    title: 'SEO + Open Graph',
-    desc: 'sitemap.xml dinámico (productos incluidos), robots.txt, metadata por producto con OG images, locale es-EC.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Tests e2e',
-    desc: 'Playwright configurado con tests del flujo completo: home, catálogo, búsqueda, carrito, login, admin, SEO.',
-  },
-]
-
-const PHASE5_CHECKLIST = [
-  { done: true, label: 'Migración 00008: índices + audit_log + expire_stale_pending_orders + refund_order' },
-  { done: true, label: 'Cloudflare Turnstile (cliente widget + server verify) en checkout y flash validate' },
-  { done: true, label: 'Sitemap.xml dinámico con productos' },
-  { done: true, label: 'Robots.txt con disallow de rutas privadas' },
-  { done: true, label: 'Metadata por producto con Open Graph + Twitter cards' },
-  { done: true, label: 'Emails transaccionales (Resend) — confirmación de orden' },
-  { done: true, label: 'Cron job para expirar órdenes pendientes (>30 min)' },
-  { done: true, label: 'Función refund_order (revierte puntos + audita)' },
-  { done: true, label: 'Tabla audit_log + trigger en orders' },
-  { done: true, label: 'Tests e2e con Playwright (flujo completo + SEO + health checks)' },
-  { done: true, label: 'vercel.json con cron schedule configurado' },
-  { done: false, label: 'Migración de API routes a Edge Functions (opcional, post-launch)' },
-  { done: false, label: 'Emails transaccionales para magic link branded (opcional)' },
-]
-
-const STACK = [
-  { name: 'Next.js 16', role: 'Frontend / API routes', icon: Sparkles },
-  { name: 'Supabase', role: 'DB · Auth · Storage · Edge Functions', icon: Database },
-  { name: 'Vercel', role: 'Hosting + deploy automático', icon: ShieldCheck },
-  { name: 'Cloudflare', role: 'DNS · SSL · Turnstile', icon: ShieldCheck },
-  { name: 'Kushki / PayPhone / PayPal', role: 'Pasarela PCI (Ecuador)', icon: CreditCard },
 ]
 
 export default function Home() {
   return (
     <div className="relative">
+      {/* MAINTENANCE BANNER */}
+      <div className="bg-primary/10 border-b border-primary/20">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-center gap-2 text-sm text-primary">
+          <Construction className="h-4 w-4 shrink-0" aria-hidden />
+          <span>
+            <strong>Munay está en construcción.</strong> El catálogo y la tienda ya están operativos —{' '}
+            <Link href={ROUTES.catalogo} className="underline font-medium hover:no-underline">
+              visítalos aquí
+            </Link>.
+          </span>
+        </div>
+      </div>
+
       {/* HERO */}
       <section className="relative overflow-hidden border-b border-border/60">
-        <div className="container mx-auto px-4 py-20 sm:py-28 md:py-32">
+        {/* Decorative gradient blobs */}
+        <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-primary/5 blur-3xl" aria-hidden />
+        <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-accent/5 blur-3xl" aria-hidden />
+
+        <div className="container mx-auto px-4 py-20 sm:py-28 md:py-36 relative z-10">
           <div className="mx-auto max-w-3xl text-center">
             <Badge variant="secondary" className="mb-4">
-              Fase 5/5 · Endurecimiento + producción · COMPLETO
+              <Clock className="mr-1 h-3 w-3" aria-hidden />
+              Sitio en mantenimiento
             </Badge>
-            <h1 className="font-display text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl">
+            <h1 className="font-display text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-7xl">
               {SITE.name}
-              <span className="block text-primary mt-2">{SITE.tagline}</span>
             </h1>
-            <p className="mt-6 text-lg text-muted-foreground sm:text-xl">
+            <p className="mt-4 text-xl text-muted-foreground sm:text-2xl font-display">
+              {SITE.tagline}
+            </p>
+            <p className="mt-6 text-base text-muted-foreground max-w-xl mx-auto leading-relaxed">
               {SITE.description}
             </p>
             <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
               <Button asChild size="lg">
                 <Link href={ROUTES.catalogo}>
-                  Ver catálogo
+                  <Package className="mr-2 h-4 w-4" aria-hidden />
+                  Explorar catálogo
                   <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline">
                 <Link href="/flash">
                   <Zap className="mr-2 h-4 w-4" aria-hidden />
-                  Tengo un código flash
+                  Códigos flash
                 </Link>
               </Button>
             </div>
@@ -129,24 +109,27 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FEATURES FASE 5 */}
-      <section className="border-b border-border/60 bg-secondary/30">
+      {/* VALUES / VISIÓN */}
+      <section className="border-b border-border/60 bg-secondary/20">
         <div className="container mx-auto px-4 py-16">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-display text-3xl font-semibold">Lo nuevo en Fase 5</h2>
+          <div className="mx-auto max-w-2xl text-center mb-12">
+            <Badge variant="outline" className="mb-3">Próximamente</Badge>
+            <h2 className="font-display text-3xl font-semibold">Un espacio para lo sagrado</h2>
             <p className="mt-3 text-muted-foreground">
-              Seguridad, observabilidad, SEO y tests — listo para producción.
+              Munay nace como un puente entre quienes buscan objetos con significado y quienes
+              crean, restauran y curan a través de ellos.
             </p>
           </div>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {FASE5_FEATURES.map((f) => (
-              <Card key={f.title} className="border-border/60">
-                <CardContent className="p-6">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <f.icon className="h-5 w-5" aria-hidden />
+
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {VALUES.map((v) => (
+              <Card key={v.title} className="border-border/60 hover:border-primary/30 transition-all hover:shadow-md group">
+                <CardContent className="p-6 text-center">
+                  <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+                    <v.icon className="h-6 w-6" aria-hidden />
                   </span>
-                  <h3 className="mt-4 font-display text-lg font-semibold">{f.title}</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">{f.desc}</p>
+                  <h3 className="mt-4 font-display text-lg font-semibold">{v.title}</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">{v.desc}</p>
                 </CardContent>
               </Card>
             ))}
@@ -154,121 +137,138 @@ export default function Home() {
         </div>
       </section>
 
-      {/* STACK */}
-      <section className="border-b border-border/60">
-        <div className="container mx-auto px-4 py-12">
-          <h2 className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            Stack objetivo (MVP)
-          </h2>
-          <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
-            {STACK.map((s) => (
-              <div key={s.name} className="flex flex-col items-center gap-2 rounded-lg border border-border/60 bg-card p-4 text-center">
-                <s.icon className="h-5 w-5 text-primary" aria-hidden />
-                <div className="text-sm font-medium">{s.name}</div>
-                <div className="text-xs text-muted-foreground">{s.role}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* RUTAS DISPONIBLES */}
+      {/* QUICK LINKS */}
       <section className="container mx-auto px-4 py-16">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="font-display text-3xl font-semibold">Rutas</h2>
+        <div className="mx-auto max-w-2xl text-center mb-10">
+          <h2 className="font-display text-3xl font-semibold">Ya disponible</h2>
           <p className="mt-3 text-muted-foreground">
-            Las rutas marcan <code className="text-foreground">en vivo</code> ya leen Supabase.
-            <code className="text-foreground"> parcial</code> dependerá de la Fase 3 (pasarela).
+            Mientras terminamos los detalles finales, estas secciones ya están operativas.
           </p>
         </div>
 
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {ROUTES_OVERVIEW.map((r) => (
-            <Card key={r.href} className="border-border/60 transition-colors hover:border-primary/40">
-              <CardHeader className="flex flex-row items-start justify-between gap-2 pb-3">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <r.icon className="h-5 w-5" aria-hidden />
-                  </span>
-                  <div>
-                    <CardTitle className="text-base">{r.label}</CardTitle>
-                  </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
+          {/* Catálogo */}
+          <Link href={ROUTES.catalogo} className="group block">
+            <Card className="border-border/60 hover:border-primary/40 transition-all hover:shadow-md h-full">
+              <CardContent className="flex items-start gap-4 p-5">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+                  <Package className="h-5 w-5" aria-hidden />
+                </span>
+                <div>
+                  <h3 className="font-medium group-hover:text-primary transition-colors">Catálogo</h3>
+                  <p className="text-sm text-muted-foreground mt-1">Explora piezas con filtros y búsqueda</p>
                 </div>
-                <Badge variant={r.status === 'listo' || r.status === 'en vivo' ? 'default' : 'secondary'}>
-                  {r.status}
-                </Badge>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-sm">{r.desc}</CardDescription>
-                <Button asChild variant="ghost" size="sm" className="mt-3 -ml-2 px-2">
-                  <Link href={r.href}>
-                    Abrir ruta
-                    <ArrowRight className="ml-1 h-3 w-3" aria-hidden />
-                  </Link>
-                </Button>
               </CardContent>
             </Card>
-          ))}
+          </Link>
+
+          {/* Carrito */}
+          <Link href={ROUTES.carrito} className="group block">
+            <Card className="border-border/60 hover:border-primary/40 transition-all hover:shadow-md h-full">
+              <CardContent className="flex items-start gap-4 p-5">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+                  <ShoppingCart className="h-5 w-5" aria-hidden />
+                </span>
+                <div>
+                  <h3 className="font-medium group-hover:text-primary transition-colors">Carrito</h3>
+                  <p className="text-sm text-muted-foreground mt-1">Agrega piezas y aplica códigos flash</p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          {/* Checkout */}
+          <Link href={ROUTES.checkout} className="group block">
+            <Card className="border-border/60 hover:border-primary/40 transition-all hover:shadow-md h-full">
+              <CardContent className="flex items-start gap-4 p-5">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+                  <CreditCard className="h-5 w-5" aria-hidden />
+                </span>
+                <div>
+                  <h3 className="font-medium group-hover:text-primary transition-colors">Checkout</h3>
+                  <p className="text-sm text-muted-foreground mt-1">Compra con pago seguro</p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          {/* Flash */}
+          <Link href="/flash" className="group block">
+            <Card className="border-border/60 hover:border-primary/40 transition-all hover:shadow-md h-full">
+              <CardContent className="flex items-start gap-4 p-5">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+                  <Zap className="h-5 w-5" aria-hidden />
+                </span>
+                <div>
+                  <h3 className="font-medium group-hover:text-primary transition-colors">Ofertas flash</h3>
+                  <p className="text-sm text-muted-foreground mt-1">Descuentos por tiempo limitado</p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          {/* Cuenta */}
+          <Link href="/cuenta" className="group block">
+            <Card className="border-border/60 hover:border-primary/40 transition-all hover:shadow-md h-full">
+              <CardContent className="flex items-start gap-4 p-5">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+                  <User className="h-5 w-5" aria-hidden />
+                </span>
+                <div>
+                  <h3 className="font-medium group-hover:text-primary transition-colors">Mi cuenta</h3>
+                  <p className="text-sm text-muted-foreground mt-1">Historial de órdenes y puntos</p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          {/* Admin */}
+          <Link href="/admin" className="group block">
+            <Card className="border-border/60 hover:border-primary/40 transition-all hover:shadow-md h-full">
+              <CardContent className="flex items-start gap-4 p-5">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+                  <ShieldCheck className="h-5 w-5" aria-hidden />
+                </span>
+                <div>
+                  <h3 className="font-medium group-hover:text-primary transition-colors">Panel admin</h3>
+                  <p className="text-sm text-muted-foreground mt-1">Gestión de productos y órdenes</p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
       </section>
 
-      {/* CHECKLIST FASE 5 (FINAL) */}
+      {/* INFO + CONTACTO */}
       <section className="border-t border-border/60 bg-secondary/20">
         <div className="container mx-auto px-4 py-16">
-          <div className="mx-auto max-w-3xl">
-            <h2 className="font-display text-3xl font-semibold text-center">
-              Checklist Fase 5 · Definition of Done
-            </h2>
-            <p className="mt-3 text-center text-muted-foreground">
-              Proyecto completo. Las dos casillas pendientes son optimizaciones post-launch opcionales.
+          <div className="mx-auto max-w-3xl text-center">
+            <Sparkles className="mx-auto h-8 w-8 text-primary" aria-hidden />
+            <h2 className="mt-4 font-display text-2xl font-semibold">Próximamente</h2>
+            <p className="mt-3 text-muted-foreground">
+              Estamos afinando los últimos detalles para ofrecerte la mejor experiencia.
+              El catálogo, carrito y checkout ya están operativos — te invitamos a explorarlos.
             </p>
-
-            <ul className="mt-8 space-y-2">
-              {PHASE5_CHECKLIST.map((item) => (
-                <li
-                  key={item.label}
-                  className="flex items-start gap-3 rounded-lg border border-border/60 bg-card px-4 py-3"
-                >
-                  {item.done ? (
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden />
-                  ) : (
-                    <Circle className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" aria-hidden />
-                  )}
-                  <span className={item.done ? 'text-foreground' : 'text-muted-foreground'}>
-                    {item.label}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      {/* DEPLOYMENT CTA */}
-      <section className="container mx-auto px-4 py-16">
-        <Card className="border-primary/30 bg-primary/5">
-          <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
-            <CheckCircle2 className="h-12 w-12 text-primary" aria-hidden />
-            <h2 className="font-display text-2xl font-semibold">Proyecto listo para producción</h2>
-            <p className="max-w-xl text-muted-foreground">
-              Tienda completa con 5 fases entregadas: catálogo, carrito, pagos con Kushki,
-              cuentas de usuario, panel admin, métricas, seguridad y observabilidad.
-              Descomprime el .zip, configura tus credenciales en <code className="rounded bg-muted px-1.5 py-0.5">.env.local</code>,
-              aplica las 8 migraciones en Supabase y despliega en Vercel.
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <Button asChild>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <MapPin className="h-4 w-4" aria-hidden />
+                {SITE.city}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Mail className="h-4 w-4" aria-hidden />
+                {SITE.email}
+              </span>
+            </div>
+            <div className="mt-8">
+              <Button asChild variant="outline" size="sm">
                 <Link href={ROUTES.catalogo}>
-                  Probar la tienda
-                  <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
+                  <Package className="mr-2 h-4 w-4" aria-hidden />
+                  Ir al catálogo
                 </Link>
               </Button>
-              <Button asChild variant="outline">
-                <Link href="/admin/login">Panel admin</Link>
-              </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </section>
     </div>
   )
