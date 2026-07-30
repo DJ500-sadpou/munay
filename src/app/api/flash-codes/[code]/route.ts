@@ -13,7 +13,7 @@ import { checkAdminRow } from '@/lib/auth/admin-checks'
 export const runtime = 'nodejs'
 
 interface RouteContext {
-  params: Promise<{ id: string }>
+  params: Promise<{ code: string }>
 }
 
 async function checkAdmin() {
@@ -36,8 +36,8 @@ export async function PUT(req: NextRequest, ctx: RouteContext) {
   const guard = await checkAdmin()
   if (!guard.ok) return guard.response!
 
-  const { id } = await ctx.params
-  const codeId = decodeURIComponent(id).toUpperCase()
+  const { code } = await ctx.params
+  const codeId = decodeURIComponent(code).toUpperCase()
 
   let body: {
     type: 'discount' | 'unlock'
@@ -98,8 +98,8 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext) {
   const guard = await checkAdmin()
   if (!guard.ok) return guard.response!
 
-  const { id } = await ctx.params
-  const codeId = decodeURIComponent(id).toUpperCase()
+  const { code } = await ctx.params
+  const codeId = decodeURIComponent(code).toUpperCase()
 
   try {
     await query(`DELETE FROM flash_codes WHERE code = $1`, [codeId])
