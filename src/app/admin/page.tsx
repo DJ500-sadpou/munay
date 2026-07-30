@@ -248,7 +248,8 @@ export default async function AdminHomePage() {
         </h2>
         <LoyaltyToggle
           initialEnabled={loyaltyConfig.enabled}
-          initialPercent={loyaltyConfig.discount_percent}
+          initialMin={loyaltyConfig.min_discount_percent}
+          initialMax={loyaltyConfig.max_discount_percent}
         />          <div className="flex gap-4 mt-4 text-sm">
           <div className="rounded-lg border border-black/5 bg-white px-4 py-3 text-center shadow-sm">
             <p className="text-2xl font-bold">{loyaltyStats.generated}</p>

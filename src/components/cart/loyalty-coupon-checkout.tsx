@@ -24,7 +24,7 @@ interface Props {
 export function LoyaltyCouponCheckout({ subtotalCents, loyaltyCode, onChange }: Props) {
   const [open, setOpen] = useState(false)
   const [coupons, setCoupons] = useState<Coupon[]>([])
-  const [config, setConfig] = useState<{ enabled: boolean; discount_percent: number } | null>(null)
+  const [config, setConfig] = useState<{ enabled: boolean } | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {

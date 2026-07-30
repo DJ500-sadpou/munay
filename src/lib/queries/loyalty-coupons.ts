@@ -18,12 +18,14 @@ import { randomUUID, randomBytes } from 'crypto'
 
 export interface LoyaltyConfig {
   enabled: boolean
-  discount_percent: number
+  min_discount_percent: number
+  max_discount_percent: number
 }
 
 const DEFAULT_CONFIG: LoyaltyConfig = {
   enabled: true,
-  discount_percent: 25,
+  min_discount_percent: 20,
+  max_discount_percent: 30,
 }
 
 export async function getLoyaltyConfig(): Promise<LoyaltyConfig> {
@@ -36,7 +38,8 @@ export async function getLoyaltyConfig(): Promise<LoyaltyConfig> {
     if (row?.value) {
       return {
         enabled: row.value.enabled ?? DEFAULT_CONFIG.enabled,
-        discount_percent: row.value.discount_percent ?? DEFAULT_CONFIG.discount_percent,
+        min_discount_percent: row.value.min_discount_percent ?? DEFAULT_CONFIG.min_discount_percent,
+        max_discount_percent: row.value.max_discount_percent ?? DEFAULT_CONFIG.max_discount_percent,
       }
     }
   } catch {
@@ -87,6 +90,7 @@ function generateCouponCode(): string {
 
 /**
  * Genera un cupón de fidelidad para un usuario tras una orden pagada.
+ * El % de descuento es aleatorio dentro del rango configurado (min/max).
  * Fire-and-forget — no bloquear si falla.
  */
 export async function generateLoyaltyCoupon(
@@ -99,6 +103,10 @@ export async function generateLoyaltyCoupon(
     const config = await getLoyaltyConfig()
     if (!config.enabled) return null
 
+    // Generar % aleatorio dentro del rango [min, max]
+    const range = config.max_discount_percent - config.min_discount_percent
+    const randomPercent = config.min_discount_percent + Math.round(Math.random() * range)
+
     const code = generateCouponCode()
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
 
@@ -106,13 +114,13 @@ export async function generateLoyaltyCoupon(
       `INSERT INTO loyalty_coupons (user_id, order_id, code, discount_percent, expires_at)
        VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT (user_id, order_id) DO NOTHING`,
-      [userId, orderId, code, config.discount_percent, expiresAt]
+      [userId, orderId, code, randomPercent, expiresAt]
     )
 
     return {
       id: randomUUID(),
       code,
-      discount_percent: config.discount_percent,
+      discount_percent: randomPercent,
       expires_at: expiresAt,
     }
   } catch (err: any) {

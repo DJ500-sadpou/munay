@@ -25,7 +25,8 @@ export async function GET() {
     coupons,
     config: {
       enabled: config.enabled,
-      discount_percent: config.discount_percent,
+      min_discount_percent: config.min_discount_percent,
+      max_discount_percent: config.max_discount_percent,
     },
   })
 }

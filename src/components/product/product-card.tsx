@@ -159,8 +159,9 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         )}
       </Link>
 
-      {/* Contenido */}
-      <CardContent className="px-3 pt-1">
+      {/* Contenido + Precio + Botones en un solo bloque flex-col */}
+      {/* flex-1 distribuye el espacio extra al final (debajo de botones), no entre secciones */}
+      <CardContent className="flex flex-1 flex-col px-3 pt-1 pb-1">
         <Link
           href={ROUTES.producto(product.slug)}
           className="line-clamp-2 text-sm font-medium leading-snug text-munay-ink transition-colors hover:text-munay-red-600"
@@ -170,10 +171,9 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         {product.grading && (
           <p className="mt-0.5 text-[11px] text-munay-ink/50">{GRADING_LABEL[product.grading]}</p>
         )}
-      </CardContent>
 
-      <CardFooter className="mt-auto flex flex-col items-stretch gap-1.5 px-3 pb-1">
-        <div className="flex items-baseline gap-1.5">
+        {/* Precio — inmediatamente después del grading */}
+        <div className="flex items-baseline gap-1.5 mt-1">
           {hasFlashDiscount && (
             <span className="text-xs text-munay-ink/40 line-through">
               {formatCents(product.price_cents)}
@@ -183,7 +183,9 @@ export function ProductCard({ product }: { product: ProductCardData }) {
             {formatCents(finalPrice)}
           </span>
         </div>
-        <div className="flex gap-1.5">
+
+        {/* Botones — inmediatamente después del precio */}
+        <div className="flex gap-1.5 mt-1">
           <Button asChild size="sm" variant="outline" className="flex-1 h-8 text-xs">
             <Link href={ROUTES.producto(product.slug)}>Ver</Link>
           </Button>
@@ -206,7 +208,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
             )}
           </Button>
         </div>
-      </CardFooter>
+      </CardContent>
     </Card>
   )
 }

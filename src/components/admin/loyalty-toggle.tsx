@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Gift, ToggleLeft, ToggleRight, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Gift, Loader2, CheckCircle2, AlertCircle, Shuffle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -11,14 +11,30 @@ import { Switch } from '@/components/ui/switch'
 
 interface Props {
   initialEnabled: boolean
-  initialPercent: number
+  initialMin: number
+  initialMax: number
 }
 
-export function LoyaltyToggle({ initialEnabled, initialPercent }: Props) {
+export function LoyaltyToggle({ initialEnabled, initialMin, initialMax }: Props) {
   const [enabled, setEnabled] = useState(initialEnabled)
-  const [percent, setPercent] = useState(initialPercent)
+  const [minPercent, setMinPercent] = useState(initialMin)
+  const [maxPercent, setMaxPercent] = useState(initialMax)
   const [saving, startSaving] = useTransition()
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+
+  const clamp = (v: number) => Math.max(1, Math.min(99, v))
+
+  const handleMinChange = (v: string) => {
+    const val = clamp(Number(v) || 1)
+    setMinPercent(val)
+    if (val > maxPercent) setMaxPercent(val)
+  }
+
+  const handleMaxChange = (v: string) => {
+    const val = clamp(Number(v) || 1)
+    setMaxPercent(val)
+    if (val < minPercent) setMinPercent(val)
+  }
 
   const handleSave = () => {
     setStatus('saving')
@@ -27,7 +43,11 @@ export function LoyaltyToggle({ initialEnabled, initialPercent }: Props) {
         const res = await fetch('/api/admin/loyalty-config', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ enabled, discount_percent: percent }),
+          body: JSON.stringify({
+            enabled,
+            min_discount_percent: minPercent,
+            max_discount_percent: maxPercent,
+          }),
         })
         const data = await res.json()
         if (data.ok) {
@@ -49,7 +69,9 @@ export function LoyaltyToggle({ initialEnabled, initialPercent }: Props) {
           <div className="flex items-center gap-2">
             <Gift className="h-5 w-5 text-primary" aria-hidden />
             <span className="font-medium">Cupones de fidelidad</span>
-            <Badge variant={enabled ? 'default' : 'outline'}>{percent}%</Badge>
+            <Badge variant={enabled ? 'default' : 'outline'}>
+              {minPercent}% — {maxPercent}%
+            </Badge>
           </div>
           <Switch
             checked={enabled}
@@ -60,26 +82,45 @@ export function LoyaltyToggle({ initialEnabled, initialPercent }: Props) {
 
         <p className="text-sm text-muted-foreground">
           {enabled
-            ? 'Se genera un cupón automático tras cada compra pagada. Los cupones existentes siguen siendo válidos.'
+            ? 'Se genera un cupón automático tras cada compra pagada. El % de descuento se asigna aleatoriamente dentro del rango configurado.'
             : 'Al desactivar, NO se generarán nuevos cupones. Los existentes siguen siendo válidos hasta su expiración.'}
         </p>
 
         <div className="flex items-end gap-4">
           <div className="space-y-1.5">
-            <Label htmlFor="discount" className="text-xs font-medium">
-              Descuento (%)
+            <Label htmlFor="min-discount" className="text-xs font-medium">
+              Mín (%)
             </Label>
             <Input
-              id="discount"
+              id="min-discount"
               type="number"
-              min={20}
-              max={30}
-              value={percent}
-              onChange={(e) => setPercent(Math.min(30, Math.max(20, Number(e.target.value))))}
-              className="w-24 font-mono"
+              min={1}
+              max={99}
+              value={minPercent}
+              onChange={(e) => handleMinChange(e.target.value)}
+              className="w-20 font-mono"
               disabled={saving}
             />
-            <p className="text-[10px] text-muted-foreground">Rango: 20% — 30%</p>
+          </div>
+
+          <div className="flex items-center pb-2">
+            <Shuffle className="h-4 w-4 text-muted-foreground" aria-hidden />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="max-discount" className="text-xs font-medium">
+              Máx (%)
+            </Label>
+            <Input
+              id="max-discount"
+              type="number"
+              min={1}
+              max={99}
+              value={maxPercent}
+              onChange={(e) => handleMaxChange(e.target.value)}
+              className="w-20 font-mono"
+              disabled={saving}
+            />
           </div>
 
           <Button
@@ -87,6 +128,7 @@ export function LoyaltyToggle({ initialEnabled, initialPercent }: Props) {
             onClick={handleSave}
             disabled={status === 'saving'}
             variant="outline"
+            className="mb-0.5"
           >
             {status === 'saving' ? (
               <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />Guardando</>
@@ -99,6 +141,10 @@ export function LoyaltyToggle({ initialEnabled, initialPercent }: Props) {
             )}
           </Button>
         </div>
+
+        <p className="text-[10px] text-muted-foreground">
+          Cada cupón recibe un % aleatorio dentro del rango. Actualmente: <strong>{minPercent}% — {maxPercent}%</strong>
+        </p>
       </CardContent>
     </Card>
   )
