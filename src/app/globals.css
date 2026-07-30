@@ -43,7 +43,7 @@
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
   /* MUNAY — paleta exacta del logo */
-  /* @deprecated — Usar munay-terracota-* en su lugar. Se eliminarán en cleanup posterior. */
+  /* @deprecated — Usar munay-terracota (acciones) o munay-terracota-quemado (urgencia). Se eliminarán en cleanup posterior. */
   --color-munay-red-500: var(--munay-red-500);
   --color-munay-red-600: var(--munay-red-600);
   --color-munay-red-800: var(--munay-red-800);
@@ -68,7 +68,7 @@
   --radius: 0.5rem;
 
   /* MUNAY — colores de marca (tomados del logo) */
-  /* @deprecated — Usar munay-terracota-* en su lugar */
+  /* @deprecated — Usar munay-terracota (acciones) o munay-terracota-quemado (urgencia máxima) */
   --munay-red-500: #f0442d;
   --munay-red-600: #d92a1e;
   --munay-red-800: #a3120c;

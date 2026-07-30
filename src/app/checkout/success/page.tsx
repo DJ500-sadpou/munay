@@ -61,9 +61,9 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
   return (
     <div className="flex min-h-[80vh] items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
-        <Card className="border-[#25D366]/15 shadow-sm">
+        <Card className="border-munay-whatsapp/15 shadow-sm">
           <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
-            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#25D366]/10 text-[#25D366]">
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-munay-whatsapp/10 text-munay-whatsapp">
               <MessageCircle className="h-8 w-8" aria-hidden />
             </span>
 
@@ -101,7 +101,7 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
               {whatsappUrl && (
                 <Button
                   asChild
-                  className="bg-[#25D366] text-white hover:bg-[#1DA851]"
+                  className="bg-munay-whatsapp text-white hover:bg-munay-whatsapp/90"
                 >
                   <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
                     <MessageCircle className="mr-2 h-4 w-4" aria-hidden />
@@ -127,7 +127,7 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
                 href={SITE.whatsappLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium text-[#25D366] underline underline-offset-2"
+                className="font-medium text-munay-whatsapp underline underline-offset-2"
               >
                 WhatsApp
               </a>

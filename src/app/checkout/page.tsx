@@ -243,10 +243,10 @@ export default function CheckoutPage() {
           </Card>
 
           {/* Pago vía WhatsApp */}
-          <Card className="border-[#25D366]/15 shadow-sm">
+          <Card className="border-munay-whatsapp/15 shadow-sm">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <MessageCircle className="h-4 w-4 text-[#25D366]" aria-hidden />
+                <MessageCircle className="h-4 w-4 text-munay-whatsapp" aria-hidden />
                 Pago por WhatsApp
               </CardTitle>
               <CardDescription>
@@ -255,7 +255,7 @@ export default function CheckoutPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="rounded-lg bg-[#25D366]/5 border border-[#25D366]/10 p-4 text-sm">
+              <div className="rounded-lg bg-munay-whatsapp/5 border border-munay-whatsapp/10 p-4 text-sm">
                 <p className="font-medium text-munay-ink">¿Cómo funciona?</p>
                 <ol className="mt-2 space-y-1.5 text-munay-ink/70 list-decimal list-inside">
                   <li>Completa tus datos y envía el pedido</li>
@@ -265,7 +265,7 @@ export default function CheckoutPage() {
                 </ol>
               </div>
               <div className="flex items-center gap-2 text-xs text-munay-ink/50">
-                <CheckCircle2 className="h-3 w-3 text-[#25D366]" aria-hidden />
+                <CheckCircle2 className="h-3 w-3 text-munay-whatsapp" aria-hidden />
                 Sin datos bancarios en el sitio · Pago seguro por WhatsApp
               </div>
             </CardContent>
@@ -366,7 +366,7 @@ export default function CheckoutPage() {
               <Button
                 type="submit"
                 size="lg"
-                className="w-full bg-[#25D366] text-white hover:bg-[#1DA851]"
+                className="w-full bg-munay-whatsapp text-white hover:bg-munay-whatsapp/90"
                 disabled={step === 'sending' || step === 'redirecting'}
               >
                 {step === 'sending' ? (
@@ -388,7 +388,7 @@ export default function CheckoutPage() {
               </Button>
 
               <div className="flex items-center justify-center gap-2 text-xs text-munay-ink/50">
-                <CheckCircle2 className="h-3 w-3 text-[#25D366]" aria-hidden />
+                <CheckCircle2 className="h-3 w-3 text-munay-whatsapp" aria-hidden />
                 Pago coordinado por WhatsApp · sin tarjeta
               </div>
             </CardContent>

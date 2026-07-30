@@ -71,7 +71,7 @@ export function TicketForm() {
               rel="noopener noreferrer"
               className="mt-2"
             >
-              <Button className="bg-[#25D366] text-white hover:bg-[#1DA851]">
+              <Button className="bg-munay-whatsapp text-white hover:bg-munay-whatsapp/90">
                 <MessageCircle className="mr-2 h-4 w-4" aria-hidden />
                 Abrir WhatsApp
                 <ArrowRight className="ml-2 h-4 w-4" aria-hidden />

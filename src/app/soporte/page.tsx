@@ -49,9 +49,9 @@ export default function SoportePage() {
                   href={SITE.whatsappLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 rounded-lg border border-black/5 bg-[#25D366]/5 p-3 text-sm transition-colors hover:bg-[#25D366]/10"
+                  className="flex items-center gap-3 rounded-lg border border-black/5 bg-munay-whatsapp/5 p-3 text-sm transition-colors hover:bg-munay-whatsapp/10"
                 >
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#25D366] text-white">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-munay-whatsapp text-white">
                     <MessageCircle className="h-5 w-5" aria-hidden />
                   </span>
                   <div className="flex-1">

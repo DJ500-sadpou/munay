@@ -150,10 +150,10 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
 
       {/* Ticket asociado (WhatsApp) */}
       {ticket && (
-        <Card className="mt-6 border-[#25D366]/15">
+        <Card className="mt-6 border-munay-whatsapp/15">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <MessageCircle className="h-4 w-4 text-[#25D366]" aria-hidden />
+              <MessageCircle className="h-4 w-4 text-munay-whatsapp" aria-hidden />
               Ticket WhatsApp · <span className="font-mono text-xs">{ticket.id.slice(0, 8)}…</span>
             </CardTitle>
           </CardHeader>
@@ -169,7 +169,7 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
                   href={`https://wa.me/${ticket.phone.replace(/[^0-9]/g, '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[#25D366] hover:underline"
+                  className="text-munay-whatsapp hover:underline"
                 >
                   {ticket.phone} ↗
                 </a>

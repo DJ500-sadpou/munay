@@ -241,7 +241,7 @@ export default function AdminTicketsPage() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="text-[#25D366]"
+                        className="text-munay-whatsapp"
                         asChild
                       >
                         <a

@@ -30,7 +30,7 @@ export default function CheckoutCancelledPage() {
                   Intentar nuevamente
                 </Link>
               </Button>
-              <Button asChild variant="outline" className="border-[#25D366] text-[#25D366] hover:bg-[#25D366]/10">
+              <Button asChild variant="outline" className="border-munay-whatsapp text-munay-whatsapp hover:bg-munay-whatsapp/10">
                 <a href={SITE.whatsappLink} target="_blank" rel="noopener noreferrer">
                   <MessageCircle className="mr-2 h-4 w-4" aria-hidden />
                   Contactar por WhatsApp
