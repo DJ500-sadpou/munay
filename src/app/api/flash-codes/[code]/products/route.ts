@@ -23,11 +23,7 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ code: string }> }
 ) {
-  try {
-    await requireAdmin()
-  } catch {
-    return NextResponse.json({ ok: false, error: 'No autorizado' }, { status: 401 })
-  }
+  await requireAdmin()
 
   const { code } = await params
   const cleanCode = decodeURIComponent(code).toUpperCase()
@@ -85,11 +81,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ code: string }> }
 ) {
-  try {
-    await requireAdmin()
-  } catch {
-    return NextResponse.json({ ok: false, error: 'No autorizado' }, { status: 401 })
-  }
+  await requireAdmin()
 
   const { code } = await params
   const cleanCode = decodeURIComponent(code).toUpperCase()
@@ -145,11 +137,7 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ code: string }> }
 ) {
-  try {
-    await requireAdmin()
-  } catch {
-    return NextResponse.json({ ok: false, error: 'No autorizado' }, { status: 401 })
-  }
+  await requireAdmin()
 
   const { code } = await params
   const cleanCode = decodeURIComponent(code).toUpperCase()
@@ -160,6 +148,12 @@ export async function DELETE(
 
   if (!productId) {
     return NextResponse.json({ ok: false, error: 'productId requerido como query param' }, { status: 400 })
+  }
+
+  // Validar UUID (consistente con POST)
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  if (!uuidRegex.test(productId)) {
+    return NextResponse.json({ ok: false, error: 'productId inválido (no es un UUID)' }, { status: 400 })
   }
 
   if (!isDbConfigured()) {

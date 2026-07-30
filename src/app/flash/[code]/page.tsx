@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
-import { Zap, Sparkles, ArrowRight, CheckCircle2, XCircle, Clock, Package, ShoppingCart } from 'lucide-react'
+import { Zap, Sparkles, ArrowRight, CheckCircle2, XCircle, Clock, Package } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -223,9 +223,9 @@ export default async function FlashPage({ params }: PageProps) {
                           </Link>
                         </Button>
                         <Button asChild size="sm" variant="outline">
-                          <Link href={`${ROUTES.carrito}?add=${p.id}&flash=${flash.code}`}>
-                            <ShoppingCart className="mr-1 h-3 w-3" aria-hidden />
-                            Agregar al carrito
+                          <Link href={`${ROUTES.catalogo}?flash=${flash.code}`}>
+                            <Zap className="mr-1 h-3 w-3" aria-hidden />
+                            Ver catálogo con descuento
                           </Link>
                         </Button>
                       </div>

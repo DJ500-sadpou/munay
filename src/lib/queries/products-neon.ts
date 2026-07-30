@@ -165,13 +165,19 @@ export async function listProducts(filters: ProductFilters = {}): Promise<Produc
       // Obtener los productos asociados a este código
       const associatedIds = await getUnlockedProductIds(flash.code)
       const pct = flash.discount_percent
+      const flat = flash.discount_cents
 
       items.forEach((it) => {
         if (associatedIds.includes(it.id)) {
           it.flash_code = flash.code
-          if (flash.type === 'discount' && pct != null) {
-            // type=discount: aplicar descuento porcentual
-            it.flash_discount_percent = pct
+          if (flash.type === 'discount') {
+            // type=discount: aplicar descuento (porcentual o fijo)
+            if (pct != null) {
+              it.flash_discount_percent = pct
+            } else if (flat != null && flat > 0) {
+              const approx = Math.round((flat / Math.max(1, it.price_cents)) * 100)
+              it.flash_discount_percent = Math.min(99, Math.max(0, approx))
+            }
           } else if (flash.type === 'unlock') {
             // type=unlock: mostrar sin descuento (solo visibilidad)
             it.flash_discount_percent = pct ?? 0
