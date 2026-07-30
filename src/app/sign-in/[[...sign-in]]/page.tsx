@@ -1,6 +1,7 @@
 import { SignIn } from "@clerk/nextjs";
 
 export const metadata = { title: 'Iniciar sesión · Munay' }
+export const dynamic = 'force-dynamic'
 
 export default function SignInPage() {
   return (
