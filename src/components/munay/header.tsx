@@ -165,7 +165,7 @@ export function MunayHeader() {
                 </Link>
                 <Link
                   href="/admin"
-                  className="rounded-lg px-2 py-2.5 text-sm font-medium text-munay-ink hover:bg-munay-cream/30"
+                  className="rounded-lg px-2 py-3 text-sm font-medium text-munay-ink hover:bg-munay-cream/30"
                 >
                   Admin
                 </Link>
