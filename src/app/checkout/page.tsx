@@ -2,16 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { CreditCard, Lock, ArrowLeft, ShieldCheck, Loader2, AlertCircle, Gift, Zap, Sparkles, CheckCircle2 } from 'lucide-react'
+import { MessageCircle, ArrowLeft, Loader2, AlertCircle, Sparkles, CheckCircle2, ShoppingBag } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
-import { Badge } from '@/components/ui/badge'
 import { formatCents } from '@/lib/format'
-import { PAYMENT, ROUTES, POINTS_RULES } from '@/lib/constants'
+import { ROUTES, POINTS_RULES } from '@/lib/constants'
 import { useCart } from '@/store/cart'
 import { useMounted } from '@/hooks/use-mounted'
 import { CartFlashCodeInput } from '@/components/cart/cart-flash-code-input'
@@ -19,7 +18,7 @@ import { PointsRedeemer } from '@/components/cart/points-redeemer'
 import { LoyaltyCouponCheckout } from '@/components/cart/loyalty-coupon-checkout'
 import { TurnstileWidget } from '@/components/auth/turnstile-widget'
 
-type Step = 'form' | 'processing' | 'redirecting' | 'error'
+type Step = 'form' | 'sending' | 'redirecting' | 'error'
 
 export default function CheckoutPage() {
   const mounted = useMounted()
@@ -30,7 +29,6 @@ export default function CheckoutPage() {
   const discountCents = useCart((s) => s.discountCents())
   const totalCents = useCart((s) => s.totalCents())
   const flashCode = useCart((s) => s.flashCode)
-  const pointsToEarn = useCart((s) => s.pointsToEarn())
   const clear = useCart((s) => s.clear)
 
   const [step, setStep] = useState<Step>('form')
@@ -54,11 +52,6 @@ export default function CheckoutPage() {
   const [city, setCity] = useState('Ibarra')
   const [province, setProvince] = useState('Imbabura')
 
-  // Datos de tarjeta (modo demo)
-  const [cardNumber, setCardNumber] = useState('4111111111111111')
-  const [cardExp, setCardExp] = useState('12/28')
-  const [cardCvc, setCardCvc] = useState('123')
-
   // Cargar saldo de puntos del usuario logueado
   useEffect(() => {
     fetch('/api/user/points')
@@ -66,7 +59,6 @@ export default function CheckoutPage() {
       .then((data) => {
         if (data?.ok) {
           setUserPoints(data.balance ?? 0)
-          // Pre-llenar email si está logueado
           if (data.email && !email) setEmail(data.email)
         }
       })
@@ -82,12 +74,8 @@ export default function CheckoutPage() {
     )
   }
 
-  const isDemo = !process.env.NEXT_PUBLIC_KUSHKI_PUBLIC_KEY
-    || process.env.NEXT_PUBLIC_KUSHKI_PUBLIC_KEY.includes('YOUR-')
-
   const pointsDiscountCents = Math.floor(pointsToRedeem / POINTS_RULES.POINTS_PER_DISCOUNT_DOLLAR) * 100
-  const loyaltyDiscountCents = 0
-  const adjustedTotalCents = Math.max(0, totalCents - pointsDiscountCents - loyaltyDiscountCents)
+  const adjustedTotalCents = Math.max(0, totalCents - pointsDiscountCents)
 
   const shipping = adjustedTotalCents > 0 ? 200 : 0
   const grandTotal = adjustedTotalCents + shipping
@@ -95,10 +83,10 @@ export default function CheckoutPage() {
   if (lines.length === 0) {
     return (
       <div className="mx-auto flex min-h-[60vh] flex-col items-center justify-center px-4 py-10 text-center">
-        <CreditCard className="h-12 w-12 text-munay-ink/30" aria-hidden />
-        <h1 className="mt-4 font-display text-2xl font-semibold text-munay-ink">No hay nada que pagar</h1>
+        <ShoppingBag className="h-12 w-12 text-munay-ink/30" aria-hidden />
+        <h1 className="mt-4 font-display text-2xl font-semibold text-munay-ink">Tu carrito está vacío</h1>
         <p className="mt-2 text-munay-ink/60">
-          Tu carrito está vacío. Agrega piezas antes de proceder al checkout.
+          Agrega piezas al carrito antes de continuar.
         </p>
         <Button asChild className="mt-6 bg-munay-red-600 text-white hover:bg-munay-red-800">
           <Link href={ROUTES.catalogo}>Ver catálogo</Link>
@@ -109,59 +97,45 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setStep('processing')
+    setStep('sending')
     setError(null)
 
     try {
-      // 1. Crear la orden
-      const orderRes = await fetch('/api/orders', {
+      // Enviar pedido: crear orden + ticket + obtener URL de WhatsApp
+      const res = await fetch('/api/checkout/whatsapp', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },          body: JSON.stringify({
-          items: lines.map((l) => ({ product_id: l.id, qty: l.qty })),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: lines.map((l) => ({ product_id: l.id, qty: l.qty, title: l.title })),
           customer_email: email,
           customer_name: name,
-          // Fix FLOW3-009: enviar shipping_cents para que la DB refleje el costo real
-          shipping: { name, address, city, province, phone, shipping_cents: shipping },
+          phone,
+          address,
+          city,
+          province,
+          shipping_cents: shipping,
           flash_code: flashCode?.code ?? null,
           loyalty_code: loyaltyCode ?? null,
           points_to_redeem: pointsToRedeem > 0 ? pointsToRedeem : undefined,
           turnstile_token: turnstileToken ?? undefined,
         }),
       })
-      const orderData = await orderRes.json()
+      const data = await res.json()
 
-      if (!orderData.ok) {
-        throw new Error(orderData.error ?? 'Error creando orden')
+      if (!data.ok) {
+        throw new Error(data.error ?? 'Error al procesar el pedido')
       }
 
-      // 2. Crear el pago
-      // En modo demo: no se necesita card_token real.
-      // En modo real: aquí se llamaría a Kushki.js para tokenizar y luego
-      // se pasaría card_token al endpoint.
-      const cardToken = isDemo ? `demo-token-${Date.now()}` : undefined
-
-      const payRes = await fetch('/api/payments/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          order_id: orderData.order_id,
-          card_token: cardToken,
-        }),
-      })
-      const payData = await payRes.json()
-
-      if (!payData.ok) {
-        throw new Error(payData.error ?? 'Error procesando pago')
-      }
-
-      // 3. Redirigir según resultado
+      // Limpiar carrito y redirigir a WhatsApp
       setStep('redirecting')
-      if (payData.redirect_url) {
-        // En modo demo, limpiar el carrito antes de redirigir
-        clear()
-        router.push(payData.redirect_url)
+      clear()
+
+      // Redirigir a WhatsApp (usar location.href en vez de window.open para evitar popup blockers)
+      if (data.whatsapp_url) {
+        // Primero redirigir a success page, que tendrá el botón para abrir WhatsApp
+        router.push(`/checkout/success?order=${data.order_id}&wa=${encodeURIComponent(data.whatsapp_url)}`)
       } else {
-        router.push(`/checkout/pending?order=${orderData.order_id}`)
+        router.push(`/checkout/success?order=${data.order_id}`)
       }
     } catch (err: any) {
       setError(err?.message ?? 'Error inesperado')
@@ -181,7 +155,7 @@ export default function CheckoutPage() {
 
         <h1 className="font-display text-3xl font-bold tracking-tight text-munay-ink sm:text-4xl">Checkout</h1>
         <p className="mt-2 text-munay-ink/60">
-          {isDemo ? 'Modo demo — sin cargo real' : `Pago seguro con ${PAYMENT.provider}`}
+          Te contactaremos por WhatsApp para coordinar el pago y el envío.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-8 grid gap-8 lg:grid-cols-[1fr_360px]">
@@ -203,7 +177,7 @@ export default function CheckoutPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  disabled={step === 'processing'}
+                  disabled={step === 'sending'}
                 />
               </div>
               <div className="space-y-2">
@@ -214,7 +188,7 @@ export default function CheckoutPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
-                  disabled={step === 'processing'}
+                  disabled={step === 'sending'}
                 />
               </div>
               <div className="space-y-2">
@@ -224,7 +198,7 @@ export default function CheckoutPage() {
                   placeholder="+593 ..."
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  disabled={step === 'processing'}
+                  disabled={step === 'sending'}
                 />
               </div>
             </CardContent>
@@ -244,7 +218,7 @@ export default function CheckoutPage() {
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   required
-                  disabled={step === 'processing'}
+                  disabled={step === 'sending'}
                 />
               </div>
               <div className="space-y-2">
@@ -253,7 +227,7 @@ export default function CheckoutPage() {
                   id="city"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  disabled={step === 'processing'}
+                  disabled={step === 'sending'}
                 />
               </div>
               <div className="space-y-2">
@@ -262,76 +236,38 @@ export default function CheckoutPage() {
                   id="province"
                   value={province}
                   onChange={(e) => setProvince(e.target.value)}
-                  disabled={step === 'processing'}
+                  disabled={step === 'sending'}
                 />
               </div>
             </CardContent>
           </Card>
 
-          {/* Pago */}
-          <Card className="border-black/5 shadow-sm">
+          {/* Pago vía WhatsApp */}
+          <Card className="border-[#25D366]/15 shadow-sm">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Lock className="h-4 w-4 text-munay-red-600" aria-hidden />
-                Pago con tarjeta
+                <MessageCircle className="h-4 w-4 text-[#25D366]" aria-hidden />
+                Pago por WhatsApp
               </CardTitle>
               <CardDescription>
-                {isDemo ? (
-                  <>Modo demo: usa cualquier tarjeta de prueba. No se realiza cargo real.</>
-                ) : (
-                  <>Pago seguro procesado por <strong>{PAYMENT.provider}</strong>. No almacenamos datos de tarjeta.</>
-                )}
+                No aceptamos pagos en línea. Un asesor se pondrá en contacto contigo por
+                WhatsApp para coordinar el método de pago (transferencia, depósito, efectivo).
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="card">Número de tarjeta</Label>
-                <Input
-                  id="card"
-                  inputMode="numeric"
-                  placeholder="4111 1111 1111 1111"
-                  value={cardNumber}
-                  onChange={(e) => setCardNumber(e.target.value.replace(/\s/g, ''))}
-                  maxLength={19}
-                  required
-                  disabled={step === 'processing'}
-                  className="font-mono"
-                />
+            <CardContent className="space-y-3">
+              <div className="rounded-lg bg-[#25D366]/5 border border-[#25D366]/10 p-4 text-sm">
+                <p className="font-medium text-munay-ink">¿Cómo funciona?</p>
+                <ol className="mt-2 space-y-1.5 text-munay-ink/70 list-decimal list-inside">
+                  <li>Completa tus datos y envía el pedido</li>
+                  <li>Te redirigiremos a WhatsApp con un resumen de tu orden</li>
+                  <li>Un asesor te confirmará el total exacto y el método de pago</li>
+                  <li>Una vez confirmado el pago, procesaremos tu envío</li>
+                </ol>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="exp">Vencimiento</Label>
-                  <Input
-                    id="exp"
-                    placeholder="MM/YY"
-                    value={cardExp}
-                    onChange={(e) => setCardExp(e.target.value)}
-                    maxLength={5}
-                    required
-                    disabled={step === 'processing'}
-                    className="font-mono"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cvc">CVC</Label>
-                  <Input
-                    id="cvc"
-                    placeholder="123"
-                    value={cardCvc}
-                    onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, ''))}
-                    maxLength={4}
-                    required
-                    disabled={step === 'processing'}
-                    className="font-mono"
-                  />
-                </div>
+              <div className="flex items-center gap-2 text-xs text-munay-ink/50">
+                <CheckCircle2 className="h-3 w-3 text-[#25D366]" aria-hidden />
+                Sin datos bancarios en el sitio · Pago seguro por WhatsApp
               </div>
-              {!isDemo && (
-                <p className="text-xs text-muted-foreground">
-                  En producción, este formulario será reemplazado por Kushki.js (tokenización embebida).
-                  La tarjeta nunca toca nuestro servidor.
-                </p>
-              )}
             </CardContent>
           </Card>
 
@@ -339,7 +275,7 @@ export default function CheckoutPage() {
             <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
               <div>
-                <p className="font-medium">Error al procesar el pago</p>
+                <p className="font-medium">Error al enviar el pedido</p>
                 <p className="mt-1">{error}</p>
               </div>
             </div>
@@ -387,15 +323,7 @@ export default function CheckoutPage() {
                     <span>−{formatCents(pointsDiscountCents)}</span>
                   </div>
                 )}
-                {loyaltyDiscountCents > 0 && (
-                  <div className="flex justify-between text-accent">
-                    <span className="flex items-center gap-1">
-                      <Gift className="h-3 w-3" aria-hidden />
-                      Cupón fidelidad
-                    </span>
-                    <span>−{formatCents(loyaltyDiscountCents)}</span>
-                  </div>
-                )}
+
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Envío</span>
                   <span>{formatCents(shipping)}</span>
@@ -438,30 +366,30 @@ export default function CheckoutPage() {
               <Button
                 type="submit"
                 size="lg"
-                className="w-full bg-munay-red-600 text-white hover:bg-munay-red-800"
-                disabled={step === 'processing' || step === 'redirecting'}
+                className="w-full bg-[#25D366] text-white hover:bg-[#1DA851]"
+                disabled={step === 'sending' || step === 'redirecting'}
               >
-                {step === 'processing' ? (
+                {step === 'sending' ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-                    Procesando…
+                    Enviando pedido…
                   </>
                 ) : step === 'redirecting' ? (
                   <>
                     <CheckCircle2 className="mr-2 h-4 w-4" aria-hidden />
-                    Redirigiendo…
+                    Redirigiendo a WhatsApp…
                   </>
                 ) : (
                   <>
-                    <CreditCard className="mr-2 h-4 w-4" aria-hidden />
-                    Pagar {formatCents(grandTotal)}
+                    <MessageCircle className="mr-2 h-4 w-4" aria-hidden />
+                    Enviar pedido por WhatsApp
                   </>
                 )}
               </Button>
 
               <div className="flex items-center justify-center gap-2 text-xs text-munay-ink/50">
-                <ShieldCheck className="h-3 w-3" aria-hidden />
-                Cifrado TLS · sin almacenamiento de tarjeta
+                <CheckCircle2 className="h-3 w-3 text-[#25D366]" aria-hidden />
+                Pago coordinado por WhatsApp · sin tarjeta
               </div>
             </CardContent>
           </Card>

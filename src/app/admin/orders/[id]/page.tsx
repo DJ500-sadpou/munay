@@ -1,6 +1,9 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, Package, CreditCard, User, MapPin, Sparkles } from 'lucide-react'
+import {
+  ArrowLeft, Package, CreditCard, User, MapPin, Sparkles,
+  MessageCircle, CheckCircle, Loader2,
+} from 'lucide-react'
 import { requireAdmin } from '@/lib/auth/require-admin'
 import { queryOne, query, isDbConfigured } from '@/lib/db/neon'
 import { Button } from '@/components/ui/button'
@@ -8,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { formatCents, formatDate } from '@/lib/format'
+import { MarkAsPaidButton } from './mark-paid-button'
 
 export const metadata = { title: 'Detalle de orden · Admin' }
 export const dynamic = 'force-dynamic'
@@ -39,6 +43,12 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
   const payments = await query<any>(`
     SELECT id, provider, provider_ref, status, created_at
     FROM payments WHERE order_id = $1 ORDER BY created_at DESC
+  `, [id])
+
+  // Buscar ticket asociado a la orden
+  const ticket = await queryOne<any>(`
+    SELECT id, name, email, phone, message, status, created_at
+    FROM tickets WHERE order_id = $1 LIMIT 1
   `, [id])
 
   const statusBadge = (status: string) => {
@@ -137,6 +147,70 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Ticket asociado (WhatsApp) */}
+      {ticket && (
+        <Card className="mt-6 border-[#25D366]/15">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <MessageCircle className="h-4 w-4 text-[#25D366]" aria-hidden />
+              Ticket WhatsApp · <span className="font-mono text-xs">{ticket.id.slice(0, 8)}…</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Cliente</span>
+              <span>{ticket.name} ({ticket.email})</span>
+            </div>
+            {ticket.phone && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Teléfono</span>
+                <a
+                  href={`https://wa.me/${ticket.phone.replace(/[^0-9]/g, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#25D366] hover:underline"
+                >
+                  {ticket.phone} ↗
+                </a>
+              </div>
+            )}
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Estado ticket</span>
+              <Badge variant={ticket.status === 'completed' ? 'default' : ticket.status === 'cancelled' ? 'destructive' : 'secondary'}>
+                {ticket.status === 'new' ? 'Nuevo' : ticket.status === 'in_progress' ? 'En progreso' : ticket.status === 'completed' ? 'Completado' : 'Cancelado'}
+              </Badge>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Creado</span>
+              <span>{formatDate(ticket.created_at)}</span>
+            </div>
+            <Link
+              href="/admin/tickets"
+              className="mt-2 inline-flex items-center gap-1 text-xs text-munay-red-600 hover:text-munay-red-800 transition-colors"
+            >
+              Ver todos los tickets →
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Botón Marcar como pagada (solo si está pendiente) */}
+      {order.status === 'pending' && (
+        <Card className="mt-6 border-primary/20 bg-primary/5">
+          <CardContent className="flex flex-col items-center gap-3 py-6 text-center">
+            <CheckCircle className="h-8 w-8 text-primary" aria-hidden />
+            <div>
+              <p className="font-medium text-munay-ink">¿Pago confirmado por WhatsApp?</p>
+              <p className="text-sm text-munay-ink/60">
+                Marca la orden como pagada cuando hayas confirmado el pago con el cliente.
+                Esto liberará el inventario y otorgará los puntos de fidelidad.
+              </p>
+            </div>
+            <MarkAsPaidButton orderId={order.id} />
+          </CardContent>
+        </Card>
+      )}
 
       {payments.length > 0 && (
         <Card className="mt-6">

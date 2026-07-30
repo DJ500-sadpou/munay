@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Plus, Package, LogOut, Sparkles, ShoppingCart, DollarSign, TrendingUp, Zap, BarChart3, Gift, Percent } from 'lucide-react'
+import { Plus, Package, LogOut, Sparkles, ShoppingCart, DollarSign, TrendingUp, Zap, BarChart3, Gift, Percent, MessageCircle } from 'lucide-react'
 import { requireAdmin } from '@/lib/auth/require-admin'
 import { query, queryOne, isDbConfigured } from '@/lib/db/neon'
 import { Button } from '@/components/ui/button'
@@ -88,6 +88,12 @@ export default async function AdminHomePage() {
             <Link href="/admin/orders">
               <ShoppingCart className="mr-2 h-4 w-4" aria-hidden />
               Órdenes
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/admin/tickets">
+              <MessageCircle className="mr-2 h-4 w-4" aria-hidden />
+              Tickets
             </Link>
           </Button>
           <Button asChild variant="outline">
