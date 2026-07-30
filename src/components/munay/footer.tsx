@@ -1,7 +1,26 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { Instagram, Facebook, Twitter } from 'lucide-react'
 import { SITE, ROUTES } from '@/lib/constants'
+
+/* SVGs inline de redes sociales (lucide-react no tiene estos iconos) */
+const WhatsAppIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+    <path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21" />
+    <path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1Zm5 0a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1Zm-2 4c-1.5 0-2.5-.5-3.5-1.5" />
+  </svg>
+)
+const InstagramIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+  </svg>
+)
+const TikTokIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+    <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
+  </svg>
+)
 
 const COLUMNS = [
   {
@@ -38,9 +57,9 @@ const COLUMNS = [
 ]
 
 const SOCIAL = [
-  { label: 'Instagram', icon: Instagram },
-  { label: 'Facebook', icon: Facebook },
-  { label: 'Twitter', icon: Twitter },
+  { label: 'WhatsApp', icon: WhatsAppIcon, href: SITE.whatsappLink },
+  { label: 'Instagram', icon: InstagramIcon, href: SITE.instagram },
+  { label: 'TikTok', icon: TikTokIcon, href: SITE.tiktok },
 ]
 
 export function MunayFooter() {
@@ -104,11 +123,13 @@ export function MunayFooter() {
               {SOCIAL.map((s) => (
                 <li key={s.label}>
                   <Link
-                    href="#"
+                    href={s.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     aria-label={s.label}
                     className="flex h-9 w-9 items-center justify-center rounded-full border border-black/5 bg-munay-cream/20 text-munay-ink/60 transition-colors hover:text-munay-red-600"
                   >
-                    <s.icon className="h-4 w-4" aria-hidden />
+                    <s.icon aria-hidden />
                   </Link>
                 </li>
               ))}
