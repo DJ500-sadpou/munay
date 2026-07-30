@@ -1,21 +1,39 @@
-name: CI/CD — Munay
+# 🚀 Munay — CI/CD Pipeline
+#
+# Ejecuta en cada push a main y en PRs contra main.
+#
+# Jobs:
+#   quality → typecheck + lint (paralelo, feedback rápido)
+#   build   → next build (solo si quality pasa)
+#
+# Deploy: Vercel auto-deploy via GitHub integration (no necesita job here)
+
+name: CI/CD
 
 on:
-  pull_request:
-    branches: [main]
   push:
-    branches: [main]
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
 
-env:
-  NODE_VERSION: '20'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   # ──────────────────────────────────────────────
-  # Stage 1: Typecheck + Lint (parallelizado)
+  # Job 1: Control de calidad (rápido, ~30s)
   # ──────────────────────────────────────────────
   quality:
-    name: Typecheck & Lint
+    name: 🔍 Quality (typecheck + lint)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+      NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,25 +41,41 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: 24
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm ci
 
-      - name: Typecheck
+      - name: TypeScript check
         run: npm run typecheck
 
-      - name: Lint
+      - name: ESLint
         run: npm run lint
 
+      - name: Cache node_modules for build job
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: build-${{ github.sha }}
+
   # ──────────────────────────────────────────────
-  # Stage 2: Build (solo si quality pasa)
+  # Job 2: Build de producción (needs: quality)
   # ──────────────────────────────────────────────
   build:
-    name: Build
-    needs: [quality]
+    name: 📦 Build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: quality
+
+    env:
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+      BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+      FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -49,22 +83,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: 22
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm ci
 
-      - name: Build
+      - name: Build production
         run: npm run build
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
-          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
-          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
-          FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
-          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ secrets.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
-          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
-          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
-          PAYMENT_PROVIDER: kushki
-          PAYMENT_SANDBOX: 'true'
+
+      # Vercel auto-deploy via GitHub integration (no necesita artifact aquí)
