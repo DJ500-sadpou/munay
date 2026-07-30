@@ -158,31 +158,26 @@ export async function listProducts(filters: ProductFilters = {}): Promise<Produc
   }))
 
   // Aplicar flash code si está presente
+  // FIX v2: solo aplicar descuento a productos en flash_code_products
   if (f.flashCode) {
     const flash = await getValidFlashCode(f.flashCode)
     if (flash) {
-      if (flash.type === 'discount') {
-        const pct = flash.discount_percent
-        const flat = flash.discount_cents
-        items.forEach((it) => {
-          if (pct != null) {
+      // Obtener los productos asociados a este código
+      const associatedIds = await getUnlockedProductIds(flash.code)
+      const pct = flash.discount_percent
+
+      items.forEach((it) => {
+        if (associatedIds.includes(it.id)) {
+          it.flash_code = flash.code
+          if (flash.type === 'discount' && pct != null) {
+            // type=discount: aplicar descuento porcentual
             it.flash_discount_percent = pct
-            it.flash_code = flash.code
-          } else if (flat != null && flat > 0) {
-            const pctApprox = Math.round((flat / Math.max(1, it.price_cents)) * 100)
-            it.flash_discount_percent = Math.min(99, Math.max(0, pctApprox))
-            it.flash_code = flash.code
+          } else if (flash.type === 'unlock') {
+            // type=unlock: mostrar sin descuento (solo visibilidad)
+            it.flash_discount_percent = pct ?? 0
           }
-        })
-      } else if (flash.type === 'unlock') {
-        const unlockedIds = await getUnlockedProductIds(flash.code)
-        items.forEach((it) => {
-          if (unlockedIds.includes(it.id)) {
-            it.flash_code = flash.code
-            it.flash_discount_percent = 0
-          }
-        })
-      }
+        }
+      })
     }
   }
 

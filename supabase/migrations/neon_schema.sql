@@ -593,6 +593,19 @@ insert into public.flash_code_products (code, product_id)
 select 'SECRETO', p.id from public.products p where p.slug = 'mystery-box'
 on conflict do nothing;
 
+-- Asociar MUNAY10 (10%) y MUNAY25 (25%) a productos activos
+insert into public.flash_code_products (code, product_id)
+select 'MUNAY10', p.id from public.products p
+where p.slug in ('amazonita-pulida', 'cuenco-ceremonial-ceramica-negra', 'palo-santo-kg')
+  and p.active = true
+on conflict do nothing;
+
+insert into public.flash_code_products (code, product_id)
+select 'MUNAY25', p.id from public.products p
+where p.slug in ('amazonita-pulida', 'colgante-cuarzo-cristal')
+  and p.active = true
+on conflict do nothing;
+
 -- =============================================================
 -- Cupones de fidelidad (lealtad post-compra)
 -- =============================================================

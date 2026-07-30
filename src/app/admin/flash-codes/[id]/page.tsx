@@ -1,7 +1,9 @@
 import { requireAdmin } from '@/lib/auth/require-admin'
 import { queryOne, isDbConfigured } from '@/lib/db/neon'
 import { FlashCodeForm } from '@/components/admin/flash-codes/flash-code-form'
+import { FlashCodeProductsManager } from '@/components/admin/flash-codes/flash-code-products'
 import { notFound } from 'next/navigation'
+import { Package } from 'lucide-react'
 
 export const metadata = { title: 'Editar código flash · Admin' }
 export const dynamic = 'force-dynamic'
@@ -18,7 +20,6 @@ export default async function EditFlashCodePage({ params }: PageProps) {
   const { id } = await params
   const code = decodeURIComponent(id).toUpperCase()
 
-  // Fix CRIT-4: query directa Neon (sin stub).
   const fc = await queryOne<any>(`
     SELECT code, type, discount_percent, discount_cents, starts_at, ends_at, max_uses, uses_count, active
     FROM flash_codes WHERE code = $1
@@ -27,18 +28,31 @@ export default async function EditFlashCodePage({ params }: PageProps) {
   if (!fc) notFound()
 
   return (
-    <FlashCodeForm
-      flashCode={{
-        code: fc.code,
-        type: fc.type,
-        discount_percent: fc.discount_percent !== null ? Number(fc.discount_percent) : null,
-        discount_cents: fc.discount_cents !== null ? Number(fc.discount_cents) : null,
-        starts_at: fc.starts_at,
-        ends_at: fc.ends_at,
-        max_uses: fc.max_uses !== null ? Number(fc.max_uses) : null,
-        uses_count: Number(fc.uses_count),
-        active: fc.active,
-      }}
-    />
+    <div className="container mx-auto px-4 py-10 max-w-2xl">
+      <FlashCodeForm
+        flashCode={{
+          code: fc.code,
+          type: fc.type,
+          discount_percent: fc.discount_percent !== null ? Number(fc.discount_percent) : null,
+          discount_cents: fc.discount_cents !== null ? Number(fc.discount_cents) : null,
+          starts_at: fc.starts_at,
+          ends_at: fc.ends_at,
+          max_uses: fc.max_uses !== null ? Number(fc.max_uses) : null,
+          uses_count: Number(fc.uses_count),
+          active: fc.active,
+        }}
+      />
+
+      {/* Gestor de productos asociados */}
+      <div className="mt-8">
+        <FlashCodeProductsManager
+          flashCode={{
+            code: fc.code,
+            type: fc.type,
+            discount_percent: fc.discount_percent !== null ? Number(fc.discount_percent) : null,
+          }}
+        />
+      </div>
+    </div>
   )
 }
