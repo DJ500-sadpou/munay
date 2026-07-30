@@ -161,7 +161,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
 
       {/* Contenido + Precio + Botones en un solo bloque flex-col */}
       {/* flex-1 distribuye el espacio extra al final (debajo de botones), no entre secciones */}
-      <CardContent className="flex flex-1 flex-col px-3 pt-1 pb-1">
+      <CardContent className="flex flex-1 flex-col px-3 pt-1 pb-0.5">
         <Link
           href={ROUTES.producto(product.slug)}
           className="line-clamp-2 text-sm font-medium leading-snug text-munay-ink transition-colors hover:text-munay-red-600"
