@@ -20,6 +20,7 @@ import { createHmac, timingSafeEqual } from 'crypto'
 import { query, queryOne, isDbConfigured } from '@/lib/db/neon'
 import { markOrderPaid, markOrderCancelled } from '@/lib/orders-neon'
 import { sendRefundEmail } from '@/lib/email/brevo'
+import { invalidateCouponByOrder } from '@/lib/queries/loyalty-coupons'
 import {
   verifyKushkiWebhookSignature,
   parseKushkiWebhook,
@@ -159,6 +160,11 @@ export async function POST(req: NextRequest) {
         )
       }
       console.log(`[webhook] Orden ${oid} marcada como REFUNDED`)
+
+      // Invalidar cupón de fidelidad asociado a esta orden
+      invalidateCouponByOrder(oid).catch((err) => {
+        console.warn('[webhook] Error invalidando cupón fidelidad:', err?.message)
+      })
 
       // Enviar email de reembolso (fire-and-forget)
       try {

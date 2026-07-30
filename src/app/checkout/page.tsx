@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { CreditCard, Lock, ArrowLeft, ShieldCheck, Loader2, AlertCircle, Zap, Sparkles, CheckCircle2 } from 'lucide-react'
+import { CreditCard, Lock, ArrowLeft, ShieldCheck, Loader2, AlertCircle, Gift, Zap, Sparkles, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -16,6 +16,7 @@ import { useCart } from '@/store/cart'
 import { useMounted } from '@/hooks/use-mounted'
 import { CartFlashCodeInput } from '@/components/cart/cart-flash-code-input'
 import { PointsRedeemer } from '@/components/cart/points-redeemer'
+import { LoyaltyCouponCheckout } from '@/components/cart/loyalty-coupon-checkout'
 import { TurnstileWidget } from '@/components/auth/turnstile-widget'
 
 type Step = 'form' | 'processing' | 'redirecting' | 'error'
@@ -38,6 +39,9 @@ export default function CheckoutPage() {
   // Datos del usuario logueado (para puntos)
   const [userPoints, setUserPoints] = useState<number>(0)
   const [pointsToRedeem, setPointsToRedeem] = useState<number>(0)
+
+  // Cupón de fidelidad seleccionado
+  const [loyaltyCode, setLoyaltyCode] = useState<string | undefined>()
 
   // Turnstile token
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
@@ -83,9 +87,11 @@ export default function CheckoutPage() {
   const isDemo = !process.env.NEXT_PUBLIC_KUSHKI_PUBLIC_KEY
     || process.env.NEXT_PUBLIC_KUSHKI_PUBLIC_KEY.includes('YOUR-')
 
-  // Recalcular descuento por puntos (debe ir antes de usar adjustedTotalCents).
+    // Recalcular descuento por puntos (debe ir antes de usar adjustedTotalCents).
   const pointsDiscountCents = Math.floor(pointsToRedeem / POINTS_RULES.POINTS_PER_DISCOUNT_DOLLAR) * 100
-  const adjustedTotalCents = Math.max(0, totalCents - pointsDiscountCents)
+  // Descuento por cupón de fidelidad (estimación client-side — el cálculo real es server-side)
+  const loyaltyDiscountCents = 0 // se calcula server-side al consumir el cupón
+  const adjustedTotalCents = Math.max(0, totalCents - pointsDiscountCents - loyaltyDiscountCents)
 
   const shipping = adjustedTotalCents > 0 ? 200 : 0
   const grandTotal = adjustedTotalCents + shipping
@@ -121,6 +127,7 @@ export default function CheckoutPage() {
           // Fix FLOW3-009: enviar shipping_cents para que la DB refleje el costo real
           shipping: { name, address, city, province, phone, shipping_cents: shipping },
           flash_code: flashCode?.code ?? null,
+          loyalty_code: loyaltyCode ?? null,
           points_to_redeem: pointsToRedeem > 0 ? pointsToRedeem : undefined,
           turnstile_token: turnstileToken ?? undefined,
         }),
@@ -390,6 +397,15 @@ export default function CheckoutPage() {
                     <span>−{formatCents(pointsDiscountCents)}</span>
                   </div>
                 )}
+                {loyaltyDiscountCents > 0 && (
+                  <div className="flex justify-between text-accent">
+                    <span className="flex items-center gap-1">
+                      <Gift className="h-3 w-3" aria-hidden />
+                      Cupón fidelidad
+                    </span>
+                    <span>−{formatCents(loyaltyDiscountCents)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Envío</span>
                   <span>{formatCents(shipping)}</span>
@@ -408,6 +424,13 @@ export default function CheckoutPage() {
               </div>
 
               <CartFlashCodeInput />
+
+              {/* Cupón de fidelidad (solo si hay sesión y cupones activos) */}
+              <LoyaltyCouponCheckout
+                subtotalCents={subtotalCents}
+                loyaltyCode={loyaltyCode}
+                onChange={setLoyaltyCode}
+              />
 
               {/* Redención de puntos (solo si hay sesión y saldo) */}
               {userPoints > 0 && (

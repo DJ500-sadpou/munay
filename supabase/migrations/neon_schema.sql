@@ -592,3 +592,33 @@ on conflict (code) do nothing;
 insert into public.flash_code_products (code, product_id)
 select 'SECRETO', p.id from public.products p where p.slug = 'mystery-box'
 on conflict do nothing;
+
+-- =============================================================
+-- Cupones de fidelidad (lealtad post-compra)
+-- =============================================================
+
+create table if not exists public.loyalty_coupons (
+  id               uuid primary key default gen_random_uuid(),
+  user_id          text not null references public.users(id) on delete cascade,
+  order_id         uuid not null references public.orders(id) on delete cascade,
+  code             text not null unique check (code ~ '^FID-[A-HJ-NP-Z2-9]{8}$'),
+  discount_percent integer not null check (discount_percent between 1 and 100),
+  expires_at       timestamptz not null,
+  used_at          timestamptz,
+  created_at       timestamptz not null default now(),
+  unique(user_id, order_id)
+);
+create index if not exists idx_loyalty_coupons_user on public.loyalty_coupons(user_id, used_at);
+create index if not exists idx_loyalty_coupons_code on public.loyalty_coupons(code);
+
+comment on table public.loyalty_coupons is 'Cupones de fidelidad: 1 por orden pagada, 7 días de vigencia, 20-30% desc.';
+
+-- Tabla de configuración en runtime (toggle on/off sin redeploy)
+create table if not exists public.app_config (
+  key   text primary key,
+  value jsonb not null
+);
+
+insert into public.app_config (key, value) values
+  ('loyalty_coupons', '{"enabled": true, "discount_percent": 25}')
+on conflict (key) do nothing;

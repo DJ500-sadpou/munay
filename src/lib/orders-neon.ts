@@ -18,6 +18,7 @@ import { transaction, query, queryOne, isDbConfigured } from '@/lib/db/neon'
 import { POINTS_RULES, LIMITS } from '@/lib/constants'
 import { randomUUID } from 'crypto'
 import { sendOrderConfirmationEmail, sendRefundEmail } from '@/lib/email/brevo'
+import { generateLoyaltyCoupon, invalidateCouponByOrder } from '@/lib/queries/loyalty-coupons'
 
 export interface CreateOrderItemInput {
   product_id: string
@@ -35,6 +36,7 @@ export interface CreateOrderInput {
   shipping_phone?: string
   shipping_cents?: number  // Fix FLOW3-009: costo de envío en centavos
   flash_code?: string | null
+  loyalty_code?: string | null
   points_to_redeem?: number
   user_id?: string | null
 }
@@ -56,6 +58,7 @@ export interface CreateOrderResult {
     | 'insufficient_stock'
     | 'flash_invalid'
     | 'points_invalid'
+    | 'loyalty_invalid'
     | 'internal_error'
 }
 
@@ -221,7 +224,24 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
         discountCents += Math.floor(pointsRedeemed / POINTS_RULES.POINTS_PER_DISCOUNT_DOLLAR) * 100
       }
 
-      discountCents = Math.min(discountCents, subtotalCents)
+      // 5c-bis. Consumir cupón de fidelidad (ATÓMICO — dentro de la tx, usando tx`...`)
+      // Fix revisor: NO usar consumeCoupon() porque usa query() fuera de la tx.
+      // Si la tx rollbackea, el cupón quedaría consumido permanentemente.
+      let loyaltyDiscountCents = 0
+      if (input.loyalty_code && input.user_id) {
+        const couponRows = await tx`
+          UPDATE loyalty_coupons SET used_at = now()
+          WHERE code = ${input.loyalty_code} AND user_id = ${input.user_id}
+            AND used_at IS NULL AND expires_at > now()
+          RETURNING id, discount_percent
+        `
+        if (couponRows.length === 0) {
+          throw { type: 'loyalty_invalid', message: 'Cupón inválido, ya usado o expirado' }
+        }
+        loyaltyDiscountCents = Math.round(subtotalCents * (Number(couponRows[0].discount_percent) / 100))
+      }
+
+      discountCents = Math.min(discountCents + loyaltyDiscountCents, subtotalCents)
       // Fix FLOW3-009: incluir shipping_cents en el total.
       // En la DB shipping_cents default 0, pero respetamos el valor enviado.
       const shippingCents = input.shipping_cents ?? 0
@@ -291,6 +311,9 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     }
     if (err?.type === 'points_invalid') {
       return { ok: false, error: err.message, error_code: 'points_invalid' }
+    }
+    if (err?.type === 'loyalty_invalid') {
+      return { ok: false, error: err.message, error_code: 'loyalty_invalid' }
     }
     if (err?.type === 'insufficient_stock') {
       return { ok: false, error: err.message, error_code: 'insufficient_stock' }
@@ -387,7 +410,7 @@ export async function markOrderPaid(
         // Obtener datos completos de la orden para el email
         const orderData = await queryOne<any>(`
           SELECT o.customer_email, o.customer_name, o.subtotal_cents, o.discount_cents,
-                 o.points_redeemed, o.total_cents, o.shipping_cents,
+                 o.points_redeemed, o.total_cents, o.shipping_cents, o.user_id,
                  o.shipping_name, o.shipping_address, o.shipping_city,
                  o.shipping_province, o.shipping_phone
           FROM orders o WHERE o.id = $1
@@ -402,6 +425,17 @@ export async function markOrderPaid(
         )
 
         if (orderData) {
+          // Generar cupón de fidelidad post-compra (fire-and-forget)
+          let loyaltyCode: string | undefined
+          let loyaltyDiscount = 25
+          if (orderData.user_id && result.ok && !(result as any).alreadyPaid) {
+            const coupon = await generateLoyaltyCoupon(orderData.user_id, orderId)
+            if (coupon) {
+              loyaltyCode = coupon.code
+              loyaltyDiscount = coupon.discount_percent
+            }
+          }
+
           sendOrderConfirmationEmail({
             orderId,
             customerEmail: orderData.customer_email,
@@ -423,6 +457,11 @@ export async function markOrderPaid(
               province: orderData.shipping_province,
               phone: orderData.shipping_phone,
             },
+            // Nuevo: cupón de fidelidad
+            loyalty_coupon: loyaltyCode ? {
+              code: loyaltyCode,
+              discount_percent: loyaltyDiscount,
+            } : undefined,
           }).catch((err) => {
             console.warn('[markOrderPaid] Email confirmación falló (no bloqueante):', err?.message)
           })

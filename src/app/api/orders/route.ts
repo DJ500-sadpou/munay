@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
       shipping_cents?: number  // Fix FLOW3-009
     }
     flash_code?: string | null
+    loyalty_code?: string | null
     points_to_redeem?: number
     turnstile_token?: string
   }
@@ -75,6 +76,7 @@ export async function POST(req: NextRequest) {
     // Fix FLOW3-009: pasar shipping_cents del checkout a createOrder
     shipping_cents: body.shipping?.shipping_cents,
     flash_code: body.flash_code ?? null,
+    loyalty_code: body.loyalty_code ?? null,
     points_to_redeem: body.points_to_redeem,
     user_id: userId,
   })
@@ -85,6 +87,7 @@ export async function POST(req: NextRequest) {
       result.error_code === 'invalid_input' ? 400 :
       result.error_code === 'product_not_found' || result.error_code === 'insufficient_stock' || result.error_code === 'flash_invalid' || result.error_code === 'points_invalid' ? 422 :
       result.error_code === 'no_db' ? 503 :
+      result.error_code === 'loyalty_invalid' ? 422 :
       500
     return NextResponse.json(result, { status })
   }

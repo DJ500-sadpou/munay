@@ -1,11 +1,13 @@
 import Link from 'next/link'
-import { Plus, Package, LogOut, Sparkles, ShoppingCart, DollarSign, TrendingUp, Zap, BarChart3 } from 'lucide-react'
+import { Plus, Package, LogOut, Sparkles, ShoppingCart, DollarSign, TrendingUp, Zap, BarChart3, Gift, Percent } from 'lucide-react'
 import { requireAdmin } from '@/lib/auth/require-admin'
 import { query, queryOne, isDbConfigured } from '@/lib/db/neon'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { formatCents } from '@/lib/format'
+import { getLoyaltyConfig, getLoyaltyStats } from '@/lib/queries/loyalty-coupons'
+import { LoyaltyToggle } from '@/components/admin/loyalty-toggle'
 
 export const metadata = {
   title: 'Admin · Munay',
@@ -30,6 +32,8 @@ export default async function AdminHomePage() {
   let paidOrdersCount = 0
   let totalRevenueCents = 0
   let flashCodesActive = 0
+  let loyaltyConfig = await getLoyaltyConfig()
+  let loyaltyStats = await getLoyaltyStats()
 
   if (isDbConfigured()) {
     // Fix CRIT-4: queries Neon directas.
@@ -229,14 +233,30 @@ export default async function AdminHomePage() {
         )}
       </div>
 
-      <div className="mt-6 rounded-md border border-dashed border-border bg-muted/30 p-4 text-sm text-muted-foreground">
-        <p className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4" aria-hidden />
-          <span>
-            En Fase 3+ se añadió gestión completa de órdenes, flash codes y métricas.
-            Explora los enlaces arriba.
-          </span>
-        </p>
+      {/* Cupones de fidelidad */}
+      <div className="mt-10">
+        <h2 className="font-display text-xl font-semibold mb-4 flex items-center gap-2">
+          <Gift className="h-5 w-5" aria-hidden />
+          Cupones de fidelidad
+        </h2>
+        <LoyaltyToggle
+          initialEnabled={loyaltyConfig.enabled}
+          initialPercent={loyaltyConfig.discount_percent}
+        />
+        <div className="flex gap-4 mt-4 text-sm">
+          <div className="rounded-lg border border-border/60 bg-card px-4 py-3 text-center">
+            <p className="text-2xl font-bold">{loyaltyStats.generated}</p>
+            <p className="text-xs text-muted-foreground">cupones generados</p>
+          </div>
+          <div className="rounded-lg border border-border/60 bg-card px-4 py-3 text-center">
+            <p className="text-2xl font-bold">{loyaltyStats.used}</p>
+            <p className="text-xs text-muted-foreground">cupones usados</p>
+          </div>
+          <div className="rounded-lg border border-border/60 bg-card px-4 py-3 text-center">
+            <p className="text-2xl font-bold">{loyaltyStats.usageRate}%</p>
+            <p className="text-xs text-muted-foreground">tasa de uso</p>
+          </div>
+        </div>
       </div>
     </div>
   )

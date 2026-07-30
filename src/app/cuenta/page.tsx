@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Sparkles, Package, Gift, LogOut, ArrowRight, Mail, Calendar } from 'lucide-react'
+import { Sparkles, Package, Gift, LogOut, ArrowRight, Mail, Calendar, Tag } from 'lucide-react'
 import { requireUser } from '@/lib/auth/require-user'
 import { query, isDbConfigured } from '@/lib/db/neon'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { formatCents, formatDate } from '@/lib/format'
 import { ROUTES } from '@/lib/constants'
+import { getActiveUserCoupons, getLoyaltyConfig } from '@/lib/queries/loyalty-coupons'
 
 export const metadata = { title: 'Mi cuenta · Munay' }
 export const dynamic = 'force-dynamic'
@@ -18,6 +19,9 @@ export default async function CuentaHomePage() {
   let totalSpent = 0
   let lastOrderDate: string | null = null
   let recentOrders: Array<{ id: string; status: string; total_cents: number; created_at: string }> = []
+
+  let activeCoupons: Array<{ code: string; discount_percent: number; expires_at: string }> = []
+  let loyaltyEnabled = false
 
   if (isDbConfigured()) {
     // Fix CRIT-4: query directa Neon.
@@ -41,6 +45,13 @@ export default async function CuentaHomePage() {
       .filter((o) => o.status === 'paid')
       .reduce((s, o) => s + o.total_cents, 0)
     lastOrderDate = recentOrders[0]?.created_at ?? null
+
+    // Cupones de fidelidad activos
+    try {
+      const config = await getLoyaltyConfig()
+      loyaltyEnabled = config.enabled
+      activeCoupons = await getActiveUserCoupons(user.id)
+    } catch {}
   }
 
   const statusBadge = (status: string) => {
@@ -127,6 +138,14 @@ export default async function CuentaHomePage() {
             Ver mis puntos
           </Link>
         </Button>
+        {activeCoupons.length > 0 && (
+          <Button asChild variant="outline" className="border-accent/40 text-accent hover:bg-accent/5">
+            <Link href="/catalogo">
+              <Tag className="mr-2 h-4 w-4" aria-hidden />
+              Usar cupón ({activeCoupons.length})
+            </Link>
+          </Button>
+        )}
         <Button asChild>
           <Link href={ROUTES.catalogo}>
             Seguir comprando
