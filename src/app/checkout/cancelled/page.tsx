@@ -1,10 +1,10 @@
 import Link from 'next/link'
-import { XCircle, ArrowRight, RefreshCw } from 'lucide-react'
+import { MessageCircle, ArrowRight, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { ROUTES } from '@/lib/constants'
+import { ROUTES, SITE } from '@/lib/constants'
 
-export const metadata = { title: 'Pago cancelado · Munay' }
+export const metadata = { title: 'Pedido pendiente · Munay' }
 
 export default function CheckoutCancelledPage() {
   return (
@@ -13,28 +13,32 @@ export default function CheckoutCancelledPage() {
         <Card className="border-munay-red-500/15 shadow-sm">
           <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
             <span className="flex h-16 w-16 items-center justify-center rounded-full bg-munay-red-500/10 text-munay-red-600">
-              <XCircle className="h-8 w-8" aria-hidden />
+              <MessageCircle className="h-8 w-8" aria-hidden />
             </span>
 
-            <h1 className="font-display text-3xl font-semibold text-munay-ink">Pago no completado</h1>
+            <h1 className="font-display text-3xl font-semibold text-munay-ink">Pedido no completado</h1>
 
             <p className="text-munay-ink/60">
-              El pago fue cancelado o no se pudo procesar. Tu carrito se mantiene intacto
-              para que puedas intentar nuevamente.
+              El pedido no se pudo completar. Tu carrito se mantiene intacto
+              para que puedas intentar nuevamente por WhatsApp.
             </p>
 
             <div className="mt-4 flex flex-col gap-2 w-full">
-              <Button asChild className="bg-munay-red-600 text-white hover:bg-munay-red-800">
+              <Button asChild className="bg-[#25D366] text-white hover:bg-[#1DA851]">
+                <a href={SITE.whatsappLink} target="_blank" rel="noopener noreferrer">
+                  <MessageCircle className="mr-2 h-4 w-4" aria-hidden />
+                  Contactar por WhatsApp
+                  <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
+                </a>
+              </Button>
+              <Button asChild variant="outline">
                 <Link href={ROUTES.checkout}>
                   <RefreshCw className="mr-2 h-4 w-4" aria-hidden />
                   Intentar nuevamente
                 </Link>
               </Button>
-              <Button asChild variant="outline">
-                <Link href={ROUTES.catalogo}>
-                  Volver al catálogo
-                  <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
-                </Link>
+              <Button asChild variant="ghost" size="sm">
+                <Link href={ROUTES.catalogo}>Volver al catálogo</Link>
               </Button>
             </div>
           </CardContent>
