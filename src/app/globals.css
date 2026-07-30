@@ -42,6 +42,12 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  /* MUNAY — paleta exacta del logo */
+  --color-munay-red-500: var(--munay-red-500);
+  --color-munay-red-600: var(--munay-red-600);
+  --color-munay-red-800: var(--munay-red-800);
+  --color-munay-cream: var(--munay-cream);
+  --color-munay-ink: var(--munay-ink);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -50,6 +56,13 @@
 
 :root {
   --radius: 0.5rem;
+
+  /* MUNAY — colores de marca (tomados del logo) */
+  --munay-red-500: #f0442d;
+  --munay-red-600: #d92a1e;
+  --munay-red-800: #a3120c;
+  --munay-cream: #f3d3a6;
+  --munay-ink: #2a1512;
 
   /* Light mode — Pergamino cálido sobre tinta obsidiana */
   --background: oklch(0.97 0.018 75);          /* crema/pergamino */
