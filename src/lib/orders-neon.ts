@@ -377,14 +377,12 @@ export async function markOrderPaid(
         console.warn('[markOrderPaid] award_points falló:', pointsWarning)
       }
 
-      // 9. Enviar email de confirmación (fire-and-forget, no bloquea)
-      //    Necesitamos datos completos de la orden para el email.
-      //    Los obtenemos fuera de la transacción para no mantener el lock.
-      return { ok: true, pointsAwarded, pointsWarning, orderData: { customerEmail: order.customer_email } }
+      return { ok: true, pointsAwarded, pointsWarning }
     })
 
     // Enviar email de confirmación después de la transacción (fire-and-forget)
-    if (result.ok) {
+    // Fix revisor: no enviar email duplicado si la orden ya estaba pagada
+    if (result.ok && !(result as any).alreadyPaid) {
       try {
         // Obtener datos completos de la orden para el email
         const orderData = await queryOne<any>(`
