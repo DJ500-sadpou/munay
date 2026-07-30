@@ -1,6 +1,10 @@
 /**
  * GET /api/cron/expire-orders
- * Cancela órdenes pendientes > 30 min y libera inventario.
+ * Cancela órdenes pendientes y libera inventario.
+ *
+ * - Órdenes normales (sin ticket): expiran después de 60 min
+ * - Órdenes con ticket (WhatsApp): expiran después de 72h
+ *
  * Protegido por CRON_SECRET.
  */
 
@@ -40,17 +44,19 @@ export async function GET(req: NextRequest) {
     )
   }
 
-  // Llamar a la RPC que expira órdenes (ahora también devuelve puntos redimidos — fix FLOW3-001).
+  // Usar la nueva RPC v2 que excluye órdenes con ticket (WhatsApp) hasta 72h
   const result = await queryOne<any>(`
-    SELECT * FROM expire_stale_pending_orders(30)
+    SELECT * FROM expire_stale_orders_v2(60, 72)
   `, [])
 
-  console.log(`[cron] expired ${result?.expired_count ?? 0} orders`)
+  const expiredCount = result?.expired_count ?? 0
+  console.log(`[cron] expired ${expiredCount} orders (standard < 60min, whatsapp < 72h)`)
 
   return NextResponse.json({
     ok: true,
-    expired_count: result?.expired_count ?? 0,
-    cutoff: result?.cutoff,
+    expired_count: expiredCount,
+    cutoff_standard: result?.cutoff_standard,
+    cutoff_whatsapp: result?.cutoff_whatsapp,
     timestamp: new Date().toISOString(),
   })
 }
