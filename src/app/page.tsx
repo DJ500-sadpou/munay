@@ -30,6 +30,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { SITE, ROUTES } from '@/lib/constants'
+import { PendingCouponBanner } from '@/components/cart/pending-coupon-banner'
 
 const VALUES = [
   {
@@ -57,6 +58,9 @@ const VALUES = [
 export default function Home() {
   return (
     <div className="relative">
+      {/* Cupones pendientes — reaparecen si no se aceptaron */}
+      <PendingCouponBanner />
+
       {/* MAINTENANCE BANNER */}
       <div className="bg-primary/10 border-b border-primary/20">
         <div className="container mx-auto px-4 py-3 flex items-center justify-center gap-2 text-sm text-primary">

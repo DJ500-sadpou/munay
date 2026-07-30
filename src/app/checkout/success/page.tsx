@@ -1,13 +1,13 @@
 import Link from 'next/link'
-import { CheckCircle2, ArrowRight, Sparkles, Gift, Mail, Package, Zap } from 'lucide-react'
+import { CheckCircle2, ArrowRight, Sparkles, Mail, Package } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { queryOne, query, isDbConfigured } from '@/lib/db/neon'
 import { formatCents } from '@/lib/format'
 import { ROUTES } from '@/lib/constants'
+import { CouponAcknowledge } from '@/components/cart/coupon-acknowledge'
 
 export const metadata = { title: 'Pago exitoso · Munay' }
 export const dynamic = 'force-dynamic'
@@ -125,43 +125,13 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
               </Badge>
             )}
 
-            {/* Cupón de fidelidad — solo en web, no en email */}
+            {/* Cupón de fidelidad — componente cliente con botón Aceptar + persistencia localStorage */}
             {loyaltyCoupon && (
-              <div className="w-full rounded-xl border-2 border-accent/40 bg-gradient-to-br from-accent/10 to-accent/5 p-5 text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent/20">
-                  <Gift className="h-6 w-6 text-accent" aria-hidden />
-                </div>
-                <h2 className="mt-3 font-display text-xl font-bold text-accent">
-                  🎉 ¡Has descubierto un cupón!
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Gracias por tu compra. Aquí tienes un descuento especial para tu próxima visita.
-                </p>
-                <Separator className="my-4 bg-accent/20" />
-                <div className="space-y-2">
-                  <p className="text-3xl font-bold text-accent">
-                    {loyaltyCoupon.discount_percent}% de descuento
-                  </p>
-                  <div className="inline-block rounded-lg bg-background px-5 py-2 font-mono text-lg font-bold tracking-[0.25em]">
-                    {loyaltyCoupon.code}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Válido hasta{' '}
-                    {new Date(loyaltyCoupon.expires_at).toLocaleDateString('es-EC', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                    })}
-                    {' · '}1 uso · Aplica en tu próxima compra
-                  </p>
-                </div>
-                <Button asChild className="mt-4 w-full" variant="default">
-                  <Link href={ROUTES.catalogo}>
-                    <Zap className="mr-2 h-4 w-4" aria-hidden />
-                    Usar cupón ahora
-                  </Link>
-                </Button>
-              </div>
+              <CouponAcknowledge
+                code={loyaltyCoupon.code}
+                discountPercent={loyaltyCoupon.discount_percent}
+                expiresAt={loyaltyCoupon.expires_at}
+              />
             )}
 
             <div className="flex flex-col gap-2 w-full">
