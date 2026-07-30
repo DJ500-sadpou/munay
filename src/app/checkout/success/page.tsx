@@ -1,8 +1,9 @@
 import Link from 'next/link'
-import { CheckCircle2, ArrowRight, Sparkles, Mail, Package } from 'lucide-react'
+import { CheckCircle2, ArrowRight, Sparkles, Gift, Mail, Package, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { queryOne, query, isDbConfigured } from '@/lib/db/neon'
 import { formatCents } from '@/lib/format'
@@ -29,9 +30,9 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
     status: string
   } | null = null
   let pointsAwarded = 0
+  let loyaltyCoupon: { code: string; discount_percent: number; expires_at: string } | null = null
 
   if (orderId && isDbConfigured()) {
-    // Verificar sesión Clerk (opcional — guests no logueados pueden ver su orden con solo el ID).
     const { userId } = await auth()
     let userEmail: string | null = null
     if (userId) {
@@ -39,9 +40,6 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
       userEmail = user?.emailAddresses?.[0]?.emailAddress ?? null
     }
 
-    // Query con filtro de propietario si hay sesión, sin filtro si es guest.
-    // (Si el orderId es un UUID v4, adivinarlo es complejo. Para mayor seguridad,
-    // se podría firmar el orderId con un secret al crear la orden — ver Fase 2 post-launch.)
     if (userId && userEmail) {
       order = await queryOne<any>(`
         SELECT id, customer_email, total_cents, points_redeemed, status
@@ -49,7 +47,6 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
         WHERE id = $1 AND (user_id = $2 OR customer_email = $3)
       `, [orderId, userId, userEmail])
     } else {
-      // Guest: buscar por id (UUID es secreto suficiente para confirmación de compra propia).
       order = await queryOne<any>(`
         SELECT id, customer_email, total_cents, points_redeemed, status
         FROM orders WHERE id = $1
@@ -64,6 +61,25 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
         LIMIT 1
       `, [orderId])
       if (pts) pointsAwarded = Number(pts.points)
+
+      // Buscar cupón de fidelidad generado post-compra (solo se muestra en web)
+      try {
+        const cp = await queryOne<any>(`
+          SELECT code, discount_percent, expires_at
+          FROM loyalty_coupons
+          WHERE order_id = $1 AND used_at IS NULL
+          LIMIT 1
+        `, [orderId])
+        if (cp) {
+          loyaltyCoupon = {
+            code: cp.code,
+            discount_percent: Number(cp.discount_percent),
+            expires_at: cp.expires_at,
+          }
+        }
+      } catch {
+        // Cupón es bonus — si falla la query, la página sigue funcionando
+      }
     }
   }
 
@@ -109,7 +125,46 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
               </Badge>
             )}
 
-            <div className="mt-4 flex flex-col gap-2 w-full">
+            {/* Cupón de fidelidad — solo en web, no en email */}
+            {loyaltyCoupon && (
+              <div className="w-full rounded-xl border-2 border-accent/40 bg-gradient-to-br from-accent/10 to-accent/5 p-5 text-center">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent/20">
+                  <Gift className="h-6 w-6 text-accent" aria-hidden />
+                </div>
+                <h2 className="mt-3 font-display text-xl font-bold text-accent">
+                  🎉 ¡Has descubierto un cupón!
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Gracias por tu compra. Aquí tienes un descuento especial para tu próxima visita.
+                </p>
+                <Separator className="my-4 bg-accent/20" />
+                <div className="space-y-2">
+                  <p className="text-3xl font-bold text-accent">
+                    {loyaltyCoupon.discount_percent}% de descuento
+                  </p>
+                  <div className="inline-block rounded-lg bg-background px-5 py-2 font-mono text-lg font-bold tracking-[0.25em]">
+                    {loyaltyCoupon.code}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Válido hasta{' '}
+                    {new Date(loyaltyCoupon.expires_at).toLocaleDateString('es-EC', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                    {' · '}1 uso · Aplica en tu próxima compra
+                  </p>
+                </div>
+                <Button asChild className="mt-4 w-full" variant="default">
+                  <Link href={ROUTES.catalogo}>
+                    <Zap className="mr-2 h-4 w-4" aria-hidden />
+                    Usar cupón ahora
+                  </Link>
+                </Button>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-2 w-full">
               <Button asChild>
                 <Link href={ROUTES.catalogo}>
                   Seguir explorando

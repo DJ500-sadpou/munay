@@ -426,14 +426,11 @@ export async function markOrderPaid(
 
         if (orderData) {
           // Generar cupón de fidelidad post-compra (fire-and-forget)
-          let loyaltyCode: string | undefined
-          let loyaltyDiscount = 25
+          // Solo se muestra en la web (página de éxito), no en el email
           if (orderData.user_id && result.ok && !(result as any).alreadyPaid) {
-            const coupon = await generateLoyaltyCoupon(orderData.user_id, orderId)
-            if (coupon) {
-              loyaltyCode = coupon.code
-              loyaltyDiscount = coupon.discount_percent
-            }
+            generateLoyaltyCoupon(orderData.user_id, orderId).catch((err) => {
+              console.warn('[markOrderPaid] Error generando cupón fidelidad (no bloqueante):', err?.message)
+            })
           }
 
           sendOrderConfirmationEmail({
@@ -457,11 +454,6 @@ export async function markOrderPaid(
               province: orderData.shipping_province,
               phone: orderData.shipping_phone,
             },
-            // Nuevo: cupón de fidelidad
-            loyalty_coupon: loyaltyCode ? {
-              code: loyaltyCode,
-              discount_percent: loyaltyDiscount,
-            } : undefined,
           }).catch((err) => {
             console.warn('[markOrderPaid] Email confirmación falló (no bloqueante):', err?.message)
           })

@@ -36,11 +36,6 @@ export interface OrderConfirmationEmailData {
     province?: string
     phone?: string
   }
-  // Cupón de fidelidad post-compra
-  loyalty_coupon?: {
-    code: string
-    discount_percent: number
-  }
 }
 
 export interface RefundEmailData {
@@ -140,15 +135,6 @@ export async function sendOrderConfirmationEmail(data: OrderConfirmationEmailDat
       </table>
 
       ${data.points_earned > 0 ? `<p style="background:#fdf6e8;padding:12px;border-radius:8px;margin-top:16px;color:#7a3a1f;">✨ Ganaste <strong>${data.points_earned} puntos</strong> con esta compra.</p>` : ''}
-
-      ${data.loyalty_coupon ? `
-      <div style="background:linear-gradient(135deg,#f0e6d3,#e8dcc8);border:1px solid #7a3a1f;border-radius:12px;padding:20px;margin-top:20px;text-align:center;">
-        <p style="font-size:14px;color:#7a3a1f;margin:0;">🎁 ¡Gracias por tu compra!</p>
-        <p style="font-size:24px;font-weight:bold;color:#2a1f15;margin:8px 0;">${data.loyalty_coupon.discount_percent}% de descuento</p>
-        <p style="font-size:13px;color:#5a4a3a;margin:4px 0;">en tu próxima compra</p>
-        <div style="background:#fff;border-radius:8px;padding:12px;margin:12px 0;font-family:monospace;font-size:18px;letter-spacing:3px;color:#2a1f15;">${data.loyalty_coupon.code}</div>
-        <p style="font-size:11px;color:#9a8a7a;margin:4px 0;">Válido por 7 días · 1 uso · Descuento configurable por el admin</p>
-      </div>` : ''}
 
       ${data.shipping.address ? `
       <h3 style="font-size:15px;color:#2a1f15;margin-top:24px;">Envío</h3>
