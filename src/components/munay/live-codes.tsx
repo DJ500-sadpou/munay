@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { ArrowRight, Check, Copy } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -21,7 +22,18 @@ export function MunayLiveCodes() {
   }
 
   return (
-    <div className="flex h-full flex-col rounded-2xl border border-black/5 bg-white p-6 shadow-sm sm:p-7">
+    <div className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-black/5 bg-white p-6 shadow-sm sm:p-7">
+      {/* Imagen decorativa — mujer con estilo urbano */}
+      <div className="pointer-events-none absolute bottom-0 right-0 top-0 w-[28%] opacity-[0.07]">
+        <Image
+          src="/munay/ref-live-woman.webp"
+          alt=""
+          fill
+          sizes="140px"
+          className="object-cover object-top"
+          aria-hidden
+        />
+      </div>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 text-lg font-extrabold uppercase tracking-wide text-munay-ink">
           Códigos en vivo

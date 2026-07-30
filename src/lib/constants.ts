@@ -13,7 +13,10 @@ export const SITE = {
   currency: 'USD' as const,
   // Para emails transaccionales y contacto
   email: 'contacto@munay.ec',
-  whatsapp: '+593 99 000 0000',
+  whatsapp: '+593959756845',
+  whatsappLink: 'https://wa.me/+593959756845',
+  instagram: 'https://www.instagram.com/munay._ec/',
+  tiktok: 'https://www.tiktok.com/@munay._ec?_r=1&_t=ZS-98SJYASLVZw',
   city: 'Ibarra, Imbabura, Ecuador',
 } as const
 
