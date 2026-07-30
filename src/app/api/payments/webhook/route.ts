@@ -19,6 +19,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createHmac, timingSafeEqual } from 'crypto'
 import { query, queryOne, isDbConfigured } from '@/lib/db/neon'
 import { markOrderPaid, markOrderCancelled } from '@/lib/orders-neon'
+import { sendRefundEmail } from '@/lib/email/brevo'
 import {
   verifyKushkiWebhookSignature,
   parseKushkiWebhook,
@@ -158,6 +159,29 @@ export async function POST(req: NextRequest) {
         )
       }
       console.log(`[webhook] Orden ${oid} marcada como REFUNDED`)
+
+      // Enviar email de reembolso (fire-and-forget)
+      try {
+        const orderData = await queryOne<any>(`
+          SELECT customer_email, customer_name, total_cents, points_redeemed
+          FROM orders WHERE id = $1
+        `, [oid])
+        if (orderData) {
+          sendRefundEmail({
+            orderId: oid,
+            customerEmail: orderData.customer_email,
+            customerName: orderData.customer_name,
+            total_cents: Number(orderData.total_cents),
+            points_reverted: Math.floor(Number(orderData.total_cents) / 100),
+            points_returned: Number(orderData.points_redeemed),
+            reason: 'Reembolso procesado por la pasarela de pago',
+          }).catch((err) => {
+            console.warn('[webhook] Email reembolso falló (no bloqueante):', err?.message)
+          })
+        }
+      } catch (emailErr: any) {
+        console.warn('[webhook] Error obteniendo datos para email:', emailErr?.message)
+      }
     } else if (status === 'authorized') {
       console.log(`[webhook] Orden ${order_id} autorizada, esperando captura`)
     }

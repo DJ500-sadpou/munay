@@ -17,6 +17,7 @@
 import { transaction, query, queryOne, isDbConfigured } from '@/lib/db/neon'
 import { POINTS_RULES, LIMITS } from '@/lib/constants'
 import { randomUUID } from 'crypto'
+import { sendOrderConfirmationEmail, sendRefundEmail } from '@/lib/email/brevo'
 
 export interface CreateOrderItemInput {
   product_id: string
@@ -376,8 +377,63 @@ export async function markOrderPaid(
         console.warn('[markOrderPaid] award_points falló:', pointsWarning)
       }
 
-      return { ok: true, pointsAwarded, pointsWarning }
+      // 9. Enviar email de confirmación (fire-and-forget, no bloquea)
+      //    Necesitamos datos completos de la orden para el email.
+      //    Los obtenemos fuera de la transacción para no mantener el lock.
+      return { ok: true, pointsAwarded, pointsWarning, orderData: { customerEmail: order.customer_email } }
     })
+
+    // Enviar email de confirmación después de la transacción (fire-and-forget)
+    if (result.ok) {
+      try {
+        // Obtener datos completos de la orden para el email
+        const orderData = await queryOne<any>(`
+          SELECT o.customer_email, o.customer_name, o.subtotal_cents, o.discount_cents,
+                 o.points_redeemed, o.total_cents, o.shipping_cents,
+                 o.shipping_name, o.shipping_address, o.shipping_city,
+                 o.shipping_province, o.shipping_phone
+          FROM orders o WHERE o.id = $1
+        `, [orderId])
+
+        const items = await query<any>(
+          `SELECT p.title, oi.qty, oi.unit_price_cents
+           FROM order_items oi
+           JOIN products p ON p.id = oi.product_id
+           WHERE oi.order_id = $1`,
+          [orderId]
+        )
+
+        if (orderData) {
+          sendOrderConfirmationEmail({
+            orderId,
+            customerEmail: orderData.customer_email,
+            customerName: orderData.customer_name,
+            items: items.map((i: any) => ({
+              title: i.title,
+              qty: i.qty,
+              unit_price_cents: i.unit_price_cents,
+            })),
+            subtotal_cents: Number(orderData.subtotal_cents),
+            discount_cents: Number(orderData.discount_cents),
+            points_redeemed: Number(orderData.points_redeemed),
+            total_cents: Number(orderData.total_cents),
+            points_earned: Math.floor(Number(orderData.total_cents) / 100),
+            shipping: {
+              name: orderData.shipping_name,
+              address: orderData.shipping_address,
+              city: orderData.shipping_city,
+              province: orderData.shipping_province,
+              phone: orderData.shipping_phone,
+            },
+          }).catch((err) => {
+            console.warn('[markOrderPaid] Email confirmación falló (no bloqueante):', err?.message)
+          })
+        }
+      } catch (emailErr: any) {
+        console.warn('[markOrderPaid] Error obteniendo datos para email:', emailErr?.message)
+      }
+    }
+
     return result
   } catch (err: any) {
     if (err?.type === 'not_found') return { ok: false, error: 'Orden no encontrada' }
