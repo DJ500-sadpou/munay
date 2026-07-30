@@ -71,7 +71,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
   // ----- Mystery Box: versión bloqueada -----
   if (isMysteryBox) {
     return (
-      <Card className="group flex flex-col overflow-hidden border-dashed border-accent/40 bg-accent/5 transition-all hover:shadow-md">
+      <Card className="group flex flex-col overflow-hidden border-dashed border-accent/40 bg-accent/5 transition-all hover:shadow-md gap-0 py-0">
         {/* Imagen bloqueada */}
         <div className="relative block aspect-square overflow-hidden bg-accent/10">
           <div className="flex h-full w-full items-center justify-center text-accent">
@@ -110,7 +110,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
 
   // ----- Producto normal -----
   return (
-    <Card className="group flex flex-col overflow-hidden border-black/5 bg-white transition-all hover:shadow-md hover:border-black/10">
+    <Card className="group flex flex-col overflow-hidden border-black/5 bg-white transition-all hover:shadow-md hover:border-black/10 gap-0 py-0">
       {/* Imagen */}
       <Link
         href={ROUTES.producto(product.slug)}
@@ -160,7 +160,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
       </Link>
 
       {/* Contenido */}
-      <CardContent className="flex-1 px-3 pt-2.5">
+      <CardContent className="px-3 pt-1">
         <Link
           href={ROUTES.producto(product.slug)}
           className="line-clamp-2 text-sm font-medium leading-snug text-munay-ink transition-colors hover:text-munay-red-600"
@@ -172,7 +172,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         )}
       </CardContent>
 
-      <CardFooter className="flex flex-col items-stretch gap-1.5 px-3 pb-3">
+      <CardFooter className="mt-auto flex flex-col items-stretch gap-1.5 px-3 pb-1">
         <div className="flex items-baseline gap-1.5">
           {hasFlashDiscount && (
             <span className="text-xs text-munay-ink/40 line-through">
