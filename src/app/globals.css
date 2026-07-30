@@ -49,7 +49,12 @@
   --color-munay-red-800: var(--munay-red-800);
   --color-munay-cream: var(--munay-cream);
   --color-munay-ink: var(--munay-ink);
-  /* MUNAY — nueva paleta de marca (v2) */
+  /* MUNAY — nueva paleta de marca (v2)
+     NOTA: Conviven tres fondos crema:
+       - --background (oklch) → token semántico del theme (usar bg-background)
+       - --munay-cream (#f3d3a6) → @deprecated, mantener bg-munay-cream/* solo legacy
+       - --munay-crema (#F6F1E8) → nuevo token general (usar bg-munay-crema/* para nuevos componentes)
+     Para migrar: bg-munay-cream/* → bg-munay-crema/* cuando sea posible. */
   --color-munay-terracota: var(--munay-terracota);
   --color-munay-terracota-quemado: var(--munay-terracota-quemado);
   --color-munay-cacao: var(--munay-cacao);

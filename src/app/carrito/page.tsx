@@ -54,7 +54,7 @@ export default function CarritoPage() {
   const grandTotal = totalCents + shipping
 
   return (
-    <div className="bg-gradient-to-b from-white via-munay-cream/10 to-white">
+    <div className="bg-gradient-to-b from-white via-munay-crema/10 to-white">
       <div className="mx-auto max-w-7xl px-4 py-10 lg:px-6">
         <div className="flex items-center justify-between">
           <div>
@@ -76,7 +76,7 @@ export default function CarritoPage() {
                 <CardContent className="flex items-center gap-4 p-4">
                   <Link
                     href={ROUTES.producto(line.slug)}
-                    className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md bg-munay-cream/30"
+                    className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md bg-munay-crema/30"
                     aria-label={line.title}
                   >
                     <ShoppingBag className="h-5 w-5 text-munay-ink/40" aria-hidden />

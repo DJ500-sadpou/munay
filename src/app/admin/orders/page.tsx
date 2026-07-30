@@ -78,7 +78,7 @@ export default async function AdminOrdersPage() {
       ) : (
         <div className="overflow-x-auto rounded-lg border border-black/5 shadow-sm">
           <table className="w-full text-sm">
-            <thead className="bg-munay-cream/30 text-xs uppercase tracking-wider text-munay-ink/50">
+            <thead className="bg-munay-crema/30 text-xs uppercase tracking-wider text-munay-ink/50">
               <tr>
                 <th className="px-4 py-3 text-left font-medium">Orden</th>
                 <th className="px-4 py-3 text-left font-medium">Cliente</th>
@@ -91,7 +91,7 @@ export default async function AdminOrdersPage() {
             </thead>
             <tbody className="divide-y divide-black/5">
               {orders.map((o) => (
-                <tr key={o.id} className="hover:bg-munay-cream/20 transition-colors">
+                <tr key={o.id} className="hover:bg-munay-crema/20 transition-colors">
                   <td className="px-4 py-3 font-mono text-xs">{o.id.slice(0, 8)}…</td>
                   <td className="px-4 py-3">{o.customer_email}</td>
                   <td className="px-4 py-3 text-center">{o.items_count}</td>

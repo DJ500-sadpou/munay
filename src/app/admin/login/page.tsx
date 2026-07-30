@@ -26,11 +26,11 @@ export default function AdminLoginPage() {
           }}
         />
 
-        <div className="mt-6 rounded-lg border border-dashed border-black/10 bg-munay-cream/20 p-3 text-xs text-munay-ink/60">
+        <div className="mt-6 rounded-lg border border-dashed border-black/10 bg-munay-crema/20 p-3 text-xs text-munay-ink/60">
           <p className="font-medium text-munay-ink">Configuración inicial de admin:</p>
           <ol className="mt-2 space-y-1 list-decimal list-inside">
             <li>Crea tu usuario en Clerk (vía /cuenta/login).</li>
-            <li>Obtén tu <code className="rounded bg-munay-cream/30 px-1">user_id</code> (formato user_xxx) del dashboard Clerk.</li>
+            <li>Obtén tu <code className="rounded bg-munay-crema/30 px-1">user_id</code> (formato user_xxx) del dashboard Clerk.</li>
             <li>
               En Neon SQL Editor:
               <pre className="mt-1 rounded bg-white p-2 text-[10px] overflow-x-auto border border-black/5">

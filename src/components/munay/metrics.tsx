@@ -2,7 +2,7 @@ import { METRICS } from '@/lib/munay-data'
 
 export function MunayMetrics() {
   return (
-    <dl className="grid h-full grid-cols-2 gap-6 rounded-2xl border border-black/5 bg-munay-cream/20 p-6 shadow-sm sm:p-7">
+    <dl className="grid h-full grid-cols-2 gap-6 rounded-2xl border border-black/5 bg-munay-crema/20 p-6 shadow-sm sm:p-7">
       {METRICS.map((m) => (
         <div key={m.label}>
           <dt className="sr-only">{m.label}</dt>

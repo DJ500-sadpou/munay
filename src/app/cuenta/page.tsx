@@ -64,7 +64,7 @@ export default async function CuentaHomePage() {
   }
 
   return (
-    <div className="bg-gradient-to-b from-white via-munay-cream/10 to-white">
+    <div className="bg-gradient-to-b from-white via-munay-crema/10 to-white">
       <div className="mx-auto max-w-7xl px-4 py-10 lg:px-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>

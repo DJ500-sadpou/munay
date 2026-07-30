@@ -31,7 +31,7 @@ export function ProductGallery({
   // Si no hay imágenes, mostrar placeholder
   if (!images || images.length === 0) {
     return (
-      <div className="relative aspect-square overflow-hidden rounded-xl border border-black/5 bg-munay-cream/20 shadow-sm flex items-center justify-center">
+      <div className="relative aspect-square overflow-hidden rounded-xl border border-black/5 bg-munay-crema/20 shadow-sm flex items-center justify-center">
         <div className="flex flex-col items-center gap-2 text-munay-ink/30">
           <ImageOff className="h-16 w-16" aria-hidden />
           <span className="text-sm">Sin imagen disponible</span>
@@ -61,7 +61,7 @@ export function ProductGallery({
       <div className="relative aspect-square overflow-hidden rounded-xl border border-black/5 bg-white shadow-sm group">
         {/* Loading skeleton */}
         {!loaded[currentIndex] && (
-          <div className="absolute inset-0 flex items-center justify-center bg-munay-cream/10 animate-pulse">
+          <div className="absolute inset-0 flex items-center justify-center bg-munay-crema/10 animate-pulse">
             <Sparkles className="h-12 w-12 text-munay-ink/10" aria-hidden />
           </div>
         )}

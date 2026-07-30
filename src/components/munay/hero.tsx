@@ -66,7 +66,7 @@ export function MunayHero() {
             <div className="flex -space-x-2">
               {AVATARS.map((a) => (
                 <Avatar key={a} className="h-8 w-8 border-2 border-white">
-                  <AvatarFallback className="bg-munay-cream text-[10px] font-bold text-munay-cacao">
+                  <AvatarFallback className="bg-munay-crema text-[10px] font-bold text-munay-cacao">
                     {a}
                   </AvatarFallback>
                 </Avatar>

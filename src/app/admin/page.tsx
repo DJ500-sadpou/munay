@@ -199,7 +199,7 @@ export default async function AdminHomePage() {
         ) : (
           <div className="overflow-x-auto rounded-lg border border-black/5 shadow-sm">
             <table className="w-full text-sm">
-              <thead className="bg-munay-cream/30 text-xs uppercase tracking-wider text-munay-ink/50">
+              <thead className="bg-munay-crema/30 text-xs uppercase tracking-wider text-munay-ink/50">
                 <tr>
                   <th className="px-4 py-3 text-left font-medium">Título</th>
                   <th className="px-4 py-3 text-left font-medium">Slug</th>
@@ -212,7 +212,7 @@ export default async function AdminHomePage() {
               </thead>
               <tbody className="divide-y divide-black/5">
                 {products.map((p) => (
-                  <tr key={p.id} className="hover:bg-munay-cream/20 transition-colors">
+                  <tr key={p.id} className="hover:bg-munay-crema/20 transition-colors">
                     <td className="px-4 py-3 font-medium">{p.title}</td>
                     <td className="px-4 py-3 font-mono text-xs text-munay-ink/50">{p.slug}</td>
                     <td className="px-4 py-3 text-right">{formatCents(p.price_cents)}</td>

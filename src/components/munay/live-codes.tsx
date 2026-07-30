@@ -45,7 +45,7 @@ export function MunayLiveCodes() {
         {LIVE_CODES.map((c) => (
           <li
             key={c.code}
-            className="flex flex-col rounded-xl border border-black/5 bg-munay-cream/15 p-4 text-center"
+            className="flex flex-col rounded-xl border border-black/5 bg-munay-crema/15 p-4 text-center"
           >
             <p className="font-mono text-sm font-bold tracking-tight text-munay-terracota">
               {c.code}

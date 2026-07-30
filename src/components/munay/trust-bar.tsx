@@ -26,7 +26,7 @@ const ITEMS = [
 
 export function MunayTrustBar() {
   return (
-    <section className="relative rounded-2xl border border-black/5 bg-munay-cream/20 px-6 py-8 shadow-sm sm:px-8">
+    <section className="relative rounded-2xl border border-black/5 bg-munay-crema/20 px-6 py-8 shadow-sm sm:px-8">
       <div className="grid gap-8 lg:grid-cols-[minmax(0,200px)_1fr] xl:pr-28">
         <h2 className="max-w-[220px] font-display text-2xl font-bold tracking-tight text-munay-ink text-balance">
           Confianza que se siente

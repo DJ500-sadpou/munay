@@ -52,7 +52,7 @@ export function MunayHeader() {
             <Link
               key={l.label}
               href={l.href}
-              className="flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-munay-ink/80 transition-colors hover:bg-munay-cream/30 hover:text-munay-terracota focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-munay-terracota"
+              className="flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-munay-ink/80 transition-colors hover:bg-munay-crema/30 hover:text-munay-terracota focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-munay-terracota"
             >
               {l.label}
               {l.live && (
@@ -78,7 +78,7 @@ export function MunayHeader() {
               name="q"
               type="search"
               placeholder="Buscar prendas, marcas, looks…"
-              className="h-10 w-72 rounded-full border-black/10 bg-munay-cream/15 pl-4 pr-10 text-sm placeholder:text-munay-ink/40 focus-visible:ring-munay-terracota/40"
+              className="h-10 w-72 rounded-full border-black/10 bg-munay-crema/15 pl-4 pr-10 text-sm placeholder:text-munay-ink/40 focus-visible:ring-munay-terracota/40"
             />
             <button
               type="submit"
@@ -145,21 +145,21 @@ export function MunayHeader() {
                   <Link
                     key={`m-${l.label}`}
                     href={l.href}
-                    className="rounded-lg px-2 py-2.5 text-sm font-medium text-munay-ink hover:bg-munay-cream/30"
+                    className="rounded-lg px-2 py-2.5 text-sm font-medium text-munay-ink hover:bg-munay-crema/30"
                   >
                     {l.label}
                   </Link>
                 ))}
                 <Link
                   href={ROUTES.carrito}
-                  className="rounded-lg px-2 py-2.5 text-sm font-medium text-munay-ink hover:bg-munay-cream/30"
+                  className="rounded-lg px-2 py-2.5 text-sm font-medium text-munay-ink hover:bg-munay-crema/30"
                 >
                   Carrito
                   {mounted && totalItems > 0 ? ` (${totalItems})` : ''}
                 </Link>
                 <Link
                   href={ROUTES.miCuenta}
-                  className="rounded-lg px-2 py-2.5 text-sm font-medium text-munay-ink hover:bg-munay-cream/30"
+                  className="rounded-lg px-2 py-2.5 text-sm font-medium text-munay-ink hover:bg-munay-crema/30"
                 >
                   Mi cuenta
                 </Link>

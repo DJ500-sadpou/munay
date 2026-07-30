@@ -72,7 +72,7 @@ export default async function MyPointsPage() {
   }
 
   return (
-    <div className="bg-gradient-to-b from-white via-munay-cream/10 to-white">
+    <div className="bg-gradient-to-b from-white via-munay-crema/10 to-white">
       <div className="mx-auto max-w-3xl px-4 py-10 lg:px-6">
         <Button asChild variant="ghost" size="sm" className="mb-4 -ml-2">
           <Link href="/cuenta">
@@ -163,7 +163,7 @@ export default async function MyPointsPage() {
                   <Card key={t.id} className="border-black/5 shadow-sm">
                     <CardContent className="flex items-center justify-between p-4">
                       <div className="flex items-center gap-3">
-                        <span className={`flex h-9 w-9 items-center justify-center rounded-full bg-munay-cream/30 ${meta.color}`}>
+                        <span className={`flex h-9 w-9 items-center justify-center rounded-full bg-munay-crema/30 ${meta.color}`}>
                           <meta.icon className="h-4 w-4" aria-hidden />
                         </span>
                         <div>

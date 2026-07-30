@@ -279,7 +279,7 @@ export function ImageUpload({
             type="button"
             onClick={openWidget}
             disabled={!loaded || loading}
-            className="aspect-square rounded-lg border-2 border-dashed border-black/10 hover:border-munay-terracota/50 transition-colors flex flex-col items-center justify-center gap-1 text-munay-ink/40 hover:text-munay-terracota/60 disabled:opacity-50 bg-munay-cream/10"
+            className="aspect-square rounded-lg border-2 border-dashed border-black/10 hover:border-munay-terracota/50 transition-colors flex flex-col items-center justify-center gap-1 text-munay-ink/40 hover:text-munay-terracota/60 disabled:opacity-50 bg-munay-crema/10"
             aria-label="Agregar imagen"
           >
             {loading ? (
@@ -306,7 +306,7 @@ export function ImageUpload({
 
       {/* Empty state */}
       {images.length === 0 && !error && (
-        <div className="flex items-center gap-2 px-3 py-2 text-sm text-munay-ink/40 bg-munay-cream/10 rounded-md">
+        <div className="flex items-center gap-2 px-3 py-2 text-sm text-munay-ink/40 bg-munay-crema/10 rounded-md">
           <ImageOff className="h-4 w-4 shrink-0" />
           <span>Sin imágenes. Haz clic en el recuadro punteado para subir.</span>
         </div>

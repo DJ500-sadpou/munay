@@ -95,7 +95,7 @@ export default async function AdminFlashCodesPage() {
       ) : (
         <div className="overflow-x-auto rounded-lg border border-black/5 shadow-sm">
           <table className="w-full text-sm">
-            <thead className="bg-munay-cream/30 text-xs uppercase tracking-wider text-munay-ink/50">
+            <thead className="bg-munay-crema/30 text-xs uppercase tracking-wider text-munay-ink/50">
               <tr>
                 <th className="px-4 py-3 text-left font-medium">Código</th>
                 <th className="px-4 py-3 text-center font-medium">Tipo</th>
@@ -110,7 +110,7 @@ export default async function AdminFlashCodesPage() {
               {flashCodes.map((fc) => {
                 const live = isLive(fc)
                 return (
-                  <tr key={fc.code} className="hover:bg-munay-cream/20 transition-colors">
+                  <tr key={fc.code} className="hover:bg-munay-crema/20 transition-colors">
                     <td className="px-4 py-3 font-mono font-bold">{fc.code}</td>
                     <td className="px-4 py-3 text-center">
                       {fc.type === 'discount' ? (
@@ -168,12 +168,12 @@ export default async function AdminFlashCodesPage() {
         </div>
       )}
 
-      <div className="mt-6 rounded-lg border border-dashed border-black/10 bg-munay-cream/20 p-4 text-sm text-munay-ink/60">
+      <div className="mt-6 rounded-lg border border-dashed border-black/10 bg-munay-crema/20 p-4 text-sm text-munay-ink/60">
         <p className="flex items-center gap-2">
           <Package className="h-4 w-4" aria-hidden />
           <span>
             Para asociar productos a un código de desbloqueo, contacta al admin de base de datos
-            o usa el SQL Editor para insertar en <code className="rounded bg-munay-cream/30 px-1">flash_code_products</code>.
+            o usa el SQL Editor para insertar en <code className="rounded bg-munay-crema/30 px-1">flash_code_products</code>.
           </span>
         </p>
       </div>

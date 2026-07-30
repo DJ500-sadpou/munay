@@ -10,7 +10,7 @@ export function MunayNewsletter() {
   const [done, setDone] = useState(false)
 
   return (
-    <section className="flex flex-col items-start justify-between gap-5 rounded-2xl border border-black/5 bg-munay-cream/20 px-6 py-7 shadow-sm sm:px-8 lg:flex-row lg:items-center">
+    <section className="flex flex-col items-start justify-between gap-5 rounded-2xl border border-black/5 bg-munay-crema/20 px-6 py-7 shadow-sm sm:px-8 lg:flex-row lg:items-center">
       <div className="flex items-start gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-munay-terracota/25 bg-white">
           <Mail className="h-4 w-4 text-munay-terracota" aria-hidden />

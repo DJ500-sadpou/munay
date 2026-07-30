@@ -30,7 +30,7 @@ export function MunayTestimonials() {
         {TESTIMONIALS.map((t) => (
           <li
             key={t.name}
-            className="rounded-xl border border-black/5 bg-munay-cream/15 p-4"
+            className="rounded-xl border border-black/5 bg-munay-crema/15 p-4"
           >
             <div className="flex items-center gap-2">
               <Avatar className="h-8 w-8">

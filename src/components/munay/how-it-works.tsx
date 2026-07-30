@@ -11,7 +11,7 @@ export function MunayHowItWorks() {
   return (
     <section
       id="como-funciona"
-      className="rounded-2xl border border-black/5 bg-munay-cream/15 px-6 py-8 shadow-sm sm:px-8"
+      className="rounded-2xl border border-black/5 bg-munay-crema/15 px-6 py-8 shadow-sm sm:px-8"
     >
       <h2 className="text-center font-display text-2xl font-bold tracking-tight text-munay-ink">
         ¿Cómo funciona Munay?

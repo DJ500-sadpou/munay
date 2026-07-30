@@ -107,7 +107,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
       {/* Imagen */}
       <Link
         href={ROUTES.producto(product.slug)}
-        className="relative block aspect-square overflow-hidden bg-munay-cream/20"
+        className="relative block aspect-square overflow-hidden bg-munay-crema/20"
         aria-label={`Ver ${product.title}`}
       >
         {product.image_url ? (

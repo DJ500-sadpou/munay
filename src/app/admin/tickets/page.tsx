@@ -261,7 +261,7 @@ export default function AdminTicketsPage() {
                         <summary className="cursor-pointer hover:text-munay-ink transition-colors">
                           Ver items
                         </summary>
-                        <div className="mt-1 space-y-1 rounded bg-munay-cream/20 p-2">
+                        <div className="mt-1 space-y-1 rounded bg-munay-crema/20 p-2">
                           {(ticket.items as any).items?.map((item: any, i: number) => (
                             <div key={i} className="flex justify-between gap-2">
                               <span className="truncate">{item.title ?? 'Producto'}</span>

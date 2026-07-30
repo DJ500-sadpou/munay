@@ -138,7 +138,7 @@ export default function InfoPage() {
       </section>
 
       {/* FEATURES FASE 5 */}
-      <section className="border-b border-black/5 bg-munay-cream/15">
+      <section className="border-b border-black/5 bg-munay-crema/15">
         <div className="mx-auto max-w-7xl px-4 py-16 lg:px-6">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="font-display text-3xl font-semibold text-munay-ink">Lo nuevo en Fase 5</h2>
@@ -202,7 +202,7 @@ export default function InfoPage() {
       </section>
 
       {/* CHECKLIST */}
-      <section className="border-t border-black/5 bg-munay-cream/15">
+      <section className="border-t border-black/5 bg-munay-crema/15">
         <div className="mx-auto max-w-7xl px-4 py-16 lg:px-6">
           <div className="mx-auto max-w-3xl">
             <h2 className="font-display text-3xl font-semibold text-center text-munay-ink">Checklist Fase 5 · Definition of Done</h2>
