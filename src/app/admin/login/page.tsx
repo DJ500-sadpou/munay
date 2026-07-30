@@ -5,11 +5,11 @@ export const dynamic = 'force-dynamic'
 
 export default function AdminLoginPage() {
   return (
-    <div className="container mx-auto flex min-h-[80vh] items-center justify-center px-4 py-10">
+    <div className="flex min-h-[80vh] items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
         <div className="mb-6 text-center">
-          <h1 className="font-display text-2xl font-semibold">Panel administrativo</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <h1 className="font-display text-2xl font-semibold text-munay-ink">Panel administrativo</h1>
+          <p className="mt-2 text-sm text-munay-ink/60">
             Acceso restringido. Inicia sesión con tu cuenta admin.
           </p>
         </div>
@@ -20,21 +20,20 @@ export default function AdminLoginPage() {
           appearance={{
             elements: {
               rootBox: 'mx-auto w-full',
-              card: 'shadow-md border-border/60',
+              card: 'shadow-sm border-black/5',
               headerTitle: 'font-display',
-              headerSubtitle: 'text-muted-foreground',
             },
           }}
         />
 
-        <div className="mt-6 rounded-md border border-dashed border-border bg-muted/30 p-3 text-xs text-muted-foreground">
-          <p className="font-medium text-foreground">Configuración inicial de admin:</p>
+        <div className="mt-6 rounded-lg border border-dashed border-black/10 bg-munay-cream/20 p-3 text-xs text-munay-ink/60">
+          <p className="font-medium text-munay-ink">Configuración inicial de admin:</p>
           <ol className="mt-2 space-y-1 list-decimal list-inside">
             <li>Crea tu usuario en Clerk (vía /cuenta/login).</li>
-            <li>Obtén tu <code className="rounded bg-muted px-1">user_id</code> (formato user_xxx) del dashboard Clerk.</li>
+            <li>Obtén tu <code className="rounded bg-munay-cream/30 px-1">user_id</code> (formato user_xxx) del dashboard Clerk.</li>
             <li>
               En Neon SQL Editor:
-              <pre className="mt-1 rounded bg-muted p-2 text-[10px] overflow-x-auto">
+              <pre className="mt-1 rounded bg-white p-2 text-[10px] overflow-x-auto border border-black/5">
 {`INSERT INTO public.users (id, email) VALUES ('user_xxx', 'tu@email.com')
   ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email;
 INSERT INTO public.admins (user_id) VALUES ('user_xxx')

@@ -72,126 +72,128 @@ export default async function MyPointsPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-10 max-w-3xl">
-      <Button asChild variant="ghost" size="sm" className="mb-4 -ml-2">
-        <Link href="/cuenta">
-          <ArrowLeft className="mr-2 h-4 w-4" aria-hidden />
-          Volver a mi cuenta
-        </Link>
-      </Button>
+    <div className="bg-gradient-to-b from-white via-munay-cream/10 to-white">
+      <div className="mx-auto max-w-3xl px-4 py-10 lg:px-6">
+        <Button asChild variant="ghost" size="sm" className="mb-4 -ml-2">
+          <Link href="/cuenta">
+            <ArrowLeft className="mr-2 h-4 w-4" aria-hidden />
+            Volver a mi cuenta
+          </Link>
+        </Button>
 
-      <h1 className="font-display text-3xl font-semibold tracking-tight mb-2">Mis puntos</h1>
-      <p className="text-muted-foreground mb-8">
-        Gana 1 punto por cada $1 gastado. Cada {POINTS_RULES.POINTS_PER_DISCOUNT_DOLLAR} puntos = $1 de descuento.
-      </p>
+        <h1 className="font-display text-3xl font-bold tracking-tight text-munay-ink mb-2">Mis puntos</h1>
+        <p className="text-munay-ink/60 mb-8">
+          Gana 1 punto por cada $1 gastado. Cada {POINTS_RULES.POINTS_PER_DISCOUNT_DOLLAR} puntos = $1 de descuento.
+        </p>
 
-      <Card className="border-primary/30 bg-primary/5">
-        <CardContent className="p-8 text-center">
-          <Sparkles className="mx-auto h-10 w-10 text-primary" aria-hidden />
-          <p className="mt-3 text-xs uppercase tracking-wider text-muted-foreground">Saldo disponible</p>
-          <p className="mt-1 text-5xl font-bold text-primary">{balance}</p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Equivalente a <strong className="text-foreground">{formatCents(Math.floor(balance / 10) * 100)}</strong> en descuento
-          </p>
-        </CardContent>
-      </Card>
-
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <Card>
-          <CardContent className="flex items-center gap-4 p-4">
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <TrendingUp className="h-5 w-5" aria-hidden />
-            </span>
-            <div>
-              <p className="text-xs text-muted-foreground">Total ganado</p>
-              <p className="text-2xl font-bold">+{totalEarned}</p>
-            </div>
+        <Card className="border-munay-red-500/15 bg-munay-red-500/5 shadow-sm">
+          <CardContent className="p-8 text-center">
+            <Sparkles className="mx-auto h-10 w-10 text-munay-red-600" aria-hidden />
+            <p className="mt-3 text-xs uppercase tracking-wider text-munay-ink/60">Saldo disponible</p>
+            <p className="mt-1 text-5xl font-bold text-munay-red-600">{balance}</p>
+            <p className="mt-2 text-sm text-munay-ink/60">
+              Equivalente a <strong className="text-munay-ink">{formatCents(Math.floor(balance / 10) * 100)}</strong> en descuento
+            </p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="flex items-center gap-4 p-4">
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
-              <TrendingDown className="h-5 w-5" aria-hidden />
-            </span>
-            <div>
-              <p className="text-xs text-muted-foreground">Total redimido</p>
-              <p className="text-2xl font-bold">−{totalRedeemed}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
-      <Card className="mt-6 border-dashed">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-            <Gift className="h-4 w-4" aria-hidden />
-            Cómo funcionan los puntos
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm text-muted-foreground">
-          <p>• Ganas <strong className="text-foreground">1 punto por cada $1</strong> real pagado en una orden.</p>
-          <p>• Cada <strong className="text-foreground">{POINTS_RULES.POINTS_PER_DISCOUNT_DOLLAR} puntos</strong> equivalen a <strong className="text-foreground">$1 de descuento</strong> en tu próxima compra.</p>
-          <p>• Puedes redimirlos en el checkout (mínimo {POINTS_RULES.MIN_POINTS_TO_REDEEM} puntos).</p>
-          <p>• Los puntos se acreditan automáticamente tras confirmar el pago.</p>
-        </CardContent>
-      </Card>
-
-      <div className="mt-8">
-        <h2 className="font-display text-xl font-semibold mb-4 flex items-center gap-2">
-          <History className="h-5 w-5" aria-hidden />
-          Historial de movimientos
-        </h2>
-
-        {transactions.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-              <Sparkles className="h-10 w-10 text-muted-foreground opacity-50" aria-hidden />
-              <p className="text-muted-foreground">
-                Aún no tienes movimientos de puntos.
-              </p>
-              <Button asChild>
-                <Link href="/catalogo">Haz tu primera compra</Link>
-              </Button>
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <Card className="border-black/5 shadow-sm">
+            <CardContent className="flex items-center gap-4 p-4">
+              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-munay-red-500/10 text-munay-red-600">
+                <TrendingUp className="h-5 w-5" aria-hidden />
+              </span>
+              <div>
+                <p className="text-xs text-munay-ink/60">Total ganado</p>
+                <p className="text-2xl font-bold text-munay-ink">+{totalEarned}</p>
+              </div>
             </CardContent>
           </Card>
-        ) : (
-          <div className="space-y-2">
-            {transactions.map((t) => {
-              const meta = typeMeta(t.type)
-              return (
-                <Card key={t.id} className="border-border/60">
-                  <CardContent className="flex items-center justify-between p-4">
-                    <div className="flex items-center gap-3">
-                      <span className={`flex h-9 w-9 items-center justify-center rounded-full bg-muted ${meta.color}`}>
-                        <meta.icon className="h-4 w-4" aria-hidden />
-                      </span>
-                      <div>
-                        <p className="text-sm font-medium">{meta.label}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatDate(t.created_at, { dateStyle: 'medium', timeStyle: 'short' })}
-                          {t.note && ` · ${t.note}`}
-                        </p>
+          <Card className="border-black/5 shadow-sm">
+            <CardContent className="flex items-center gap-4 p-4">
+              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-munay-red-500/10 text-munay-red-600">
+                <TrendingDown className="h-5 w-5" aria-hidden />
+              </span>
+              <div>
+                <p className="text-xs text-munay-ink/60">Total redimido</p>
+                <p className="text-2xl font-bold text-munay-ink">−{totalRedeemed}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="mt-6 border-dashed border-black/10">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-munay-ink/60 flex items-center gap-2">
+              <Gift className="h-4 w-4" aria-hidden />
+              Cómo funcionan los puntos
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm text-munay-ink/60">
+            <p>• Ganas <strong className="text-munay-ink">1 punto por cada $1</strong> real pagado en una orden.</p>
+            <p>• Cada <strong className="text-munay-ink">{POINTS_RULES.POINTS_PER_DISCOUNT_DOLLAR} puntos</strong> equivalen a <strong className="text-munay-ink">$1 de descuento</strong> en tu próxima compra.</p>
+            <p>• Puedes redimirlos en el checkout (mínimo {POINTS_RULES.MIN_POINTS_TO_REDEEM} puntos).</p>
+            <p>• Los puntos se acreditan automáticamente tras confirmar el pago.</p>
+          </CardContent>
+        </Card>
+
+        <div className="mt-8">
+          <h2 className="font-display text-xl font-semibold text-munay-ink mb-4 flex items-center gap-2">
+            <History className="h-5 w-5" aria-hidden />
+            Historial de movimientos
+          </h2>
+
+          {transactions.length === 0 ? (
+            <Card className="border-dashed border-black/10">
+              <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+                <Sparkles className="h-10 w-10 text-munay-ink/30" aria-hidden />
+                <p className="text-munay-ink/60">
+                  Aún no tienes movimientos de puntos.
+                </p>
+                <Button asChild className="bg-munay-red-600 text-white hover:bg-munay-red-800">
+                  <Link href="/catalogo">Haz tu primera compra</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-2">
+              {transactions.map((t) => {
+                const meta = typeMeta(t.type)
+                return (
+                  <Card key={t.id} className="border-black/5 shadow-sm">
+                    <CardContent className="flex items-center justify-between p-4">
+                      <div className="flex items-center gap-3">
+                        <span className={`flex h-9 w-9 items-center justify-center rounded-full bg-munay-cream/30 ${meta.color}`}>
+                          <meta.icon className="h-4 w-4" aria-hidden />
+                        </span>
+                        <div>
+                          <p className="text-sm font-medium text-munay-ink">{meta.label}</p>
+                          <p className="text-xs text-munay-ink/60">
+                            {formatDate(t.created_at, { dateStyle: 'medium', timeStyle: 'short' })}
+                            {t.note && ` · ${t.note}`}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                    <span className={`text-lg font-bold ${meta.color}`}>
-                      {t.points > 0 ? '+' : ''}{t.points}
-                    </span>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
-        )}
+                      <span className={`text-lg font-bold ${meta.color}`}>
+                        {t.points > 0 ? '+' : ''}{t.points}
+                      </span>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        <Separator className="my-8" />
+
+        <Button asChild className="w-full sm:w-auto bg-munay-red-600 text-white hover:bg-munay-red-800">
+          <Link href="/catalogo">
+            <Sparkles className="mr-2 h-4 w-4" aria-hidden />
+            Seguir acumulando puntos
+          </Link>
+        </Button>
       </div>
-
-      <Separator className="my-8" />
-
-      <Button asChild className="w-full sm:w-auto">
-        <Link href="/catalogo">
-          <Sparkles className="mr-2 h-4 w-4" aria-hidden />
-          Seguir acumulando puntos
-        </Link>
-      </Button>
     </div>
   )
 }

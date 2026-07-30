@@ -57,50 +57,43 @@ export default async function CatalogoPage({ searchParams }: PageProps) {
   }
 
   return (
-    <div className="container mx-auto px-4 py-10">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-          Catálogo
-        </h1>
-        <p className="mt-2 text-muted-foreground">
-          Prendas nuevas y de segunda mano · precios en USD · envíos desde Ibarra.
-        </p>
-      </div>
-
-      {/* Buscador */}
-      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-start">
-        <CatalogSearch initialValue={filters.q ?? ''} />
-        <Button asChild variant="outline" className="sm:w-auto">
-          <Link href="/flash">
-            <Zap className="mr-2 h-4 w-4" aria-hidden />
-            Tengo un código flash
-          </Link>
-        </Button>
-      </div>
-
-      {/* Aviso si el código no es válido */}
-      {filters.q && looksLikeFlashCode(filters.q) && !activeFlashInfo && supabaseReady && (
-        <div className="mb-6 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm">
-          <p className="text-foreground">
-            <strong>{filters.q.toUpperCase()}</strong> no es un código flash válido.
-            Mostrando resultados de búsqueda normales.
+    <div className="bg-gradient-to-b from-white via-munay-cream/10 to-white">
+      <div className="mx-auto max-w-7xl px-4 py-10 lg:px-6">
+        <div className="mb-6">
+          <h1 className="font-display text-3xl font-bold tracking-tight text-munay-ink sm:text-4xl">
+            Catálogo
+          </h1>
+          <p className="mt-2 text-munay-ink/60">
+            Prendas nuevas y de segunda mano · precios en USD · envíos desde Ibarra.
           </p>
         </div>
-      )}
 
-      {/* Banner si Supabase no está configurado */}
-      {!supabaseReady && (
-        <div className="mb-6">
-          <SupabaseNotConfiguredBanner />
+        <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-start">
+          <CatalogSearch initialValue={filters.q ?? ''} />
+          <Button asChild variant="outline" className="sm:w-auto">
+            <Link href="/flash">
+              <Zap className="mr-2 h-4 w-4" aria-hidden />
+              Tengo un código flash
+            </Link>
+          </Button>
         </div>
-      )}
 
-      {/* Aviso si hay código flash activo */}
-      {activeFlashInfo && (
-        <div className="mb-6 rounded-md border border-accent/40 bg-accent/10 px-4 py-3 text-sm">
-          <p className="text-foreground">
-            <Zap className="mr-1 inline h-4 w-4 text-accent" aria-hidden />
+        {filters.q && looksLikeFlashCode(filters.q) && !activeFlashInfo && supabaseReady && (
+          <div className="mb-6 rounded-lg border border-munay-red-500/20 bg-munay-red-500/5 px-4 py-3 text-sm text-munay-ink">
+            <strong>{filters.q.toUpperCase()}</strong> no es un código flash válido.
+            Mostrando resultados de búsqueda normales.
+          </div>
+        )}
+
+        {!supabaseReady && (
+          <div className="mb-6">
+            <SupabaseNotConfiguredBanner />
+          </div>
+        )}
+
+        {activeFlashInfo && (
+          <div className="mb-6 rounded-lg border border-munay-red-500/15 bg-munay-red-500/5 px-4 py-3 text-sm text-munay-ink">
+            <Zap className="mr-1 inline h-4 w-4 text-munay-red-600" aria-hidden />
             Código <strong className="font-mono">{activeFlashInfo.code}</strong> activo:
             {' '}
             {activeFlashInfo.type === 'discount' && activeFlashInfo.discount_percent != null
@@ -108,59 +101,58 @@ export default async function CatalogoPage({ searchParams }: PageProps) {
               : activeFlashInfo.type === 'unlock'
               ? 'Piezas exclusivas desbloqueadas.'
               : 'Descuento aplicado.'}
-          </p>
-        </div>
-      )}
+          </div>
+        )}
 
-      {/* Layout principal: filtros + grid */}
-      <div className="grid gap-8 lg:grid-cols-[240px_1fr]">
-        <CatalogFilters
-          filters={filters}
-          totalCount={products.length}
-          flashCodeActive={activeFlashInfo?.code ?? null}
-        />
+        <div className="grid gap-8 lg:grid-cols-[240px_1fr]">
+          <CatalogFilters
+            filters={filters}
+            totalCount={products.length}
+            flashCodeActive={activeFlashInfo?.code ?? null}
+          />
 
-        <div>
-          {products.length > 0 ? (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
-              {products.map((p) => (
-                <ProductCard
-                  key={p.id}
-                  product={{
-                    id: p.id,
-                    slug: p.slug,
-                    title: p.title,
-                    price_cents: p.price_cents,
-                    condition: p.condition,
-                    grading: p.grading,
-                    image_url: p.image_url,
-                    stock: p.stock,
-                    flash_discount_percent: p.flash_discount_percent,
-                    flash_code: p.flash_code,
-                  }}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border py-20 text-center">
-              {filters.q ? (
-                <>
-                  <Search className="h-10 w-10 text-muted-foreground" aria-hidden />
-                  <p className="text-muted-foreground">
-                    No encontramos piezas para <strong>"{filters.q}"</strong>.
-                  </p>
-                  <Button asChild variant="outline" size="sm">
-                    <Link href="/catalogo">Ver todo el catálogo</Link>
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Package className="h-10 w-10 text-muted-foreground" aria-hidden />
-                  <p className="text-muted-foreground">No hay prendas disponibles con esos filtros.</p>
-                </>
-              )}
-            </div>
-          )}
+          <div>
+            {products.length > 0 ? (
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
+                {products.map((p) => (
+                  <ProductCard
+                    key={p.id}
+                    product={{
+                      id: p.id,
+                      slug: p.slug,
+                      title: p.title,
+                      price_cents: p.price_cents,
+                      condition: p.condition,
+                      grading: p.grading,
+                      image_url: p.image_url,
+                      stock: p.stock,
+                      flash_discount_percent: p.flash_discount_percent,
+                      flash_code: p.flash_code,
+                    }}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-black/10 py-20 text-center">
+                {filters.q ? (
+                  <>
+                    <Search className="h-10 w-10 text-munay-ink/30" aria-hidden />
+                    <p className="text-munay-ink/60">
+                      No encontramos piezas para <strong>"{filters.q}"</strong>.
+                    </p>
+                    <Button asChild variant="outline" size="sm">
+                      <Link href="/catalogo">Ver todo el catálogo</Link>
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Package className="h-10 w-10 text-munay-ink/30" aria-hidden />
+                    <p className="text-munay-ink/60">No hay prendas disponibles con esos filtros.</p>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

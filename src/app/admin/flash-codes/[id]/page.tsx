@@ -28,7 +28,7 @@ export default async function EditFlashCodePage({ params }: PageProps) {
   if (!fc) notFound()
 
   return (
-    <div className="container mx-auto px-4 py-10 max-w-2xl">
+    <div className="mx-auto max-w-2xl px-4 py-10 lg:px-6">
       <FlashCodeForm
         flashCode={{
           code: fc.code,

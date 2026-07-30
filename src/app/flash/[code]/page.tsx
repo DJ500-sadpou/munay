@@ -26,15 +26,15 @@ export default async function FlashPage({ params }: PageProps) {
   // ---- Caso: código inválido/expirado/agotado ----
   if (!flash) {
     return (
-      <div className="container mx-auto flex min-h-[60vh] flex-col items-center justify-center px-4 py-10 text-center">
-        <XCircle className="h-12 w-12 text-destructive" aria-hidden />
-        <h1 className="mt-4 font-display text-2xl font-semibold">Código no válido</h1>
-        <p className="mt-2 max-w-md text-muted-foreground">
-          El código <code className="rounded bg-muted px-1.5 py-0.5 font-mono">{upper}</code> no existe,
+      <div className="mx-auto flex min-h-[60vh] flex-col items-center justify-center px-4 py-10 text-center">
+        <XCircle className="h-12 w-12 text-munay-red-600" aria-hidden />
+        <h1 className="mt-4 font-display text-2xl font-semibold text-munay-ink">Código no válido</h1>
+        <p className="mt-2 max-w-md text-munay-ink/60">
+          El código <code className="rounded bg-munay-cream/30 px-1.5 py-0.5 font-mono">{upper}</code> no existe,
           está inactivo, ya expiró o alcanzó su límite de usos.
         </p>
         <div className="mt-6 flex gap-2">
-          <Button asChild>
+          <Button asChild className="bg-munay-red-600 text-white hover:bg-munay-red-800">
             <Link href={ROUTES.catalogo}>Ver catálogo público</Link>
           </Button>
           <Button asChild variant="outline">
@@ -95,10 +95,9 @@ export default async function FlashPage({ params }: PageProps) {
   const isUnlockType = flash.type === 'unlock'
 
   return (
-    <div className="container mx-auto px-4 py-10">
-      <div className="mx-auto max-w-3xl">
-        {/* Header */}
-        <Badge className={`mb-3 ${isUnlockType ? 'bg-accent text-accent-foreground' : 'bg-primary text-primary-foreground'}`}>
+    <div className="bg-gradient-to-b from-white via-munay-cream/10 to-white">
+      <div className="mx-auto max-w-3xl px-4 py-10 lg:px-6">
+        <Badge className={`mb-3 ${isUnlockType ? 'bg-munay-cream text-munay-ink' : 'bg-munay-red-600 text-white'}`}>
           {isUnlockType ? (
             <><Sparkles className="mr-1 h-3 w-3" /> Pieza{products.length !== 1 ? 's' : ''} desbloqueada{products.length !== 1 ? 's' : ''}</>
           ) : (
@@ -106,10 +105,10 @@ export default async function FlashPage({ params }: PageProps) {
           )}
         </Badge>
 
-        <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-          Código: <span className="text-primary">{flash.code}</span>
+        <h1 className="font-display text-3xl font-bold tracking-tight text-munay-ink sm:text-4xl">
+          Código: <span className="text-munay-red-600">{flash.code}</span>
         </h1>
-        <p className="mt-2 text-muted-foreground">
+        <p className="mt-2 text-munay-ink/60">
           {isUnlockType
             ? 'Este código revela piezas exclusivas que no están visibles en el catálogo público.'
             : discountPct > 0
@@ -117,42 +116,40 @@ export default async function FlashPage({ params }: PageProps) {
             : 'Descuento especial activo en las piezas asociadas.'}
         </p>
 
-        {/* Info de validez */}
         <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="rounded-md border border-border/60 bg-card p-3 text-sm">
-            <p className="flex items-center gap-2 text-muted-foreground">
+          <div className="rounded-lg border border-black/5 bg-white p-3 text-sm shadow-sm">
+            <p className="flex items-center gap-2 text-munay-ink/60">
               <Clock className="h-4 w-4" aria-hidden />
               Válido hasta
             </p>
-            <p className="mt-1 font-medium">
+            <p className="mt-1 font-medium text-munay-ink">
               {new Date(flash.ends_at).toLocaleDateString('es-EC', { dateStyle: 'long' })}
             </p>
           </div>
           {flash.remaining_uses !== null && (
-            <div className="rounded-md border border-border/60 bg-card p-3 text-sm">
-              <p className="flex items-center gap-2 text-muted-foreground">
+            <div className="rounded-lg border border-black/5 bg-white p-3 text-sm shadow-sm">
+              <p className="flex items-center gap-2 text-munay-ink/60">
                 <Package className="h-4 w-4" aria-hidden />
                 Usos restantes
               </p>
-              <p className="mt-1 font-medium">{flash.remaining_uses}</p>
+              <p className="mt-1 font-medium text-munay-ink">{flash.remaining_uses}</p>
             </div>
           )}
-          <div className="rounded-md border border-border/60 bg-card p-3 text-sm">
-            <p className="flex items-center gap-2 text-muted-foreground">
+          <div className="rounded-lg border border-black/5 bg-white p-3 text-sm shadow-sm">
+            <p className="flex items-center gap-2 text-munay-ink/60">
               <CheckCircle2 className="h-4 w-4" aria-hidden />
               Estado
             </p>
-            <p className="mt-1 font-medium text-primary">Activo</p>
+            <p className="mt-1 font-medium text-munay-red-600">Activo</p>
           </div>
         </div>
 
         <Separator className="my-8" />
 
-        {/* Productos */}
         {products.length > 0 ? (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-2xl font-semibold">
+              <h2 className="font-display text-2xl font-semibold text-munay-ink">
                 {products.length} {products.length === 1 ? 'pieza disponible' : 'piezas disponibles'}
               </h2>
               <Badge variant="secondary">
@@ -164,9 +161,9 @@ export default async function FlashPage({ params }: PageProps) {
               const finalPrice = getDiscountedPrice(p.price_cents)
               const hasDiscount = finalPrice !== p.price_cents
               return (
-                <Card key={p.id} className="overflow-hidden border-primary/30">
+                <Card key={p.id} className="overflow-hidden border-black/5 shadow-sm">
                   <div className="grid gap-0 sm:grid-cols-[200px_1fr]">
-                    <div className="relative aspect-square sm:aspect-auto bg-muted">
+                    <div className="relative aspect-square sm:aspect-auto bg-white">
                       {p.image_url ? (
                         <Image
                           src={p.image_url}
@@ -176,21 +173,20 @@ export default async function FlashPage({ params }: PageProps) {
                           className="object-cover"
                         />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                        <div className="flex h-full w-full items-center justify-center text-munay-ink/30">
                           <Sparkles className="h-10 w-10 opacity-30" aria-hidden />
                         </div>
                       )}
-                      {/* Badge de descuento */}
                       {hasDiscount && (
                         <div className="absolute left-2 top-2">
-                          <Badge className="bg-accent text-accent-foreground">
+                          <Badge className="bg-munay-red-600 text-white">
                             <Zap className="mr-1 h-3 w-3" />−{discountPct}%
                           </Badge>
                         </div>
                       )}
                       {!p.active && (
                         <div className="absolute right-2 top-2">
-                          <Badge variant="outline" className="bg-background/80">
+                          <Badge variant="outline" className="bg-white/80">
                             <Sparkles className="mr-1 h-3 w-3" />Exclusivo
                           </Badge>
                         </div>
@@ -198,25 +194,25 @@ export default async function FlashPage({ params }: PageProps) {
                     </div>
                     <CardContent className="flex flex-col justify-between p-5">
                       <div>
-                        <h3 className="font-display text-lg font-semibold">{p.title}</h3>
-                        <p className="mt-2 text-sm text-muted-foreground line-clamp-3">
+                        <h3 className="font-display text-lg font-semibold text-munay-ink">{p.title}</h3>
+                        <p className="mt-2 text-sm text-munay-ink/60 line-clamp-3">
                           {p.description ?? (isUnlockType
                             ? 'Pieza exclusiva desbloqueada con tu código.'
                             : 'Pieza con descuento flash.')}
                         </p>
                         <div className="mt-3 flex items-baseline gap-2">
                           {hasDiscount && (
-                            <span className="text-sm text-muted-foreground line-through">
+                            <span className="text-sm text-munay-ink/40 line-through">
                               {formatCents(p.price_cents)}
                             </span>
                           )}
-                          <span className="text-2xl font-bold text-primary">
+                          <span className="text-2xl font-bold text-munay-red-600">
                             {formatCents(finalPrice)}
                           </span>
                         </div>
                       </div>
                       <div className="mt-4 flex flex-wrap gap-2">
-                        <Button asChild size="sm">
+                        <Button asChild size="sm" className="bg-munay-red-600 text-white hover:bg-munay-red-800">
                           <Link href={`${ROUTES.producto(p.slug)}?flash=${flash.code}`}>
                             Ver detalles
                             <ArrowRight className="ml-1 h-3 w-3" aria-hidden />
@@ -236,14 +232,14 @@ export default async function FlashPage({ params }: PageProps) {
             })}
           </div>
         ) : (
-          <Card className="border-dashed">
+          <Card className="border-dashed border-black/10">
             <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-              <Package className="h-10 w-10 text-muted-foreground" aria-hidden />
-              <p className="text-muted-foreground">
+              <Package className="h-10 w-10 text-munay-ink/30" aria-hidden />
+              <p className="text-munay-ink/60">
                 Este código es válido pero no tiene productos asociados por ahora.
               </p>
               {isDiscountType && (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-munay-ink/50">
                   El administrador debe asociar productos a este código desde el panel admin.
                 </p>
               )}

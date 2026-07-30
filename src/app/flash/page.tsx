@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ROUTES } from '@/lib/constants'
+import { MunayPageShell } from '@/components/munay/page-shell'
 
 export default function FlashCodeEntryPage() {
   const router = useRouter()
@@ -21,57 +22,50 @@ export default function FlashCodeEntryPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-16">
-      <div className="mx-auto max-w-md">
-        <div className="mb-6 text-center">
-          <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent/20 text-accent">
-            <Zap className="h-6 w-6" aria-hidden />
-          </span>
-          <h1 className="font-display text-3xl font-semibold tracking-tight">
-            Ofertas flash
-          </h1>
-          <p className="mt-2 text-muted-foreground">
-            ¿Tienes un código secreto? Ingrésalo para desbloquear ofertas y prendas exclusivas.
-          </p>
-        </div>
-
-        <Card className="border-border/60">
-          <CardHeader>
-            <CardTitle className="text-lg">Ingresar código</CardTitle>
-            <CardDescription>
-              Mayúsculas y minúsculas no importan. Ejemplo: <code className="rounded bg-muted px-1.5 py-0.5">MUNAY10</code>.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="code">Código flash</Label>
-                <Input
-                  id="code"
-                  type="text"
-                  placeholder="MUNAY10"
-                  className="uppercase font-mono tracking-widest"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  autoFocus
-                  required
-                  minLength={4}
-                  maxLength={32}
-                />
-              </div>
-              <Button type="submit" size="lg" className="w-full">
-                Desbloquear
-                <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          En Fase 2: la validación del código (activo, dentro de ventana, no agotado) se hará con
-          Cloudflare Turnstile + Edge Function de Supabase para evitar abuso.
+    <MunayPageShell size="sm" className="py-16">
+      <div className="text-center">
+        <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-munay-red-500/10 text-munay-red-600">
+          <Zap className="h-6 w-6" aria-hidden />
+        </span>
+        <h1 className="font-display text-3xl font-semibold tracking-tight text-munay-ink">
+          Ofertas flash
+        </h1>
+        <p className="mt-2 text-munay-ink/60">
+          ¿Tienes un código secreto? Ingrésalo para desbloquear ofertas y prendas exclusivas.
         </p>
       </div>
-    </div>
+
+      <Card className="border-black/5 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg">Ingresar código</CardTitle>
+          <CardDescription>
+            Mayúsculas y minúsculas no importan. Ejemplo: <code className="rounded bg-muted px-1.5 py-0.5">MUNAY10</code>.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="code">Código flash</Label>
+              <Input
+                id="code"
+                type="text"
+                placeholder="MUNAY10"
+                className="uppercase font-mono tracking-widest"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                autoFocus
+                required
+                minLength={4}
+                maxLength={32}
+              />
+            </div>
+            <Button type="submit" size="lg" className="w-full bg-munay-red-600 text-white hover:bg-munay-red-800">
+              Desbloquear
+              <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </MunayPageShell>
   )
 }

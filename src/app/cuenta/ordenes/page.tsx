@@ -44,55 +44,57 @@ export default async function MyOrdersPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-10 max-w-4xl">
-      <Button asChild variant="ghost" size="sm" className="mb-4 -ml-2">
-        <Link href="/cuenta">
-          <ArrowLeft className="mr-2 h-4 w-4" aria-hidden />
-          Volver a mi cuenta
-        </Link>
-      </Button>
+    <div className="bg-gradient-to-b from-white via-munay-cream/10 to-white">
+      <div className="mx-auto max-w-4xl px-4 py-10 lg:px-6">
+        <Button asChild variant="ghost" size="sm" className="mb-4 -ml-2">
+          <Link href="/cuenta">
+            <ArrowLeft className="mr-2 h-4 w-4" aria-hidden />
+            Volver a mi cuenta
+          </Link>
+        </Button>
 
-      <h1 className="font-display text-3xl font-semibold tracking-tight mb-2">Mis órdenes</h1>
-      <p className="text-muted-foreground mb-8">
-        {orders.length} {orders.length === 1 ? 'orden' : 'órdenes'} registradas.
-      </p>
+        <h1 className="font-display text-3xl font-bold tracking-tight text-munay-ink mb-2">Mis órdenes</h1>
+        <p className="text-munay-ink/60 mb-8">
+          {orders.length} {orders.length === 1 ? 'orden' : 'órdenes'} registradas.
+        </p>
 
-      {orders.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-            <Package className="h-10 w-10 text-muted-foreground" aria-hidden />
-            <p className="text-muted-foreground">Aún no tienes órdenes.</p>
-            <Button asChild>
-              <Link href="/catalogo">Explorar catálogo</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-2">
-          {orders.map((o) => (
-            <Card key={o.id} className="border-border/60 hover:border-primary/40 transition-colors">
-              <CardContent className="flex items-center justify-between p-4">
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5 text-muted-foreground" aria-hidden />
-                  <div>
-                    <p className="text-sm font-medium font-mono">{o.id.slice(0, 8)}…</p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatDate(o.created_at, { dateStyle: 'medium', timeStyle: 'short' })} · {o.items_count} {o.items_count === 1 ? 'item' : 'items'}
-                    </p>
+        {orders.length === 0 ? (
+          <Card className="border-dashed border-black/10">
+            <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+              <Package className="h-10 w-10 text-munay-ink/30" aria-hidden />
+              <p className="text-munay-ink/60">Aún no tienes órdenes.</p>
+              <Button asChild className="bg-munay-red-600 text-white hover:bg-munay-red-800">
+                <Link href="/catalogo">Explorar catálogo</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-2">
+            {orders.map((o) => (
+              <Card key={o.id} className="border-black/5 shadow-sm hover:border-munay-red-500/20 transition-colors">
+                <CardContent className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-3">
+                    <Calendar className="h-5 w-5 text-munay-ink/30" aria-hidden />
+                    <div>
+                      <p className="text-sm font-medium font-mono">{o.id.slice(0, 8)}…</p>
+                      <p className="text-xs text-munay-ink/60">
+                        {formatDate(o.created_at, { dateStyle: 'medium', timeStyle: 'short' })} · {o.items_count} {o.items_count === 1 ? 'item' : 'items'}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-sm font-medium">{formatCents(o.total_cents)}</span>
-                  {statusBadge(o.status)}
-                  <Button asChild size="sm" variant="ghost">
-                    <Link href={`/cuenta/ordenes/${o.id}`}>Ver detalle</Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm font-medium">{formatCents(o.total_cents)}</span>
+                    {statusBadge(o.status)}
+                    <Button asChild size="sm" variant="ghost">
+                      <Link href={`/cuenta/ordenes/${o.id}`}>Ver detalle</Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

@@ -75,7 +75,7 @@ export default async function AdminMetricsPage() {
   const maxDayTotal = Math.max(...salesLast30Days.map((d) => d.total), 1)
 
   return (
-    <div className="container mx-auto px-4 py-10">
+    <div className="mx-auto max-w-7xl px-4 py-10 lg:px-6">
       <Button asChild variant="ghost" size="sm" className="mb-4 -ml-2">
         <Link href="/admin">
           <ArrowLeft className="mr-2 h-4 w-4" aria-hidden />
@@ -83,8 +83,8 @@ export default async function AdminMetricsPage() {
         </Link>
       </Button>
 
-      <h1 className="font-display text-3xl font-semibold tracking-tight mb-2">Métricas</h1>
-      <p className="text-muted-foreground mb-8">
+      <h1 className="font-display text-3xl font-bold tracking-tight text-munay-ink mb-2">Métricas</h1>
+      <p className="text-munay-ink/60 mb-8">
         Resumen de ventas, productos y engagement de los últimos 30 días.
       </p>
 

@@ -4,27 +4,27 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { ROUTES } from '@/lib/constants'
 
-export const metadata = { title: 'Pago cancelado' }
+export const metadata = { title: 'Pago cancelado · Munay' }
 
 export default function CheckoutCancelledPage() {
   return (
-    <div className="container mx-auto flex min-h-[80vh] items-center justify-center px-4 py-10">
+    <div className="flex min-h-[80vh] items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
-        <Card className="border-destructive/30 bg-destructive/5">
+        <Card className="border-munay-red-500/15 shadow-sm">
           <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
-            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-munay-red-500/10 text-munay-red-600">
               <XCircle className="h-8 w-8" aria-hidden />
             </span>
 
-            <h1 className="font-display text-3xl font-semibold">Pago no completado</h1>
+            <h1 className="font-display text-3xl font-semibold text-munay-ink">Pago no completado</h1>
 
-            <p className="text-muted-foreground">
+            <p className="text-munay-ink/60">
               El pago fue cancelado o no se pudo procesar. Tu carrito se mantiene intacto
               para que puedas intentar nuevamente.
             </p>
 
             <div className="mt-4 flex flex-col gap-2 w-full">
-              <Button asChild>
+              <Button asChild className="bg-munay-red-600 text-white hover:bg-munay-red-800">
                 <Link href={ROUTES.checkout}>
                   <RefreshCw className="mr-2 h-4 w-4" aria-hidden />
                   Intentar nuevamente

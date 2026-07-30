@@ -51,7 +51,7 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
   }
 
   return (
-    <div className="container mx-auto px-4 py-10 max-w-4xl">
+    <div className="mx-auto max-w-4xl px-4 py-10 lg:px-6">
       <Button asChild variant="ghost" size="sm" className="mb-4 -ml-2">
         <Link href="/admin/orders">
           <ArrowLeft className="mr-2 h-4 w-4" aria-hidden />
@@ -61,10 +61,10 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-3xl font-semibold tracking-tight">
-            Orden <span className="font-mono text-xl text-muted-foreground">{order.id.slice(0, 8)}…</span>
+          <h1 className="font-display text-3xl font-bold tracking-tight text-munay-ink">
+            Orden <span className="font-mono text-xl text-munay-ink/50">{order.id.slice(0, 8)}…</span>
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-munay-ink/60">
             Creada: {formatDate(order.created_at)}
           </p>
         </div>

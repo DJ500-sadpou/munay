@@ -105,19 +105,19 @@ const STACK = [
 
 export default function InfoPage() {
   return (
-    <div className="relative">
+    <div>
       {/* HERO */}
-      <section className="relative overflow-hidden border-b border-border/60">
-        <div className="container mx-auto px-4 py-20 sm:py-28 md:py-32">
+      <section className="relative overflow-hidden border-b border-black/5 bg-gradient-to-b from-white via-munay-cream/10 to-white">
+        <div className="mx-auto max-w-7xl px-4 py-20 sm:py-28 md:py-32 lg:px-6">
           <div className="mx-auto max-w-3xl text-center">
-            <Badge variant="secondary" className="mb-4">
+            <span className="mb-4 inline-block rounded-full bg-munay-red-500/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-munay-red-600">
               Fase 5/5 · COMPLETO
-            </Badge>
-            <h1 className="font-display text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl">
+            </span>
+            <h1 className="font-display text-4xl font-bold tracking-tight text-munay-ink sm:text-5xl md:text-6xl">
               {SITE.name}
-              <span className="block text-primary mt-2">{SITE.tagline}</span>
+              <span className="block text-munay-red-600 mt-2">{SITE.tagline}</span>
             </h1>
-            <p className="mt-6 text-lg text-muted-foreground sm:text-xl">
+            <p className="mt-6 text-lg text-munay-ink/60 sm:text-xl">
               {SITE.description}
             </p>
             <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
@@ -138,17 +138,16 @@ export default function InfoPage() {
       </section>
 
       {/* FEATURES FASE 5 */}
-      <section className="border-b border-border/60 bg-secondary/30">
-        <div className="container mx-auto px-4 py-16">
+      <section className="border-b border-black/5 bg-munay-cream/15">
+        <div className="mx-auto max-w-7xl px-4 py-16 lg:px-6">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-display text-3xl font-semibold">Lo nuevo en Fase 5</h2>
-            <p className="mt-3 text-muted-foreground">Seguridad, observabilidad, SEO y tests — listo para producción.</p>
+            <h2 className="font-display text-3xl font-semibold text-munay-ink">Lo nuevo en Fase 5</h2>
+            <p className="mt-3 text-munay-ink/60">Seguridad, observabilidad, SEO y tests — listo para producción.</p>
           </div>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {FASE5_FEATURES.map((f) => (
-              <Card key={f.title} className="border-border/60">
-                <CardContent className="p-6">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Card key={f.title} className="border-black/5 shadow-sm">
+                <CardContent className="p-6">                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-munay-red-500/10 text-munay-red-600">
                     <f.icon className="h-5 w-5" aria-hidden />
                   </span>
                   <h3 className="mt-4 font-display text-lg font-semibold">{f.title}</h3>
@@ -161,13 +160,13 @@ export default function InfoPage() {
       </section>
 
       {/* STACK */}
-      <section className="border-b border-border/60">
-        <div className="container mx-auto px-4 py-12">
-          <h2 className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Stack del proyecto</h2>
+      <section className="border-b border-black/5">
+        <div className="mx-auto max-w-7xl px-4 py-12 lg:px-6">
+          <h2 className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-munay-ink/50">Stack del proyecto</h2>
           <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-6">
             {STACK.map((s) => (
-              <div key={s.name} className="flex flex-col items-center gap-2 rounded-lg border border-border/60 bg-card p-4 text-center">
-                <s.icon className="h-5 w-5 text-primary" aria-hidden />
+              <div key={s.name} className="flex flex-col items-center gap-2 rounded-lg border border-black/5 bg-white p-4 text-center shadow-sm">
+                <s.icon className="h-5 w-5 text-munay-red-600" aria-hidden />
                 <div className="text-sm font-medium">{s.name}</div>
                 <div className="text-xs text-muted-foreground">{s.role}</div>
               </div>
@@ -177,17 +176,16 @@ export default function InfoPage() {
       </section>
 
       {/* RUTAS DISPONIBLES */}
-      <section className="container mx-auto px-4 py-16">
+      <section className="mx-auto max-w-7xl px-4 py-16 lg:px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="font-display text-3xl font-semibold">Rutas</h2>
-          <p className="mt-3 text-muted-foreground">Las rutas marcadas como <code className="text-foreground">en vivo</code> operan con datos reales de Neon Postgres.</p>
+          <h2 className="font-display text-3xl font-semibold text-munay-ink">Rutas</h2>
+          <p className="mt-3 text-munay-ink/60">Las rutas marcadas como <code className="text-munay-ink">en vivo</code> operan con datos reales de Neon Postgres.</p>
         </div>
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {ROUTES_OVERVIEW.map((r) => (
             <Card key={r.href} className="border-border/60 transition-colors hover:border-primary/40">
               <CardHeader className="flex flex-row items-start justify-between gap-2 pb-3">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary"><r.icon className="h-5 w-5" aria-hidden /></span>
+                <div className="flex items-center gap-3">                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-munay-red-500/10 text-munay-red-600"><r.icon className="h-5 w-5" aria-hidden /></span>
                   <div><CardTitle className="text-base">{r.label}</CardTitle></div>
                 </div>
                 <Badge variant={r.status === 'listo' || r.status === 'en vivo' ? 'default' : 'secondary'}>{r.status}</Badge>
@@ -204,20 +202,20 @@ export default function InfoPage() {
       </section>
 
       {/* CHECKLIST */}
-      <section className="border-t border-border/60 bg-secondary/20">
-        <div className="container mx-auto px-4 py-16">
+      <section className="border-t border-black/5 bg-munay-cream/15">
+        <div className="mx-auto max-w-7xl px-4 py-16 lg:px-6">
           <div className="mx-auto max-w-3xl">
-            <h2 className="font-display text-3xl font-semibold text-center">Checklist Fase 5 · Definition of Done</h2>
-            <p className="mt-3 text-center text-muted-foreground">Proyecto completo. Una casilla pendiente es opcional post-launch.</p>
+            <h2 className="font-display text-3xl font-semibold text-center text-munay-ink">Checklist Fase 5 · Definition of Done</h2>
+            <p className="mt-3 text-center text-munay-ink/60">Proyecto completo. Una casilla pendiente es opcional post-launch.</p>
             <ul className="mt-8 space-y-2">
               {PHASE5_CHECKLIST.map((item) => (
-                <li key={item.label} className="flex items-start gap-3 rounded-lg border border-border/60 bg-card px-4 py-3">
+                <li key={item.label} className="flex items-start gap-3 rounded-lg border border-black/5 bg-white px-4 py-3 shadow-sm">
                   {item.done ? (
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden />
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-munay-red-600" aria-hidden />
                   ) : (
-                    <Circle className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" aria-hidden />
+                    <Circle className="mt-0.5 h-5 w-5 shrink-0 text-munay-ink/30" aria-hidden />
                   )}
-                  <span className={item.done ? 'text-foreground' : 'text-muted-foreground'}>{item.label}</span>
+                  <span className={item.done ? 'text-munay-ink' : 'text-munay-ink/50'}>{item.label}</span>
                 </li>
               ))}
             </ul>
@@ -226,12 +224,12 @@ export default function InfoPage() {
       </section>
 
       {/* DEPLOYMENT CTA */}
-      <section className="container mx-auto px-4 py-16">
-        <Card className="border-primary/30 bg-primary/5">
+      <section className="mx-auto max-w-7xl px-4 py-16 lg:px-6">
+        <Card className="border-munay-red-500/15 bg-munay-red-500/5 shadow-sm">
           <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
-            <CheckCircle2 className="h-12 w-12 text-primary" aria-hidden />
-            <h2 className="font-display text-2xl font-semibold">Proyecto listo para producción</h2>
-            <p className="max-w-xl text-muted-foreground">
+            <CheckCircle2 className="h-12 w-12 text-munay-red-600" aria-hidden />
+            <h2 className="font-display text-2xl font-semibold text-munay-ink">Proyecto listo para producción</h2>
+            <p className="max-w-xl text-munay-ink/60">
               Tienda completa con 5 fases entregadas: catálogo, carrito, pagos,
               cuentas de usuario, panel admin, métricas, seguridad y observabilidad.
             </p>

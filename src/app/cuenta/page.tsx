@@ -64,140 +64,144 @@ export default async function CuentaHomePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-10">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <Badge variant="secondary" className="mb-2">Mi cuenta</Badge>
-          <h1 className="font-display text-3xl font-semibold tracking-tight">Mi cuenta</h1>
-          <p className="mt-2 text-muted-foreground flex items-center gap-2">
-            <Mail className="h-4 w-4" aria-hidden />
-            {user.email}
-          </p>
-        </div>
-        <form action="/api/auth/logout?next=/" method="POST">
-          <Button type="submit" variant="outline">
-            <LogOut className="mr-2 h-4 w-4" aria-hidden />
-            Cerrar sesión
-          </Button>
-        </form>
-      </div>
-
-      <div className="mt-8 grid gap-4 sm:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Sparkles className="h-4 w-4" aria-hidden />
-              Puntos disponibles
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold text-primary">{user.points_balance ?? 0}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              ≈ {formatCents(Math.floor((user.points_balance ?? 0) / 10) * 100)} en descuento
+    <div className="bg-gradient-to-b from-white via-munay-cream/10 to-white">
+      <div className="mx-auto max-w-7xl px-4 py-10 lg:px-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <span className="mb-3 inline-block rounded-full bg-munay-red-500/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-munay-red-600">
+              Mi cuenta
+            </span>
+            <h1 className="font-display text-3xl font-bold tracking-tight text-munay-ink">Mi cuenta</h1>
+            <p className="mt-2 text-munay-ink/60 flex items-center gap-2">
+              <Mail className="h-4 w-4" aria-hidden />
+              {user.email}
             </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Package className="h-4 w-4" aria-hidden />
-              Órdenes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{ordersCount}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {lastOrderDate ? `Última: ${formatDate(lastOrderDate, { dateStyle: 'medium' })}` : 'Sin órdenes aún'}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Gift className="h-4 w-4" aria-hidden />
-              Total gastado
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{formatCents(totalSpent)}</p>
-            <p className="mt-1 text-xs text-muted-foreground">en órdenes pagadas</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="mt-8 flex flex-wrap gap-3">
-        <Button asChild variant="outline">
-          <Link href="/cuenta/ordenes">
-            <Package className="mr-2 h-4 w-4" aria-hidden />
-            Ver historial de órdenes
-          </Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link href="/cuenta/puntos">
-            <Sparkles className="mr-2 h-4 w-4" aria-hidden />
-            Ver mis puntos
-          </Link>
-        </Button>
-        {activeCoupons.length > 0 && (
-          <Button asChild variant="outline" className="border-accent/40 text-accent hover:bg-accent/5">
-            <Link href="/catalogo">
-              <Tag className="mr-2 h-4 w-4" aria-hidden />
-              Usar cupón ({activeCoupons.length})
-            </Link>
-          </Button>
-        )}
-        <Button asChild>
-          <Link href={ROUTES.catalogo}>
-            Seguir comprando
-            <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
-          </Link>
-        </Button>
-      </div>
-
-      <div className="mt-10">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-xl font-semibold">Órdenes recientes</h2>
-          {ordersCount > 0 && (
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/cuenta/ordenes">Ver todas</Link>
+          </div>
+          <form action="/api/auth/logout?next=/" method="POST">
+            <Button type="submit" variant="outline">
+              <LogOut className="mr-2 h-4 w-4" aria-hidden />
+              Cerrar sesión
             </Button>
-          )}
+          </form>
         </div>
 
-        {recentOrders.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-              <Package className="h-10 w-10 text-muted-foreground" aria-hidden />
-              <p className="text-muted-foreground">Aún no tienes órdenes.</p>
-              <Button asChild>
-                <Link href={ROUTES.catalogo}>Explorar catálogo</Link>
-              </Button>
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          <Card className="border-black/5 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-munay-ink/60 flex items-center gap-2">
+                <Sparkles className="h-4 w-4" aria-hidden />
+                Puntos disponibles
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-munay-red-600">{user.points_balance ?? 0}</p>
+              <p className="mt-1 text-xs text-munay-ink/60">
+                ≈ {formatCents(Math.floor((user.points_balance ?? 0) / 10) * 100)} en descuento
+              </p>
             </CardContent>
           </Card>
-        ) : (
-          <div className="space-y-2">
-            {recentOrders.map((o) => (
-              <Card key={o.id} className="border-border/60 hover:border-primary/40 transition-colors">
-                <CardContent className="flex items-center justify-between p-4">
-                  <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5 text-muted-foreground" aria-hidden />
-                    <div>
-                      <p className="text-sm font-medium font-mono">{o.id.slice(0, 8)}…</p>
-                      <p className="text-xs text-muted-foreground">{formatDate(o.created_at, { dateStyle: 'medium', timeStyle: 'short' })}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className="text-sm font-medium">{formatCents(o.total_cents)}</span>
-                    {statusBadge(o.status)}
-                    <Button asChild size="sm" variant="ghost">
-                      <Link href={`/cuenta/ordenes/${o.id}`}>Ver</Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          <Card className="border-black/5 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-munay-ink/60 flex items-center gap-2">
+                <Package className="h-4 w-4" aria-hidden />
+                Órdenes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-munay-ink">{ordersCount}</p>
+              <p className="mt-1 text-xs text-munay-ink/60">
+                {lastOrderDate ? `Última: ${formatDate(lastOrderDate, { dateStyle: 'medium' })}` : 'Sin órdenes aún'}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="border-black/5 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-munay-ink/60 flex items-center gap-2">
+                <Gift className="h-4 w-4" aria-hidden />
+                Total gastado
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-munay-ink">{formatCents(totalSpent)}</p>
+              <p className="mt-1 text-xs text-munay-ink/60">en órdenes pagadas</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Button asChild variant="outline">
+            <Link href="/cuenta/ordenes">
+              <Package className="mr-2 h-4 w-4" aria-hidden />
+              Ver historial de órdenes
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/cuenta/puntos">
+              <Sparkles className="mr-2 h-4 w-4" aria-hidden />
+              Ver mis puntos
+            </Link>
+          </Button>
+          {activeCoupons.length > 0 && (
+            <Button asChild variant="outline" className="border-munay-red-500/30 text-munay-red-600 hover:bg-munay-red-500/5">
+              <Link href="/catalogo">
+                <Tag className="mr-2 h-4 w-4" aria-hidden />
+                Usar cupón ({activeCoupons.length})
+              </Link>
+            </Button>
+          )}
+          <Button asChild className="bg-munay-red-600 text-white hover:bg-munay-red-800">
+            <Link href={ROUTES.catalogo}>
+              Seguir comprando
+              <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
+            </Link>
+          </Button>
+        </div>
+
+        <div className="mt-10">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display text-xl font-semibold text-munay-ink">Órdenes recientes</h2>
+            {ordersCount > 0 && (
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/cuenta/ordenes">Ver todas</Link>
+              </Button>
+            )}
           </div>
-        )}
+
+          {recentOrders.length === 0 ? (
+            <Card className="border-dashed border-black/10">
+              <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+                <Package className="h-10 w-10 text-munay-ink/30" aria-hidden />
+                <p className="text-munay-ink/60">Aún no tienes órdenes.</p>
+                <Button asChild className="bg-munay-red-600 text-white hover:bg-munay-red-800">
+                  <Link href={ROUTES.catalogo}>Explorar catálogo</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-2">
+              {recentOrders.map((o) => (
+                <Card key={o.id} className="border-black/5 shadow-sm hover:border-munay-red-500/20 transition-colors">
+                  <CardContent className="flex items-center justify-between p-4">
+                    <div className="flex items-center gap-3">
+                      <Calendar className="h-5 w-5 text-munay-ink/30" aria-hidden />
+                      <div>
+                        <p className="text-sm font-medium font-mono">{o.id.slice(0, 8)}…</p>
+                        <p className="text-xs text-munay-ink/60">{formatDate(o.created_at, { dateStyle: 'medium', timeStyle: 'short' })}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm font-medium">{formatCents(o.total_cents)}</span>
+                      {statusBadge(o.status)}
+                      <Button asChild size="sm" variant="ghost">
+                        <Link href={`/cuenta/ordenes/${o.id}`}>Ver</Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

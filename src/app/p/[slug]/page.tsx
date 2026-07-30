@@ -124,7 +124,7 @@ export default async function ProductDetailPage({ params, searchParams }: PagePr
   const outOfStock = product.stock <= 0
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
       <Button asChild variant="ghost" size="sm" className="mb-4 -ml-2">
         <Link href={ROUTES.catalogo}>
           <ArrowLeft className="mr-2 h-4 w-4" aria-hidden />
@@ -135,7 +135,7 @@ export default async function ProductDetailPage({ params, searchParams }: PagePr
       <div className="grid gap-8 md:grid-cols-2">
         {/* Galería de imágenes */}
         <div className="space-y-3">
-          <div className="relative aspect-square overflow-hidden rounded-lg border border-border/60 bg-muted">
+          <div className="relative aspect-square overflow-hidden rounded-xl border border-black/5 bg-white shadow-sm">
             {product.images.length > 0 && product.images[0].url ? (
               <Image
                 src={product.images[0].url}
@@ -146,7 +146,7 @@ export default async function ProductDetailPage({ params, searchParams }: PagePr
                 priority
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+              <div className="flex h-full w-full items-center justify-center text-munay-ink/30">
                 <Sparkles className="h-16 w-16 opacity-30" aria-hidden />
               </div>
             )}
@@ -154,20 +154,19 @@ export default async function ProductDetailPage({ params, searchParams }: PagePr
               {CONDITION_LABEL[product.condition]}
             </Badge>
             {flashDiscountPercent != null && (
-              <Badge className="absolute right-3 top-3 bg-accent text-accent-foreground">
+              <Badge className="absolute right-3 top-3 bg-munay-red-600 text-white">
                 <Tag className="mr-1 h-3 w-3" aria-hidden />
                 -{flashDiscountPercent}%
               </Badge>
             )}
           </div>
 
-          {/* Thumbnails (si hay más imágenes) */}
           {product.images.length > 1 && (
             <div className="grid grid-cols-4 gap-2">
               {product.images.slice(0, 4).map((img) => (
                 <div
                   key={img.id}
-                  className="relative aspect-square overflow-hidden rounded-md border border-border/60 bg-muted"
+                  className="relative aspect-square overflow-hidden rounded-lg border border-black/5 bg-white shadow-sm"
                 >
                   <Image
                     src={img.url}
@@ -182,19 +181,18 @@ export default async function ProductDetailPage({ params, searchParams }: PagePr
           )}
         </div>
 
-        {/* Info */}
         <div className="flex flex-col">
-          <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">
+          <h1 className="font-display text-2xl font-semibold tracking-tight text-munay-ink sm:text-3xl">
             {product.title}
           </h1>
 
           {product.grading && (
-            <p className="mt-2 text-sm text-muted-foreground">{GRADING_LABEL[product.grading]}</p>
+            <p className="mt-2 text-sm text-munay-ink/60">{GRADING_LABEL[product.grading]}</p>
           )}
 
           <Separator className="my-6" />
 
-          <div className="prose prose-sm max-w-none text-muted-foreground">
+          <div className="text-munay-ink/70 text-sm leading-relaxed">
             <p>{product.description ?? 'Sin descripción disponible.'}</p>
           </div>
 
@@ -215,14 +213,13 @@ export default async function ProductDetailPage({ params, searchParams }: PagePr
             }}
           />
 
-          {/* Trust badges */}
           <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Truck className="h-4 w-4 text-primary" aria-hidden />
+            <div className="flex items-center gap-2 text-sm text-munay-ink/60">
+              <Truck className="h-4 w-4 text-munay-red-600" aria-hidden />
               <span>Envíos en Ibarra y todo Ecuador</span>
             </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <ShieldCheck className="h-4 w-4 text-primary" aria-hidden />
+            <div className="flex items-center gap-2 text-sm text-munay-ink/60">
+              <ShieldCheck className="h-4 w-4 text-munay-red-600" aria-hidden />
               <span>Pago seguro con pasarela PCI</span>
             </div>
           </div>

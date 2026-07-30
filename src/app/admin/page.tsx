@@ -70,14 +70,16 @@ export default async function AdminHomePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-10">
+    <div className="mx-auto max-w-7xl px-4 py-10 lg:px-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <Badge variant="secondary" className="mb-2">Panel admin</Badge>
-          <h1 className="font-display text-3xl font-semibold tracking-tight">
+          <span className="mb-3 inline-block rounded-full bg-munay-red-500/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-munay-red-600">
+            Panel admin
+          </span>
+          <h1 className="font-display text-3xl font-bold tracking-tight text-munay-ink">
             Panel administrativo
           </h1>
-          <p className="mt-2 text-muted-foreground">
+          <p className="mt-2 text-munay-ink/60">
             Hola, <strong>{admin.email}</strong>. Gestiona el catálogo desde aquí.
           </p>
         </div>
@@ -153,8 +155,7 @@ export default async function AdminHomePage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-primary">{formatCents(totalRevenueCents)}</p>
-            <p className="mt-1 text-xs text-muted-foreground">de órdenes pagadas</p>
+            <p className="text-3xl font-bold text-primary">{formatCents(totalRevenueCents)}</p>              <p className="mt-1 text-xs text-munay-ink/60">de órdenes pagadas</p>
           </CardContent>
         </Card>
         <Card>
@@ -177,10 +178,10 @@ export default async function AdminHomePage() {
       <div className="mt-10">
         <h2 className="font-display text-xl font-semibold mb-4">Productos</h2>
         {products.length === 0 ? (
-          <Card className="border-dashed">
+          <Card className="border-dashed border-black/10">
             <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-              <Package className="h-10 w-10 text-muted-foreground" aria-hidden />
-              <p className="text-muted-foreground">Aún no hay productos. Crea el primero.</p>
+              <Package className="h-10 w-10 text-munay-ink/30" aria-hidden />
+              <p className="text-munay-ink/60">Aún no hay productos. Crea el primero.</p>
               <Button asChild>
                 <Link href="/admin/products/new">
                   <Plus className="mr-2 h-4 w-4" aria-hidden />
@@ -190,9 +191,9 @@ export default async function AdminHomePage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-border/60">
+          <div className="overflow-x-auto rounded-lg border border-black/5 shadow-sm">
             <table className="w-full text-sm">
-              <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
+              <thead className="bg-munay-cream/30 text-xs uppercase tracking-wider text-munay-ink/50">
                 <tr>
                   <th className="px-4 py-3 text-left font-medium">Título</th>
                   <th className="px-4 py-3 text-left font-medium">Slug</th>
@@ -203,11 +204,11 @@ export default async function AdminHomePage() {
                   <th className="px-4 py-3 text-right font-medium">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/60">
+              <tbody className="divide-y divide-black/5">
                 {products.map((p) => (
-                  <tr key={p.id} className="hover:bg-muted/30 transition-colors">
+                  <tr key={p.id} className="hover:bg-munay-cream/20 transition-colors">
                     <td className="px-4 py-3 font-medium">{p.title}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.slug}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-munay-ink/50">{p.slug}</td>
                     <td className="px-4 py-3 text-right">{formatCents(p.price_cents)}</td>
                     <td className="px-4 py-3 text-center">
                       <Badge variant={p.condition === 'new' ? 'default' : 'secondary'}>
@@ -242,9 +243,8 @@ export default async function AdminHomePage() {
         <LoyaltyToggle
           initialEnabled={loyaltyConfig.enabled}
           initialPercent={loyaltyConfig.discount_percent}
-        />
-        <div className="flex gap-4 mt-4 text-sm">
-          <div className="rounded-lg border border-border/60 bg-card px-4 py-3 text-center">
+        />          <div className="flex gap-4 mt-4 text-sm">
+          <div className="rounded-lg border border-black/5 bg-white px-4 py-3 text-center shadow-sm">
             <p className="text-2xl font-bold">{loyaltyStats.generated}</p>
             <p className="text-xs text-muted-foreground">cupones generados</p>
           </div>

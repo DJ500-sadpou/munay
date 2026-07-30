@@ -55,7 +55,7 @@ export default async function AdminOrdersPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-10">
+    <div className="mx-auto max-w-7xl px-4 py-10 lg:px-6">
       <Button asChild variant="ghost" size="sm" className="mb-4 -ml-2">
         <Link href="/admin">
           <ArrowLeft className="mr-2 h-4 w-4" aria-hidden />
@@ -63,22 +63,22 @@ export default async function AdminOrdersPage() {
         </Link>
       </Button>
 
-      <h1 className="font-display text-3xl font-semibold tracking-tight mb-2">Órdenes</h1>
-      <p className="text-muted-foreground mb-8">
+      <h1 className="font-display text-3xl font-bold tracking-tight text-munay-ink mb-2">Órdenes</h1>
+      <p className="text-munay-ink/60 mb-8">
         {orders.length} {orders.length === 1 ? 'orden registrada' : 'órdenes registradas'}.
       </p>
 
       {orders.length === 0 ? (
-        <Card className="border-dashed">
+        <Card className="border-dashed border-black/10">
           <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-            <Package className="h-10 w-10 text-muted-foreground" aria-hidden />
-            <p className="text-muted-foreground">Aún no hay órdenes. Cuando alguien compre, aparecerán aquí.</p>
+            <Package className="h-10 w-10 text-munay-ink/30" aria-hidden />
+            <p className="text-munay-ink/60">Aún no hay órdenes. Cuando alguien compre, aparecerán aquí.</p>
           </CardContent>
         </Card>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border/60">
+        <div className="overflow-x-auto rounded-lg border border-black/5 shadow-sm">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
+            <thead className="bg-munay-cream/30 text-xs uppercase tracking-wider text-munay-ink/50">
               <tr>
                 <th className="px-4 py-3 text-left font-medium">Orden</th>
                 <th className="px-4 py-3 text-left font-medium">Cliente</th>
@@ -89,15 +89,15 @@ export default async function AdminOrdersPage() {
                 <th className="px-4 py-3 text-right font-medium">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/60">
+            <tbody className="divide-y divide-black/5">
               {orders.map((o) => (
-                <tr key={o.id} className="hover:bg-muted/30 transition-colors">
+                <tr key={o.id} className="hover:bg-munay-cream/20 transition-colors">
                   <td className="px-4 py-3 font-mono text-xs">{o.id.slice(0, 8)}…</td>
                   <td className="px-4 py-3">{o.customer_email}</td>
                   <td className="px-4 py-3 text-center">{o.items_count}</td>
                   <td className="px-4 py-3 text-right font-medium">{formatCents(o.total_cents)}</td>
                   <td className="px-4 py-3 text-center">{statusBadge(o.status)}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                  <td className="px-4 py-3 text-xs text-munay-ink/60">
                     {formatDate(o.created_at, { dateStyle: 'medium', timeStyle: 'short' })}
                   </td>
                   <td className="px-4 py-3 text-right">

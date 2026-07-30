@@ -56,7 +56,7 @@ export default async function AdminFlashCodesPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-10">
+    <div className="mx-auto max-w-7xl px-4 py-10 lg:px-6">
       <Button asChild variant="ghost" size="sm" className="mb-4 -ml-2">
         <Link href="/admin">
           <ArrowLeft className="mr-2 h-4 w-4" aria-hidden />
@@ -66,12 +66,12 @@ export default async function AdminFlashCodesPage() {
 
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="font-display text-3xl font-semibold tracking-tight">Códigos flash</h1>
-          <p className="mt-2 text-muted-foreground">
+          <h1 className="font-display text-3xl font-bold tracking-tight text-munay-ink">Códigos flash</h1>
+          <p className="mt-2 text-munay-ink/60">
             {flashCodes.length} {flashCodes.length === 1 ? 'código' : 'códigos'} configurados.
           </p>
         </div>
-        <Button asChild>
+        <Button asChild className="bg-munay-red-600 text-white hover:bg-munay-red-800">
           <Link href="/admin/flash-codes/new">
             <Plus className="mr-2 h-4 w-4" aria-hidden />
             Nuevo código
@@ -80,11 +80,11 @@ export default async function AdminFlashCodesPage() {
       </div>
 
       {flashCodes.length === 0 ? (
-        <Card className="border-dashed">
+        <Card className="border-dashed border-black/10">
           <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-            <Zap className="h-10 w-10 text-muted-foreground" aria-hidden />
-            <p className="text-muted-foreground">Aún no hay códigos flash.</p>
-            <Button asChild>
+            <Zap className="h-10 w-10 text-munay-ink/30" aria-hidden />
+            <p className="text-munay-ink/60">Aún no hay códigos flash.</p>
+            <Button asChild className="bg-munay-red-600 text-white hover:bg-munay-red-800">
               <Link href="/admin/flash-codes/new">
                 <Plus className="mr-2 h-4 w-4" aria-hidden />
                 Crear el primero
@@ -93,9 +93,9 @@ export default async function AdminFlashCodesPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border/60">
+        <div className="overflow-x-auto rounded-lg border border-black/5 shadow-sm">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
+            <thead className="bg-munay-cream/30 text-xs uppercase tracking-wider text-munay-ink/50">
               <tr>
                 <th className="px-4 py-3 text-left font-medium">Código</th>
                 <th className="px-4 py-3 text-center font-medium">Tipo</th>
@@ -106,11 +106,11 @@ export default async function AdminFlashCodesPage() {
                 <th className="px-4 py-3 text-right font-medium">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/60">
+            <tbody className="divide-y divide-black/5">
               {flashCodes.map((fc) => {
                 const live = isLive(fc)
                 return (
-                  <tr key={fc.code} className="hover:bg-muted/30 transition-colors">
+                  <tr key={fc.code} className="hover:bg-munay-cream/20 transition-colors">
                     <td className="px-4 py-3 font-mono font-bold">{fc.code}</td>
                     <td className="px-4 py-3 text-center">
                       {fc.type === 'discount' ? (
@@ -135,7 +135,7 @@ export default async function AdminFlashCodesPage() {
                     <td className="px-4 py-3 text-center">
                       {fc.uses_count}{fc.max_uses != null ? ` / ${fc.max_uses}` : ''}
                     </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">
+                    <td className="px-4 py-3 text-xs text-munay-ink/60">
                       {formatDate(fc.starts_at, { dateStyle: 'short' })}
                       {' → '}
                       {formatDate(fc.ends_at, { dateStyle: 'short' })}
@@ -168,12 +168,12 @@ export default async function AdminFlashCodesPage() {
         </div>
       )}
 
-      <div className="mt-6 rounded-md border border-dashed border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+      <div className="mt-6 rounded-lg border border-dashed border-black/10 bg-munay-cream/20 p-4 text-sm text-munay-ink/60">
         <p className="flex items-center gap-2">
           <Package className="h-4 w-4" aria-hidden />
           <span>
             Para asociar productos a un código de desbloqueo, contacta al admin de base de datos
-            o usa el SQL Editor para insertar en <code className="rounded bg-muted px-1">flash_code_products</code>.
+            o usa el SQL Editor para insertar en <code className="rounded bg-munay-cream/30 px-1">flash_code_products</code>.
           </span>
         </p>
       </div>

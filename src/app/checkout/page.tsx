@@ -75,22 +75,18 @@ export default function CheckoutPage() {
 
   if (!mounted) {
     return (
-      <div className="container mx-auto px-4 py-10">
+      <div className="mx-auto max-w-7xl px-4 py-10">
         <div className="h-8 w-32 animate-pulse rounded bg-muted" />
         <div className="mt-8 h-64 animate-pulse rounded bg-muted" />
       </div>
     )
   }
 
-  // Fix CRIT-5: declarar ANTES de usar (TDZ fix).
-  // Fix secundario: isDemo detecta correctamente por KUSHKI_PUBLIC_KEY, no Supabase.
   const isDemo = !process.env.NEXT_PUBLIC_KUSHKI_PUBLIC_KEY
     || process.env.NEXT_PUBLIC_KUSHKI_PUBLIC_KEY.includes('YOUR-')
 
-    // Recalcular descuento por puntos (debe ir antes de usar adjustedTotalCents).
   const pointsDiscountCents = Math.floor(pointsToRedeem / POINTS_RULES.POINTS_PER_DISCOUNT_DOLLAR) * 100
-  // Descuento por cupón de fidelidad (estimación client-side — el cálculo real es server-side)
-  const loyaltyDiscountCents = 0 // se calcula server-side al consumir el cupón
+  const loyaltyDiscountCents = 0
   const adjustedTotalCents = Math.max(0, totalCents - pointsDiscountCents - loyaltyDiscountCents)
 
   const shipping = adjustedTotalCents > 0 ? 200 : 0
@@ -98,13 +94,13 @@ export default function CheckoutPage() {
 
   if (lines.length === 0) {
     return (
-      <div className="container mx-auto flex min-h-[60vh] flex-col items-center justify-center px-4 py-10 text-center">
-        <CreditCard className="h-12 w-12 text-muted-foreground" aria-hidden />
-        <h1 className="mt-4 font-display text-2xl font-semibold">No hay nada que pagar</h1>
-        <p className="mt-2 text-muted-foreground">
+      <div className="mx-auto flex min-h-[60vh] flex-col items-center justify-center px-4 py-10 text-center">
+        <CreditCard className="h-12 w-12 text-munay-ink/30" aria-hidden />
+        <h1 className="mt-4 font-display text-2xl font-semibold text-munay-ink">No hay nada que pagar</h1>
+        <p className="mt-2 text-munay-ink/60">
           Tu carrito está vacío. Agrega piezas antes de proceder al checkout.
         </p>
-        <Button asChild className="mt-6">
+        <Button asChild className="mt-6 bg-munay-red-600 text-white hover:bg-munay-red-800">
           <Link href={ROUTES.catalogo}>Ver catálogo</Link>
         </Button>
       </div>
@@ -174,27 +170,23 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-10">
-      <Button asChild variant="ghost" size="sm" className="mb-4 -ml-2">
-        <Link href={ROUTES.carrito}>
-          <ArrowLeft className="mr-2 h-4 w-4" aria-hidden />
-          Volver al carrito
-        </Link>
-      </Button>
+    <div className="bg-gradient-to-b from-white via-munay-cream/10 to-white">
+      <div className="mx-auto max-w-7xl px-4 py-10 lg:px-6">
+        <Button asChild variant="ghost" size="sm" className="mb-4 -ml-2">
+          <Link href={ROUTES.carrito}>
+            <ArrowLeft className="mr-2 h-4 w-4" aria-hidden />
+            Volver al carrito
+          </Link>
+        </Button>
 
-      <Badge variant="secondary" className="mb-2">
-        Fase 3 · {isDemo ? 'modo demo (sin Kushki configurado)' : `pasarela ${PAYMENT.provider} ${PAYMENT.sandbox ? 'sandbox' : 'producción'}`}
-      </Badge>
-      <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Checkout</h1>
-      <p className="mt-2 text-muted-foreground">
-        Creación de orden en Supabase + integración con pasarela PCI.
-      </p>
+        <h1 className="font-display text-3xl font-bold tracking-tight text-munay-ink sm:text-4xl">Checkout</h1>
+        <p className="mt-2 text-munay-ink/60">
+          {isDemo ? 'Modo demo — sin cargo real' : `Pago seguro con ${PAYMENT.provider}`}
+        </p>
 
-      <form onSubmit={handleSubmit} className="mt-8 grid gap-8 lg:grid-cols-[1fr_360px]">
-        {/* Formularios */}
-        <div className="space-y-6">
-          {/* Datos del comprador */}
-          <Card className="border-border/60">
+        <form onSubmit={handleSubmit} className="mt-8 grid gap-8 lg:grid-cols-[1fr_360px]">
+          <div className="space-y-6">
+            <Card className="border-black/5 shadow-sm">
             <CardHeader>
               <CardTitle className="text-lg">Datos del comprador</CardTitle>
               <CardDescription>
@@ -239,7 +231,7 @@ export default function CheckoutPage() {
           </Card>
 
           {/* Envío */}
-          <Card className="border-border/60">
+          <Card className="border-black/5 shadow-sm">
             <CardHeader>
               <CardTitle className="text-lg">Dirección de envío</CardTitle>
             </CardHeader>
@@ -277,10 +269,10 @@ export default function CheckoutPage() {
           </Card>
 
           {/* Pago */}
-          <Card className="border-border/60">
+          <Card className="border-black/5 shadow-sm">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Lock className="h-4 w-4 text-primary" aria-hidden />
+                <Lock className="h-4 w-4 text-munay-red-600" aria-hidden />
                 Pago con tarjeta
               </CardTitle>
               <CardDescription>
@@ -352,11 +344,9 @@ export default function CheckoutPage() {
               </div>
             </div>
           )}
-        </div>
-
-        {/* Resumen */}
+        </div>          {/* Resumen */}
         <div className="lg:sticky lg:top-20 h-fit space-y-4">
-          <Card className="border-border/60">
+          <Card className="border-black/5 shadow-sm">
             <CardHeader>
               <CardTitle className="text-lg">Tu orden</CardTitle>
               <CardDescription>{lines.length} {lines.length === 1 ? 'pieza' : 'piezas'}</CardDescription>
@@ -448,7 +438,7 @@ export default function CheckoutPage() {
               <Button
                 type="submit"
                 size="lg"
-                className="w-full"
+                className="w-full bg-munay-red-600 text-white hover:bg-munay-red-800"
                 disabled={step === 'processing' || step === 'redirecting'}
               >
                 {step === 'processing' ? (
@@ -469,7 +459,7 @@ export default function CheckoutPage() {
                 )}
               </Button>
 
-              <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center justify-center gap-2 text-xs text-munay-ink/50">
                 <ShieldCheck className="h-3 w-3" aria-hidden />
                 Cifrado TLS · sin almacenamiento de tarjeta
               </div>
@@ -477,6 +467,7 @@ export default function CheckoutPage() {
           </Card>
         </div>
       </form>
+    </div>
     </div>
   )
 }

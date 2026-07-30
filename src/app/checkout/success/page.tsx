@@ -20,8 +20,6 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
   const sp = await searchParams
   const orderId = typeof sp.order === 'string' ? sp.order : undefined
 
-  // Fix PERM2-007: no usar createAdminClient (bypass RLS) sin verificación de propietario.
-  // Ahora: verificar sesión Clerk y filtrar por user_id OR customer_email.
   let order: {
     id: string
     customer_email: string
@@ -54,7 +52,6 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
     }
 
     if (order) {
-      // Buscar puntos acreditados
       const pts = await queryOne<any>(`
         SELECT points FROM point_transactions
         WHERE order_id = $1 AND type = 'earn'
@@ -62,7 +59,6 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
       `, [orderId])
       if (pts) pointsAwarded = Number(pts.points)
 
-      // Buscar cupón de fidelidad generado post-compra (solo se muestra en web)
       try {
         const cp = await queryOne<any>(`
           SELECT code, discount_percent, expires_at
@@ -77,39 +73,37 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
             expires_at: cp.expires_at,
           }
         }
-      } catch {
-        // Cupón es bonus — si falla la query, la página sigue funcionando
-      }
+      } catch {}
     }
   }
 
   return (
-    <div className="container mx-auto flex min-h-[80vh] items-center justify-center px-4 py-10">
+    <div className="flex min-h-[80vh] items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
-        <Card className="border-primary/30 bg-primary/5">
+        <Card className="border-munay-red-500/15 shadow-sm">
           <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
-            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-munay-red-500/10 text-munay-red-600">
               <CheckCircle2 className="h-8 w-8" aria-hidden />
             </span>
 
-            <h1 className="font-display text-3xl font-semibold">¡Pago confirmado!</h1>
+            <h1 className="font-display text-3xl font-semibold text-munay-ink">¡Pago confirmado!</h1>
 
-            <p className="text-muted-foreground">
+            <p className="text-munay-ink/60">
               Gracias por tu compra. Te enviaremos un correo con los detalles del envío.
             </p>
 
             {order ? (
-              <div className="w-full rounded-md border border-border/60 bg-card p-4 text-left text-sm">
+              <div className="w-full rounded-md border border-black/5 bg-white p-4 text-left text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Orden</span>
+                  <span className="text-munay-ink/60">Orden</span>
                   <span className="font-mono text-xs">{order.id.slice(0, 8)}…</span>
                 </div>
                 <div className="mt-2 flex justify-between">
-                  <span className="text-muted-foreground">Total pagado</span>
+                  <span className="text-munay-ink/60">Total pagado</span>
                   <span className="font-semibold">{formatCents(order.total_cents)}</span>
                 </div>
                 {pointsAwarded > 0 && (
-                  <div className="mt-2 flex justify-between text-primary">
+                  <div className="mt-2 flex justify-between text-munay-red-600">
                     <span className="flex items-center gap-1">
                       <Sparkles className="h-3 w-3" aria-hidden />
                       Puntos ganados
@@ -125,7 +119,6 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
               </Badge>
             )}
 
-            {/* Cupón de fidelidad — componente cliente con botón Aceptar + persistencia localStorage */}
             {loyaltyCoupon && (
               <CouponAcknowledge
                 code={loyaltyCoupon.code}
@@ -135,7 +128,7 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
             )}
 
             <div className="flex flex-col gap-2 w-full">
-              <Button asChild>
+              <Button asChild className="bg-munay-red-600 text-white hover:bg-munay-red-800">
                 <Link href={ROUTES.catalogo}>
                   Seguir explorando
                   <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
