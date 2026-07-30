@@ -56,12 +56,14 @@ export interface Database {
           id: string
           product_id: string
           url: string
+          public_id: string | null
           sort: number
         }
         Insert: {
           id?: string
           product_id: string
           url: string
+          public_id?: string | null
           sort?: number
         }
         Update: Partial<Database['public']['Tables']['product_images']['Insert']>

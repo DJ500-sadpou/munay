@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
     grading?: 'excelente' | 'buena' | 'regular' | null
     active: boolean
     stock: number
+    images?: { url: string; public_id?: string; sort?: number }[]
   }
   try {
     body = await req.json()
@@ -83,6 +84,17 @@ export async function POST(req: NextRequest) {
         INSERT INTO inventory (product_id, stock, reserved)
         VALUES (${product.id}, ${Math.max(0, body.stock ?? 0)}, 0)
       `
+
+      // Guardar imágenes en product_images
+      if (body.images && body.images.length > 0) {
+        for (const img of body.images) {
+          await tx`
+            INSERT INTO product_images (product_id, url, public_id, sort)
+            VALUES (${product.id}, ${img.url}, ${img.public_id ?? null}, ${img.sort ?? 0})
+          `
+        }
+      }
+
       return product
     })
 
@@ -107,7 +119,12 @@ export async function GET() {
   const { query } = await import('@/lib/db/neon')
   const products = await query<any>(`
     SELECT p.id, p.slug, p.title, p.price_cents, p.condition, p.grading, p.active,
-           COALESCE(i.stock, 0) AS stock
+           COALESCE(i.stock, 0) AS stock,
+           COALESCE(
+             (SELECT json_agg(json_build_object('url', pi.url, 'sort', pi.sort) ORDER BY pi.sort)
+              FROM product_images pi WHERE pi.product_id = p.id),
+             '[]'::json
+           ) AS images
     FROM products p
     LEFT JOIN inventory i ON i.product_id = p.id
     ORDER BY p.created_at DESC

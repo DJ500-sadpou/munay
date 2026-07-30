@@ -46,6 +46,7 @@ export async function PUT(req: NextRequest, ctx: RouteContext) {
     grading?: 'excelente' | 'buena' | 'regular' | null
     active: boolean
     stock: number
+    images?: { url: string; public_id?: string; sort?: number }[]
   }
   try {
     body = await req.json()
@@ -85,6 +86,17 @@ export async function PUT(req: NextRequest, ctx: RouteContext) {
         ON CONFLICT (product_id)
         DO UPDATE SET stock = EXCLUDED.stock, updated_at = now()
       `
+
+      // Actualizar imágenes: borrar existentes e insertar nuevas
+      await tx`DELETE FROM product_images WHERE product_id = ${id}`
+      if (body.images && body.images.length > 0) {
+        for (const img of body.images) {
+          await tx`
+            INSERT INTO product_images (product_id, url, public_id, sort)
+            VALUES (${id}, ${img.url}, ${img.public_id ?? null}, ${img.sort ?? 0})
+          `
+        }
+      }
     })
 
     return NextResponse.json({ ok: true, id })

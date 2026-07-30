@@ -1,10 +1,7 @@
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
-import Image from 'next/image'
-import { Sparkles, ArrowLeft, ShieldCheck, Truck, Tag } from 'lucide-react'
+import { ArrowLeft, ShieldCheck, Truck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import {
   getProductBySlug,
@@ -12,17 +9,13 @@ import {
   applyFlashDiscount,
 } from '@/lib/queries/products'
 import { ProductAddToCart } from '@/components/product/product-add-to-cart'
+import { ProductGallery } from '@/components/product/product-gallery'
 import { parseFiltersFromSearchParams } from '@/lib/queries/products'
 import { ROUTES } from '@/lib/constants'
 import { formatCents } from '@/lib/format'
 import { isSupabaseConfigured } from '@/lib/supabase/configured'
 import { SupabaseNotConfiguredBanner } from '@/components/catalogo/supabase-not-configured-banner'
-import type { ProductCondition, ProductGrading } from '@/types/database'
-
-const CONDITION_LABEL: Record<ProductCondition, string> = {
-  new: 'Nuevo',
-  used: 'Usado',
-}
+import type { ProductGrading } from '@/types/database'
 
 const GRADING_LABEL: Record<ProductGrading, string> = {
   excelente: 'Excelente estado',
@@ -133,53 +126,13 @@ export default async function ProductDetailPage({ params, searchParams }: PagePr
       </Button>
 
       <div className="grid gap-8 md:grid-cols-2">
-        {/* Galería de imágenes */}
-        <div className="space-y-3">
-          <div className="relative aspect-square overflow-hidden rounded-xl border border-black/5 bg-white shadow-sm">
-            {product.images.length > 0 && product.images[0].url ? (
-              <Image
-                src={product.images[0].url}
-                alt={product.title}
-                fill
-                sizes="(max-width: 768px) 100vw, 50vw"
-                className="object-cover"
-                priority
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-munay-ink/30">
-                <Sparkles className="h-16 w-16 opacity-30" aria-hidden />
-              </div>
-            )}
-            <Badge className="absolute left-3 top-3" variant={product.condition === 'new' ? 'default' : 'secondary'}>
-              {CONDITION_LABEL[product.condition]}
-            </Badge>
-            {flashDiscountPercent != null && (
-              <Badge className="absolute right-3 top-3 bg-munay-red-600 text-white">
-                <Tag className="mr-1 h-3 w-3" aria-hidden />
-                -{flashDiscountPercent}%
-              </Badge>
-            )}
-          </div>
-
-          {product.images.length > 1 && (
-            <div className="grid grid-cols-4 gap-2">
-              {product.images.slice(0, 4).map((img) => (
-                <div
-                  key={img.id}
-                  className="relative aspect-square overflow-hidden rounded-lg border border-black/5 bg-white shadow-sm"
-                >
-                  <Image
-                    src={img.url}
-                    alt={product.title}
-                    fill
-                    sizes="100px"
-                    className="object-cover"
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Galería interactiva de imágenes */}
+        <ProductGallery
+          images={product.images}
+          title={product.title}
+          flashDiscountPercent={flashDiscountPercent}
+          condition={product.condition}
+        />
 
         <div className="flex flex-col">
           <h1 className="font-display text-2xl font-semibold tracking-tight text-munay-ink sm:text-3xl">

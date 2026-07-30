@@ -13,6 +13,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import { slugify } from '@/lib/format'
 import { ROUTES } from '@/lib/constants'
+import { ImageUpload } from '@/components/admin/image-upload'
+
+interface ImageData {
+  url: string
+  public_id?: string
+  sort?: number
+}
 
 interface Props {
   /** Si se pasa, es edición. Si no, es creación. */
@@ -26,6 +33,7 @@ interface Props {
     grading: 'excelente' | 'buena' | 'regular' | null
     active: boolean
     stock: number
+    images?: ImageData[]
   }
 }
 
@@ -43,6 +51,7 @@ export function ProductForm({ product }: Props) {
   )
   const [stock, setStock] = useState(product ? String(product.stock) : '0')
   const [active, setActive] = useState(product?.active ?? true)
+  const [images, setImages] = useState<ImageData[]>(product?.images ?? [])
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -80,6 +89,7 @@ export function ProductForm({ product }: Props) {
       grading: grading === 'none' ? null : grading,
       active,
       stock: stockNum,
+      images: images.map((img) => ({ url: img.url, public_id: img.public_id, sort: img.sort })),
     }
 
     try {
@@ -165,6 +175,16 @@ export function ProductForm({ product }: Props) {
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
                 placeholder="Origen, dimensiones, condición, historia…"
+              />
+            </div>
+
+            {/* Imágenes del producto */}
+            <div className="space-y-2">
+              <ImageUpload
+                images={images}
+                onImagesChange={setImages}
+                maxImages={5}
+                aspectRatio={1}
               />
             </div>
 
