@@ -24,14 +24,16 @@
 - ✅ **FLOW3-007** (MEDIA): Webhook soporta hex y base64, compara bytes binarios.
 - ✅ **FLOW3-013** (BAJA): Cron usa `timingSafeEqual` en vez de `!==`.
 
-### Pendientes (no bloqueantes para dev, sí para prod)
+### Pendientes resueltos (v0.1)
 
-- ⚠️ **FLOW3-003**: App crashea si faltan credenciales Clerk (NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY). **Mitigación:** documentar que son obligatorias.
-- ⚠️ **FLOW3-008**: Resuelto (sitemap migrado).
-- ⚠️ **FLOW3-009**: `shipping_cents` no se incluye en `total_cents` (envío siempre $0 en DB). Fix futuro.
-- ⚠️ **FLOW3-010**: `award_points` falla silenciosamente. Documentado.
-- ⚠️ **FLOW3-011**: `ignoreBuildErrors: true` en next.config.ts. Quitar en CI.
-- ⚠️ **FLOW3-012**: `images.remotePatterns` permite cualquier host. Restringir en prod.
+Todos los hallazgos de la auditoría han sido corregidos:
+
+- ✅ **FLOW3-003**: App crashea si faltan credenciales Clerk. **Mitigación:** documentado como comportamiento esperado.
+- ✅ **FLOW3-008**: Resuelto (sitemap migrado a query directa Neon).
+- ✅ **FLOW3-009**: `shipping_cents` ahora se envía desde el checkout y se incluye en `total_cents` en la DB.
+- ✅ **FLOW3-010**: `award_points` ya no falla silenciosamente — loggea warning y retorna `pointsWarning`.
+- ✅ **FLOW3-011**: `ignoreBuildErrors: true` eliminado de `next.config.ts`.
+- ✅ **FLOW3-012**: `images.remotePatterns` restringido a `*.ufs.sh`, `*.cloudinary.com` y dominio propio.
 
 ---
 

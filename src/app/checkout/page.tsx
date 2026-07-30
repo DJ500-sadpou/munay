@@ -114,12 +114,12 @@ export default function CheckoutPage() {
       // 1. Crear la orden
       const orderRes = await fetch('/api/orders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        headers: { 'Content-Type': 'application/json' },          body: JSON.stringify({
           items: lines.map((l) => ({ product_id: l.id, qty: l.qty })),
           customer_email: email,
           customer_name: name,
-          shipping: { name, address, city, province, phone },
+          // Fix FLOW3-009: enviar shipping_cents para que la DB refleje el costo real
+          shipping: { name, address, city, province, phone, shipping_cents: shipping },
           flash_code: flashCode?.code ?? null,
           points_to_redeem: pointsToRedeem > 0 ? pointsToRedeem : undefined,
           turnstile_token: turnstileToken ?? undefined,

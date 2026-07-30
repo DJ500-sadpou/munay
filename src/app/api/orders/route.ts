@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
       city?: string
       province?: string
       phone?: string
+      shipping_cents?: number  // Fix FLOW3-009
     }
     flash_code?: string | null
     points_to_redeem?: number
@@ -71,6 +72,8 @@ export async function POST(req: NextRequest) {
     shipping_city: body.shipping?.city,
     shipping_province: body.shipping?.province,
     shipping_phone: body.shipping?.phone,
+    // Fix FLOW3-009: pasar shipping_cents del checkout a createOrder
+    shipping_cents: body.shipping?.shipping_cents,
     flash_code: body.flash_code ?? null,
     points_to_redeem: body.points_to_redeem,
     user_id: userId,
