@@ -7,7 +7,6 @@
 import { PendingCouponBanner } from '@/components/cart/pending-coupon-banner'
 import { MunayHero } from '@/components/munay/hero'
 import { MunayCategoryBar } from '@/components/munay/category-bar'
-import { MunayFlashOffers } from '@/components/munay/flash-offers'
 import { MunayLiveCodes } from '@/components/munay/live-codes'
 import { MunayTrustBar } from '@/components/munay/trust-bar'
 import { MunayHowItWorks } from '@/components/munay/how-it-works'
@@ -15,6 +14,17 @@ import { MunayTestimonials } from '@/components/munay/testimonials'
 import { MunayMetrics } from '@/components/munay/metrics'
 import { MunayCtaWeb } from '@/components/munay/cta-web'
 import { MunayNewsletter } from '@/components/munay/newsletter'
+import { CampaignBanner, CampaignBannerSkeleton } from '@/components/loyalty/campaign-banner'
+import { getActiveCampaign } from '@/lib/queries/flash-campaigns'
+import { Suspense } from 'react'
+
+async function CampaignSection() {
+  const campaign = await getActiveCampaign()
+
+  if (!campaign) return null
+
+  return <CampaignBanner campaign={campaign} />
+}
 
 export default function Home() {
   return (
@@ -30,7 +40,9 @@ export default function Home() {
           aria-label="Ofertas flash y códigos en vivo"
           className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]"
         >
-          <MunayFlashOffers />
+          <Suspense fallback={<CampaignBannerSkeleton />}>
+            <CampaignSection />
+          </Suspense>
           <MunayLiveCodes />
         </section>
 
