@@ -43,11 +43,21 @@
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
   /* MUNAY — paleta exacta del logo */
+  /* @deprecated — Usar munay-terracota-* en su lugar. Se eliminarán en cleanup posterior. */
   --color-munay-red-500: var(--munay-red-500);
   --color-munay-red-600: var(--munay-red-600);
   --color-munay-red-800: var(--munay-red-800);
   --color-munay-cream: var(--munay-cream);
   --color-munay-ink: var(--munay-ink);
+  /* MUNAY — nueva paleta de marca (v2) */
+  --color-munay-terracota: var(--munay-terracota);
+  --color-munay-terracota-quemado: var(--munay-terracota-quemado);
+  --color-munay-cacao: var(--munay-cacao);
+  --color-munay-turquesa: var(--munay-turquesa);
+  --color-munay-carbon: var(--munay-carbon);
+  --color-munay-warm-gray: var(--munay-warm-gray);
+  --color-munay-crema: var(--munay-crema);
+  --color-munay-whatsapp: var(--munay-whatsapp);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -58,11 +68,21 @@
   --radius: 0.5rem;
 
   /* MUNAY — colores de marca (tomados del logo) */
+  /* @deprecated — Usar munay-terracota-* en su lugar */
   --munay-red-500: #f0442d;
   --munay-red-600: #d92a1e;
   --munay-red-800: #a3120c;
   --munay-cream: #f3d3a6;
   --munay-ink: #2a1512;
+  /* MUNAY — nueva paleta de marca (v2) */
+  --munay-terracota: #C65A2E;
+  --munay-terracota-quemado: #A8451F;
+  --munay-cacao: #3B241C;
+  --munay-turquesa: #2AA7A0;
+  --munay-carbon: #1E1E1E;
+  --munay-warm-gray: #B9B0A6;
+  --munay-crema: #F6F1E8;
+  --munay-whatsapp: #25D366;
 
   /* Light mode — Pergamino cálido sobre tinta obsidiana */
   --background: oklch(0.97 0.018 75);          /* crema/pergamino */
@@ -145,6 +165,16 @@
   --sidebar-accent-foreground: oklch(0.92 0.02 75);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.72 0.16 60);
+
+  /* MUNAY v2 — dark mode variants */
+  --munay-terracota: #E07B4A;
+  --munay-terracota-quemado: #C65A2E;
+  --munay-cacao: #5C3830;
+  --munay-turquesa: #4DCEC7;
+  --munay-carbon: #E0E0E0;
+  --munay-warm-gray: #8A8278;
+  --munay-crema: #2A2520;
+  --munay-whatsapp: #25D366;
 }
 
 @layer base {
