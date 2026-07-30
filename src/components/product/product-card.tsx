@@ -110,11 +110,11 @@ export function ProductCard({ product }: { product: ProductCardData }) {
 
   // ----- Producto normal -----
   return (
-    <Card className="group flex flex-col overflow-hidden border-border/60 bg-card transition-all hover:shadow-lg hover:border-primary/40">
+    <Card className="group flex flex-col overflow-hidden border-black/5 bg-white transition-all hover:shadow-md hover:border-black/10">
       {/* Imagen */}
       <Link
         href={ROUTES.producto(product.slug)}
-        className="relative block aspect-square overflow-hidden bg-muted"
+        className="relative block aspect-square overflow-hidden bg-munay-cream/20"
         aria-label={`Ver ${product.title}`}
       >
         {product.image_url ? (
@@ -126,8 +126,8 @@ export function ProductCard({ product }: { product: ProductCardData }) {
             className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-            <Sparkles className="h-10 w-10 opacity-40" aria-hidden />
+          <div className="flex h-full w-full items-center justify-center text-munay-ink/30">
+            <Sparkles className="h-12 w-12" aria-hidden />
           </div>
         )}
 
@@ -137,13 +137,13 @@ export function ProductCard({ product }: { product: ProductCardData }) {
             {CONDITION_LABEL[product.condition]}
           </Badge>
           {hasFlashDiscount && (
-            <Badge variant="default" className="bg-accent text-accent-foreground">
+            <Badge className="bg-munay-red-600 text-white border-0">
               <Tag className="mr-1 h-3 w-3" aria-hidden />
               -{product.flash_discount_percent}%
             </Badge>
           )}
           {product.flash_code && !hasFlashDiscount && (
-            <Badge variant="default" className="bg-accent text-accent-foreground">
+            <Badge className="bg-munay-cream text-munay-ink border-0">
               <Sparkles className="mr-1 h-3 w-3" aria-hidden />
               Desbloqueado
             </Badge>
@@ -151,8 +151,8 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         </div>
 
         {outOfStock && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/70">
-            <span className="rounded-full bg-foreground px-3 py-1 text-xs font-medium uppercase tracking-wider text-background">
+          <div className="absolute inset-0 flex items-center justify-center bg-white/70">
+            <span className="rounded-full bg-munay-ink px-3 py-1 text-xs font-medium uppercase tracking-wider text-white">
               Agotado
             </span>
           </div>
@@ -160,47 +160,47 @@ export function ProductCard({ product }: { product: ProductCardData }) {
       </Link>
 
       {/* Contenido */}
-      <CardContent className="flex-1 px-4 pt-4">
+      <CardContent className="flex-1 px-3 pt-2.5">
         <Link
           href={ROUTES.producto(product.slug)}
-          className="line-clamp-2 font-medium leading-snug hover:text-primary transition-colors"
+          className="line-clamp-2 text-sm font-medium leading-snug text-munay-ink transition-colors hover:text-munay-red-600"
         >
           {product.title}
         </Link>
         {product.grading && (
-          <p className="mt-1 text-xs text-muted-foreground">{GRADING_LABEL[product.grading]}</p>
+          <p className="mt-0.5 text-[11px] text-munay-ink/50">{GRADING_LABEL[product.grading]}</p>
         )}
       </CardContent>
 
-      <CardFooter className="flex flex-col items-stretch gap-2 px-4 pb-4">
-        <div className="flex items-baseline gap-2">
+      <CardFooter className="flex flex-col items-stretch gap-1.5 px-3 pb-3">
+        <div className="flex items-baseline gap-1.5">
           {hasFlashDiscount && (
-            <span className="text-sm text-muted-foreground line-through">
+            <span className="text-xs text-munay-ink/40 line-through">
               {formatCents(product.price_cents)}
             </span>
           )}
-          <span className={`text-lg font-semibold ${hasFlashDiscount ? 'text-primary' : 'text-foreground'}`}>
+          <span className={`text-base font-semibold ${hasFlashDiscount ? 'text-munay-red-600' : 'text-munay-ink'}`}>
             {formatCents(finalPrice)}
           </span>
         </div>
-        <div className="flex gap-2">
-          <Button asChild size="sm" variant="outline" className="flex-1">
+        <div className="flex gap-1.5">
+          <Button asChild size="sm" variant="outline" className="flex-1 h-8 text-xs">
             <Link href={ROUTES.producto(product.slug)}>Ver</Link>
           </Button>
           <Button
             size="sm"
-            className="flex-1"
+            className="flex-1 h-8 text-xs bg-munay-red-600 text-white hover:bg-munay-red-800"
             disabled={outOfStock}
             onClick={handleAddToCart}
           >
             {added ? (
               <>
-                <Check className="mr-1 h-3.5 w-3.5" aria-hidden />
+                <Check className="mr-1 h-3 w-3" aria-hidden />
                 Agregado
               </>
             ) : (
               <>
-                <ShoppingCart className="mr-1 h-3.5 w-3.5" aria-hidden />
+                <ShoppingCart className="mr-1 h-3 w-3" aria-hidden />
                 {outOfStock ? 'Sin stock' : 'Agregar'}
               </>
             )}
