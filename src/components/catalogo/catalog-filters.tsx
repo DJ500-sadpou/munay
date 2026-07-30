@@ -9,7 +9,7 @@
  */
 
 import Link from 'next/link'
-import { RotateCcw } from 'lucide-react'
+import { RotateCcw, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -46,20 +46,22 @@ export function CatalogFilters({ filters, totalCount, flashCodeActive }: Props) 
 
   return (
     <aside className="space-y-6">
-      <div>
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+      {/* Header del panel */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
           Filtros
         </h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {totalCount} {totalCount === 1 ? 'prenda' : 'prendas'} encontradas
-        </p>
+        <span className="rounded-full bg-primary/5 px-2.5 py-0.5 text-[11px] font-medium text-primary">
+          {totalCount}
+        </span>
       </div>
+      <div className="h-px bg-gradient-to-r from-border/60 to-transparent" />
 
       {/* Orden */}
       <div className="space-y-2">
-        <Label htmlFor="sort" className="text-xs font-medium">Ordenar por</Label>
+        <Label htmlFor="sort" className="text-xs font-medium text-foreground/70">Ordenar por</Label>
         <Select name="sort" defaultValue={filters.sort ?? 'recent'}>
-          <SelectTrigger id="sort" className="h-9">
+          <SelectTrigger id="sort" className="h-9 border-border/60 transition-colors hover:border-primary/40 focus:ring-primary/30">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -69,14 +71,11 @@ export function CatalogFilters({ filters, totalCount, flashCodeActive }: Props) 
             <SelectItem value="title_asc">Título: A → Z</SelectItem>
           </SelectContent>
         </Select>
-        <p className="text-[10px] text-muted-foreground">
-          Los enlaces siguientes preservan el orden.
-        </p>
       </div>
 
       {/* Condición */}
-      <div className="space-y-2">
-        <Label className="text-xs font-medium">Condición</Label>
+      <div className="space-y-2.5">
+        <Label className="text-xs font-medium text-foreground/70">Condición</Label>
         <div className="flex flex-col gap-1">
           {(['all', 'new', 'used'] as const).map((c) => {
             const label = c === 'all' ? 'Todas' : c === 'new' ? 'Nuevas' : 'Usadas'
@@ -85,13 +84,16 @@ export function CatalogFilters({ filters, totalCount, flashCodeActive }: Props) 
               <Link
                 key={c}
                 href={buildHref({ condition: c })}
-                className={`flex items-center justify-between rounded-md px-3 py-1.5 text-sm transition-colors ${
+                className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-all duration-200 ${
                   isActive
-                    ? 'bg-primary/10 text-primary font-medium'
-                    : 'text-foreground/80 hover:bg-muted'
+                    ? 'bg-primary/10 text-primary font-medium shadow-sm'
+                    : 'text-foreground/70 hover:bg-muted hover:text-foreground'
                 }`}
               >
                 {label}
+                {isActive && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                )}
               </Link>
             )
           })}
@@ -99,8 +101,8 @@ export function CatalogFilters({ filters, totalCount, flashCodeActive }: Props) 
       </div>
 
       {/* Grading (solo aplica a piezas usadas) */}
-      <div className="space-y-2">
-        <Label className="text-xs font-medium">Estado (usadas)</Label>
+      <div className="space-y-2.5">
+        <Label className="text-xs font-medium text-foreground/70">Estado (usadas)</Label>
         <div className="flex flex-col gap-1">
           {(['all', 'excelente', 'buena', 'regular'] as const).map((g) => {
             const labels: Record<string, string> = {
@@ -114,13 +116,16 @@ export function CatalogFilters({ filters, totalCount, flashCodeActive }: Props) 
               <Link
                 key={g}
                 href={buildHref({ grading: g })}
-                className={`flex items-center justify-between rounded-md px-3 py-1.5 text-sm transition-colors ${
+                className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-all duration-200 ${
                   isActive
-                    ? 'bg-primary/10 text-primary font-medium'
-                    : 'text-foreground/80 hover:bg-muted'
+                    ? 'bg-primary/10 text-primary font-medium shadow-sm'
+                    : 'text-foreground/70 hover:bg-muted hover:text-foreground'
                 }`}
               >
                 {labels[g]}
+                {isActive && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                )}
               </Link>
             )
           })}
@@ -128,8 +133,8 @@ export function CatalogFilters({ filters, totalCount, flashCodeActive }: Props) 
       </div>
 
       {/* Rango de precio */}
-      <div className="space-y-2">
-        <Label className="text-xs font-medium">Rango de precio (USD)</Label>
+      <div className="space-y-2.5">
+        <Label className="text-xs font-medium text-foreground/70">Rango de precio (USD)</Label>
         <div className="flex items-center gap-2">
           <Input
             type="number"
@@ -137,31 +142,36 @@ export function CatalogFilters({ filters, totalCount, flashCodeActive }: Props) 
             step={1}
             placeholder="Mín"
             defaultValue={filters.minPriceCents !== undefined ? filters.minPriceCents / 100 : ''}
-            className="h-9"
+            className="h-9 border-border/60 transition-colors focus:border-primary/40"
             name="minPrice"
           />
-          <span className="text-muted-foreground">—</span>
+          <span className="text-muted-foreground/60">—</span>
           <Input
             type="number"
             min={0}
             step={1}
             placeholder="Máx"
             defaultValue={filters.maxPriceCents !== undefined ? filters.maxPriceCents / 100 : ''}
-            className="h-9"
+            className="h-9 border-border/60 transition-colors focus:border-primary/40"
             name="maxPrice"
           />
         </div>
-        <Button asChild variant="outline" size="sm" className="w-full mt-2">
+        <Button asChild variant="outline" size="sm" className="w-full transition-all duration-200 hover:border-primary/30 hover:bg-primary/5">
           <Link href={buildHref({})}>Aplicar rango</Link>
         </Button>
       </div>
 
       {/* Código flash activo */}
       {flashCodeActive && (
-        <div className="rounded-md border border-accent/40 bg-accent/10 p-3">
-          <p className="text-xs font-medium text-accent-foreground">Código flash activo</p>
-          <p className="mt-1 font-mono text-lg font-bold text-accent">{flashCodeActive}</p>
-          <Button asChild variant="ghost" size="sm" className="mt-2 h-7 px-2 text-xs">
+        <div className="rounded-xl border border-accent/30 bg-gradient-to-br from-accent/10 to-accent/5 p-4 shadow-sm">
+          <div className="flex items-center gap-2">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent/20">
+              <Zap className="h-3 w-3 text-accent" aria-hidden />
+            </span>
+            <p className="text-xs font-medium text-accent-foreground/80">Código flash activo</p>
+          </div>
+          <p className="mt-2 font-mono text-xl font-bold tracking-wider text-accent">{flashCodeActive}</p>
+          <Button asChild variant="ghost" size="sm" className="mt-2 h-7 px-2 text-xs text-accent hover:text-accent/80 hover:bg-accent/10">
             <Link href={buildHref({ flashCode: undefined })}>
               <RotateCcw className="mr-1 h-3 w-3" aria-hidden />
               Quitar descuento
@@ -171,7 +181,7 @@ export function CatalogFilters({ filters, totalCount, flashCodeActive }: Props) 
       )}
 
       {/* Limpiar filtros */}
-      <Button asChild variant="ghost" size="sm" className="w-full">
+      <Button asChild variant="ghost" size="sm" className="w-full text-muted-foreground transition-all duration-200 hover:text-foreground hover:bg-muted/80">
         <Link href="/catalogo">
           <RotateCcw className="mr-2 h-3.5 w-3.5" aria-hidden />
           Limpiar filtros

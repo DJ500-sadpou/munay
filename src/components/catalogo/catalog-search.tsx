@@ -45,36 +45,39 @@ export function CatalogSearch({ initialValue = '' }: { initialValue?: string }) 
   return (
     <form onSubmit={handleSubmit} className="relative flex-1">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/60 transition-colors peer-focus-within:text-primary/60" aria-hidden />
         <Input
           type="search"
           name="q"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder="Buscar prendas o ingresar código flash (ej. MUNAY10)…"
-          className="pl-10 pr-24"
+          className="pl-10 pr-24 h-11 border-border/60 bg-background transition-all duration-200 focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20 focus-visible:ring-primary/30"
           autoComplete="off"
           aria-label="Buscar en el catálogo"
         />
         <Button
           type="submit"
           size="sm"
-          className="absolute right-1 top-1/2 -translate-y-1/2 h-8"
+          className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 px-3 text-xs font-medium transition-all duration-200 active:scale-95"
           disabled={pending}
         >
           {pending ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
           ) : (
             <>
-              <Zap className="mr-1 h-3.5 w-3.5" aria-hidden />
+              <Search className="mr-1.5 h-3.5 w-3.5" aria-hidden />
               Buscar
             </>
           )}
         </Button>
       </div>
-      <p className="mt-1.5 px-1 text-xs text-muted-foreground">
-        Si ingresas un código flash válido, te llevamos directo a la oferta.
-      </p>
+      <div className="mt-2 flex items-center gap-1.5 px-1">
+        <Zap className="h-3 w-3 text-accent/60" aria-hidden />
+        <p className="text-[11px] text-muted-foreground/70">
+          Si ingresas un código flash válido, te llevamos directo a la oferta.
+        </p>
+      </div>
     </form>
   )
 }

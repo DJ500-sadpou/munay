@@ -110,7 +110,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
 
   // ----- Producto normal -----
   return (
-    <Card className="group flex flex-col overflow-hidden border-border/60 bg-card transition-all hover:shadow-lg hover:border-primary/40">
+    <Card className="group flex flex-col overflow-hidden border-border/50 bg-card transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-0.5 hover:border-primary/30">
       {/* Imagen */}
       <Link
         href={ROUTES.producto(product.slug)}
@@ -123,27 +123,30 @@ export function ProductCard({ product }: { product: ProductCardData }) {
             alt={product.title}
             fill
             sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            className="object-cover transition-all duration-500 group-hover:scale-105 group-hover:brightness-[1.02]"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-            <Sparkles className="h-10 w-10 opacity-40" aria-hidden />
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5 text-muted-foreground">
+            <Sparkles className="h-10 w-10 text-primary/30" aria-hidden />
           </div>
         )}
 
+        {/* Overlay en hover */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+
         {/* Badges */}
-        <div className="absolute left-2 top-2 flex flex-col gap-1">
-          <Badge variant={product.condition === 'new' ? 'default' : 'secondary'}>
+        <div className="absolute left-2 top-2 flex flex-col gap-1.5">
+          <Badge variant={product.condition === 'new' ? 'default' : 'secondary'} className="shadow-sm backdrop-blur-sm">
             {CONDITION_LABEL[product.condition]}
           </Badge>
           {hasFlashDiscount && (
-            <Badge variant="default" className="bg-accent text-accent-foreground">
+            <Badge variant="default" className="bg-accent text-accent-foreground shadow-sm backdrop-blur-sm">
               <Tag className="mr-1 h-3 w-3" aria-hidden />
               -{product.flash_discount_percent}%
             </Badge>
           )}
           {product.flash_code && !hasFlashDiscount && (
-            <Badge variant="default" className="bg-accent text-accent-foreground">
+            <Badge variant="default" className="bg-accent text-accent-foreground shadow-sm backdrop-blur-sm">
               <Sparkles className="mr-1 h-3 w-3" aria-hidden />
               Desbloqueado
             </Badge>
@@ -151,8 +154,8 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         </div>
 
         {outOfStock && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/70">
-            <span className="rounded-full bg-foreground px-3 py-1 text-xs font-medium uppercase tracking-wider text-background">
+          <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-[2px]">
+            <span className="rounded-full bg-foreground px-4 py-1.5 text-xs font-medium uppercase tracking-widest text-background shadow-md">
               Agotado
             </span>
           </div>
@@ -163,44 +166,47 @@ export function ProductCard({ product }: { product: ProductCardData }) {
       <CardContent className="flex-1 px-4 pt-4">
         <Link
           href={ROUTES.producto(product.slug)}
-          className="line-clamp-2 font-medium leading-snug hover:text-primary transition-colors"
+          className="line-clamp-2 font-medium leading-snug transition-colors duration-200 group-hover:text-primary"
         >
           {product.title}
         </Link>
         {product.grading && (
-          <p className="mt-1 text-xs text-muted-foreground">{GRADING_LABEL[product.grading]}</p>
+          <p className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground">
+            <span className="inline-block h-1 w-1 rounded-full bg-muted-foreground/40" />
+            {GRADING_LABEL[product.grading]}
+          </p>
         )}
       </CardContent>
 
       <CardFooter className="flex flex-col items-stretch gap-2 px-4 pb-4">
         <div className="flex items-baseline gap-2">
           {hasFlashDiscount && (
-            <span className="text-sm text-muted-foreground line-through">
+            <span className="text-sm text-muted-foreground line-through decoration-accent/50">
               {formatCents(product.price_cents)}
             </span>
           )}
-          <span className={`text-lg font-semibold ${hasFlashDiscount ? 'text-primary' : 'text-foreground'}`}>
+          <span className={`text-lg font-semibold tracking-tight ${hasFlashDiscount ? 'text-accent' : 'text-foreground'}`}>
             {formatCents(finalPrice)}
           </span>
         </div>
         <div className="flex gap-2">
-          <Button asChild size="sm" variant="outline" className="flex-1">
+          <Button asChild size="sm" variant="outline" className="flex-1 transition-all duration-200 hover:border-primary/30 hover:bg-primary/5">
             <Link href={ROUTES.producto(product.slug)}>Ver</Link>
           </Button>
           <Button
             size="sm"
-            className="flex-1"
+            className="flex-1 transition-all duration-200 active:scale-95"
             disabled={outOfStock}
             onClick={handleAddToCart}
           >
             {added ? (
               <>
-                <Check className="mr-1 h-3.5 w-3.5" aria-hidden />
+                <Check className="mr-1.5 h-3.5 w-3.5" aria-hidden />
                 Agregado
               </>
             ) : (
               <>
-                <ShoppingCart className="mr-1 h-3.5 w-3.5" aria-hidden />
+                <ShoppingCart className="mr-1.5 h-3.5 w-3.5 transition-transform duration-200 group-hover:scale-110" aria-hidden />
                 {outOfStock ? 'Sin stock' : 'Agregar'}
               </>
             )}
