@@ -89,8 +89,8 @@ export async function PUT(req: NextRequest, ctx: RouteContext) {
 
     return NextResponse.json({ ok: true, id })
   } catch (err: any) {
-    console.error('[admin/products] update error:', err?.message)
-    return NextResponse.json({ error: err?.message ?? 'Error interno' }, { status: 500 })
+    console.error('[admin/products] update error:', err)
+    return NextResponse.json({ error: 'Error al actualizar producto' }, { status: 500 })
   }
 }
 
@@ -108,6 +108,7 @@ export async function DELETE(req: NextRequest, ctx: RouteContext) {
     await query(`DELETE FROM products WHERE id = $1`, [id])
     return NextResponse.json({ ok: true })
   } catch (err: any) {
-    return NextResponse.json({ error: err?.message ?? 'Error interno' }, { status: 500 })
+    console.error('[admin/products] delete error:', err)
+    return NextResponse.json({ error: 'Error al eliminar producto' }, { status: 500 })
   }
 }

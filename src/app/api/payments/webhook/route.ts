@@ -177,7 +177,7 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     console.error('[webhook] Error inesperado:', err)
     return NextResponse.json(
-      { ok: false, error: err?.message ?? 'Error interno' },
+      { ok: false, error: 'Error interno en webhook' },
       { status: 500 }
     )
   }

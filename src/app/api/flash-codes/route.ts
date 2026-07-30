@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
     if (err?.code === '23505') {
       return NextResponse.json({ error: 'Ya existe un código con ese nombre' }, { status: 409 })
     }
-    return NextResponse.json({ error: err?.message ?? 'Error al crear' }, { status: 500 })
+    return NextResponse.json({ error: 'Error al crear código flash' }, { status: 500 })
   }
 }
 

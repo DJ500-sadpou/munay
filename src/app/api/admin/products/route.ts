@@ -91,8 +91,8 @@ export async function POST(req: NextRequest) {
     if (err?.code === '23505') {
       return NextResponse.json({ error: 'Ya existe un producto con ese slug' }, { status: 409 })
     }
-    console.error('[admin/products] create error:', err?.message)
-    return NextResponse.json({ error: err?.message ?? 'Error interno' }, { status: 500 })
+    console.error('[admin/products] create error:', err)
+    return NextResponse.json({ error: 'Error al crear producto' }, { status: 500 })
   }
 }
 

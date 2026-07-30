@@ -90,7 +90,7 @@ export async function PUT(req: NextRequest, ctx: RouteContext) {
 
     return NextResponse.json({ ok: true, code: codeId })
   } catch (err: any) {
-    return NextResponse.json({ error: err?.message ?? 'Error al actualizar' }, { status: 500 })
+    return NextResponse.json({ error: 'Error al actualizar código flash' }, { status: 500 })
   }
 }
 
@@ -105,6 +105,6 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext) {
     await query(`DELETE FROM flash_codes WHERE code = $1`, [codeId])
     return NextResponse.json({ ok: true })
   } catch (err: any) {
-    return NextResponse.json({ error: err?.message ?? 'Error al eliminar' }, { status: 500 })
+    return NextResponse.json({ error: 'Error al eliminar código flash' }, { status: 500 })
   }
 }
