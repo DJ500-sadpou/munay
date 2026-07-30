@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowLeft, Sparkles, TrendingUp, TrendingDown, History, Gift } from 'lucide-react'
+import { ArrowLeft, Sparkles, TrendingUp, TrendingDown, History, Gift, Crown } from 'lucide-react'
 import { requireUser } from '@/lib/auth/require-user'
 import { queryOne, query, isDbConfigured } from '@/lib/db/neon'
 import { Button } from '@/components/ui/button'
@@ -8,6 +8,9 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { formatCents, formatDate } from '@/lib/format'
 import { POINTS_RULES } from '@/lib/constants'
+import { getUserLevel } from '@/lib/queries/loyalty-points'
+import { LevelBadge } from '@/components/loyalty/level-badge'
+import { LevelProgressBar } from '@/components/loyalty/level-progress'
 
 export const metadata = { title: 'Mis puntos · Munay' }
 export const dynamic = 'force-dynamic'
@@ -26,8 +29,11 @@ export default async function MyPointsPage() {
   }> = []
   let totalEarned = 0
   let totalRedeemed = 0
+  let levelInfo: Awaited<ReturnType<typeof getUserLevel>> = null
 
   if (isDbConfigured()) {
+    // Obtener nivel del usuario
+    levelInfo = await getUserLevel(user.id)
     // Fix CRIT-4: query directa con Neon.
     const customer = await queryOne<any>(`
       SELECT id FROM customers WHERE user_id = $1 OR email = $2 LIMIT 1
@@ -96,6 +102,32 @@ export default async function MyPointsPage() {
             </p>
           </CardContent>
         </Card>
+
+        {/* Nivel actual */}
+        {levelInfo && (
+          <Card className="border-black/5 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-munay-ink/60 flex items-center gap-2">
+                <Crown className="h-4 w-4" aria-hidden />
+                Tu nivel
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <LevelBadge levelName={levelInfo.levelName} size="lg" className="mb-3" />
+              <LevelProgressBar
+                currentLevelName={levelInfo.levelName}
+                pointsBalance={levelInfo.pointsBalance}
+                nextLevel={levelInfo.nextLevel}
+              />
+              {levelInfo.earlyAccessHours > 0 && (
+                <p className="mt-3 text-xs text-munay-ink/60 flex items-center gap-1">
+                  <Sparkles className="h-3 w-3 text-accent" aria-hidden />
+                  Acceso anticipado a códigos flash: <strong>{levelInfo.earlyAccessHours}h</strong> antes del público
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <Card className="border-black/5 shadow-sm">
