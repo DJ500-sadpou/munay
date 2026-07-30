@@ -57,7 +57,7 @@ export function MunayFlashOffers() {
 
       <div className="pointer-events-none absolute bottom-0 right-0 top-0 hidden w-[46%] sm:block">
         <Image
-          src="/munay/flash-jacket.png"
+          src="/munay/ref-flash-jacket.webp"
           alt="Chaqueta roja en oferta flash"
           fill
           sizes="(max-width: 1024px) 50vw, 25vw"
