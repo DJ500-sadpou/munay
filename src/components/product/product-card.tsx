@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ImageOff, Sparkles, Tag, ShoppingCart, Check, Lock, Gift } from 'lucide-react'
 import { useState } from 'react'
-import { Card, CardContent, CardFooter } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatCents } from '@/lib/format'
@@ -68,11 +68,13 @@ export function ProductCard({ product }: { product: ProductCardData }) {
     setTimeout(() => setAdded(false), 1500)
   }
 
-  // ----- Mystery Box: versión bloqueada -----
+  // ----- Mystery Box: versión bloqueada y compacta -----
+  // Diseñado para que NO sea más alto que una card normal,
+  // así no fuerza a las demás cards de la fila a estirarse.
   if (isMysteryBox) {
     return (
       <Card className="group flex flex-col overflow-hidden border-dashed border-accent/40 bg-accent/5 transition-all hover:shadow-md gap-0 py-0">
-        {/* Imagen bloqueada */}
+        {/* Imagen bloqueada con badge Próximamente */}
         <div className="relative block aspect-square overflow-hidden bg-accent/10">
           <div className="flex h-full w-full items-center justify-center text-accent">
             <Gift className="h-16 w-16 opacity-60" aria-hidden />
@@ -85,25 +87,12 @@ export function ProductCard({ product }: { product: ProductCardData }) {
           </div>
         </div>
 
-        {/* Contenido */}
-        <CardContent className="flex-1 px-4 pt-4">
-          <div className="line-clamp-2 font-medium leading-snug text-foreground/80">
+        {/* Solo título — sin descripción, sin precio, sin botón */}
+        <CardContent className="flex flex-1 flex-col px-3 pt-1 pb-1">
+          <div className="line-clamp-2 text-sm font-medium leading-snug text-accent/70">
             {product.title}
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">Contenido sorpresa — disponible pronto</p>
         </CardContent>
-
-        <CardFooter className="flex flex-col items-stretch gap-2 px-4 pb-4">
-          <div className="flex items-baseline gap-2">
-            <span className="text-lg font-semibold text-accent">???
-              <span className="ml-1 text-xs font-normal text-muted-foreground">— sorpresa</span>
-            </span>
-          </div>
-          <Button size="sm" variant="outline" className="flex-1" disabled>
-            <Lock className="mr-1 h-3.5 w-3.5" aria-hidden />
-            No disponible aún
-          </Button>
-        </CardFooter>
       </Card>
     )
   }
@@ -161,7 +150,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
 
       {/* Contenido + Precio + Botones en un solo bloque flex-col */}
       {/* flex-1 distribuye el espacio extra al final (debajo de botones), no entre secciones */}
-      <CardContent className="flex flex-1 flex-col px-3 pt-1 pb-0.5">
+      <CardContent className="flex flex-1 flex-col px-3 pt-1 pb-1">
         <Link
           href={ROUTES.producto(product.slug)}
           className="line-clamp-2 text-sm font-medium leading-snug text-munay-ink transition-colors hover:text-munay-red-600"
