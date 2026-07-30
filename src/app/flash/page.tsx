@@ -24,7 +24,7 @@ export default function FlashCodeEntryPage() {
   return (
     <MunayPageShell size="sm" className="py-16">
       <div className="text-center">
-        <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-munay-red-500/10 text-munay-red-600">
+        <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-munay-terracota/10 text-munay-terracota">
           <Zap className="h-6 w-6" aria-hidden />
         </span>
         <h1 className="font-display text-3xl font-semibold tracking-tight text-munay-ink">
@@ -59,7 +59,7 @@ export default function FlashCodeEntryPage() {
                 maxLength={32}
               />
             </div>
-            <Button type="submit" size="lg" className="w-full bg-munay-red-600 text-white hover:bg-munay-red-800">
+            <Button type="submit" size="lg" className="w-full bg-munay-terracota text-white hover:bg-munay-terracota-quemado">
               Desbloquear
               <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
             </Button>

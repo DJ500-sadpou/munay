@@ -21,8 +21,8 @@ export function MunayHowItWorks() {
         {STEPS.map((s, i) => (
           <li key={s.title} className="flex flex-1 items-center gap-4">
             <div className="flex flex-1 items-start gap-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-munay-red-500/25 bg-white">
-                <s.icon className="h-5 w-5 text-munay-red-500" strokeWidth={1.75} aria-hidden />
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-munay-terracota/25 bg-white">
+                <s.icon className="h-5 w-5 text-munay-terracota" strokeWidth={1.75} aria-hidden />
               </span>
               <div>
                 <h3 className="text-sm font-semibold text-munay-ink">{s.title}</h3>

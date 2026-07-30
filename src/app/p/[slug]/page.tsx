@@ -168,11 +168,11 @@ export default async function ProductDetailPage({ params, searchParams }: PagePr
 
           <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="flex items-center gap-2 text-sm text-munay-ink/60">
-              <Truck className="h-4 w-4 text-munay-red-600" aria-hidden />
+              <Truck className="h-4 w-4 text-munay-turquesa" aria-hidden />
               <span>Envíos en Ibarra y todo Ecuador</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-munay-ink/60">
-              <ShieldCheck className="h-4 w-4 text-munay-red-600" aria-hidden />
+              <ShieldCheck className="h-4 w-4 text-munay-turquesa" aria-hidden />
               <span>Pago seguro con pasarela PCI</span>
             </div>
           </div>

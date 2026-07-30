@@ -27,14 +27,14 @@ export default async function FlashPage({ params }: PageProps) {
   if (!flash) {
     return (
       <div className="mx-auto flex min-h-[60vh] flex-col items-center justify-center px-4 py-10 text-center">
-        <XCircle className="h-12 w-12 text-munay-red-600" aria-hidden />
+        <XCircle className="h-12 w-12 text-munay-terracota" aria-hidden />
         <h1 className="mt-4 font-display text-2xl font-semibold text-munay-ink">Código no válido</h1>
         <p className="mt-2 max-w-md text-munay-ink/60">
           El código <code className="rounded bg-munay-cream/30 px-1.5 py-0.5 font-mono">{upper}</code> no existe,
           está inactivo, ya expiró o alcanzó su límite de usos.
         </p>
         <div className="mt-6 flex gap-2">
-          <Button asChild className="bg-munay-red-600 text-white hover:bg-munay-red-800">
+          <Button asChild className="bg-munay-terracota text-white hover:bg-munay-terracota-quemado">
             <Link href={ROUTES.catalogo}>Ver catálogo público</Link>
           </Button>
           <Button asChild variant="outline">
@@ -97,7 +97,7 @@ export default async function FlashPage({ params }: PageProps) {
   return (
     <div className="bg-gradient-to-b from-white via-munay-cream/10 to-white">
       <div className="mx-auto max-w-3xl px-4 py-10 lg:px-6">
-        <Badge className={`mb-3 ${isUnlockType ? 'bg-munay-cream text-munay-ink' : 'bg-munay-red-600 text-white'}`}>
+        <Badge className={`mb-3 ${isUnlockType ? 'bg-munay-cream text-munay-ink' : 'bg-munay-terracota text-white'}`}>
           {isUnlockType ? (
             <><Sparkles className="mr-1 h-3 w-3" /> Pieza{products.length !== 1 ? 's' : ''} desbloqueada{products.length !== 1 ? 's' : ''}</>
           ) : (
@@ -106,7 +106,7 @@ export default async function FlashPage({ params }: PageProps) {
         </Badge>
 
         <h1 className="font-display text-3xl font-bold tracking-tight text-munay-ink sm:text-4xl">
-          Código: <span className="text-munay-red-600">{flash.code}</span>
+          Código: <span className="text-munay-terracota">{flash.code}</span>
         </h1>
         <p className="mt-2 text-munay-ink/60">
           {isUnlockType
@@ -140,7 +140,7 @@ export default async function FlashPage({ params }: PageProps) {
               <CheckCircle2 className="h-4 w-4" aria-hidden />
               Estado
             </p>
-            <p className="mt-1 font-medium text-munay-red-600">Activo</p>
+            <p className="mt-1 font-medium text-munay-terracota">Activo</p>
           </div>
         </div>
 
@@ -179,7 +179,7 @@ export default async function FlashPage({ params }: PageProps) {
                       )}
                       {hasDiscount && (
                         <div className="absolute left-2 top-2">
-                          <Badge className="bg-munay-red-600 text-white">
+                          <Badge className="bg-munay-terracota text-white">
                             <Zap className="mr-1 h-3 w-3" />−{discountPct}%
                           </Badge>
                         </div>
@@ -206,13 +206,13 @@ export default async function FlashPage({ params }: PageProps) {
                               {formatCents(p.price_cents)}
                             </span>
                           )}
-                          <span className="text-2xl font-bold text-munay-red-600">
+                          <span className="text-2xl font-bold text-munay-terracota">
                             {formatCents(finalPrice)}
                           </span>
                         </div>
                       </div>
                       <div className="mt-4 flex flex-wrap gap-2">
-                        <Button asChild size="sm" className="bg-munay-red-600 text-white hover:bg-munay-red-800">
+                        <Button asChild size="sm" className="bg-munay-terracota text-white hover:bg-munay-terracota-quemado">
                           <Link href={`${ROUTES.producto(p.slug)}?flash=${flash.code}`}>
                             Ver detalles
                             <ArrowRight className="ml-1 h-3 w-3" aria-hidden />

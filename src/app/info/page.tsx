@@ -110,12 +110,12 @@ export default function InfoPage() {
       <section className="relative overflow-hidden border-b border-black/5 bg-gradient-to-b from-white via-munay-cream/10 to-white">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:py-28 md:py-32 lg:px-6">
           <div className="mx-auto max-w-3xl text-center">
-            <span className="mb-4 inline-block rounded-full bg-munay-red-500/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-munay-red-600">
+            <span className="mb-4 inline-block rounded-full bg-munay-red-500/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-munay-terracota">
               Fase 5/5 · COMPLETO
             </span>
             <h1 className="font-display text-4xl font-bold tracking-tight text-munay-ink sm:text-5xl md:text-6xl">
               {SITE.name}
-              <span className="block text-munay-red-600 mt-2">{SITE.tagline}</span>
+              <span className="block text-munay-terracota mt-2">{SITE.tagline}</span>
             </h1>
             <p className="mt-6 text-lg text-munay-ink/60 sm:text-xl">
               {SITE.description}
@@ -147,7 +147,7 @@ export default function InfoPage() {
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {FASE5_FEATURES.map((f) => (
               <Card key={f.title} className="border-black/5 shadow-sm">
-                <CardContent className="p-6">                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-munay-red-500/10 text-munay-red-600">
+                <CardContent className="p-6">                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-munay-terracota/10 text-munay-terracota">
                     <f.icon className="h-5 w-5" aria-hidden />
                   </span>
                   <h3 className="mt-4 font-display text-lg font-semibold">{f.title}</h3>
@@ -166,7 +166,7 @@ export default function InfoPage() {
           <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-6">
             {STACK.map((s) => (
               <div key={s.name} className="flex flex-col items-center gap-2 rounded-lg border border-black/5 bg-white p-4 text-center shadow-sm">
-                <s.icon className="h-5 w-5 text-munay-red-600" aria-hidden />
+                <s.icon className="h-5 w-5 text-munay-terracota" aria-hidden />
                 <div className="text-sm font-medium">{s.name}</div>
                 <div className="text-xs text-muted-foreground">{s.role}</div>
               </div>
@@ -185,7 +185,7 @@ export default function InfoPage() {
           {ROUTES_OVERVIEW.map((r) => (
             <Card key={r.href} className="border-border/60 transition-colors hover:border-primary/40">
               <CardHeader className="flex flex-row items-start justify-between gap-2 pb-3">
-                <div className="flex items-center gap-3">                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-munay-red-500/10 text-munay-red-600"><r.icon className="h-5 w-5" aria-hidden /></span>
+                <div className="flex items-center gap-3">                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-munay-terracota/10 text-munay-terracota"><r.icon className="h-5 w-5" aria-hidden /></span>
                   <div><CardTitle className="text-base">{r.label}</CardTitle></div>
                 </div>
                 <Badge variant={r.status === 'listo' || r.status === 'en vivo' ? 'default' : 'secondary'}>{r.status}</Badge>
@@ -211,7 +211,7 @@ export default function InfoPage() {
               {PHASE5_CHECKLIST.map((item) => (
                 <li key={item.label} className="flex items-start gap-3 rounded-lg border border-black/5 bg-white px-4 py-3 shadow-sm">
                   {item.done ? (
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-munay-red-600" aria-hidden />
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-munay-terracota" aria-hidden />
                   ) : (
                     <Circle className="mt-0.5 h-5 w-5 shrink-0 text-munay-ink/30" aria-hidden />
                   )}
@@ -225,9 +225,9 @@ export default function InfoPage() {
 
       {/* DEPLOYMENT CTA */}
       <section className="mx-auto max-w-7xl px-4 py-16 lg:px-6">
-        <Card className="border-munay-red-500/15 bg-munay-red-500/5 shadow-sm">
+        <Card className="border-munay-terracota/15 bg-munay-terracota/5 shadow-sm">
           <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
-            <CheckCircle2 className="h-12 w-12 text-munay-red-600" aria-hidden />
+            <CheckCircle2 className="h-12 w-12 text-munay-terracota" aria-hidden />
             <h2 className="font-display text-2xl font-semibold text-munay-ink">Proyecto listo para producción</h2>
             <p className="max-w-xl text-munay-ink/60">
               Tienda completa con 5 fases entregadas: catálogo, carrito, pagos,

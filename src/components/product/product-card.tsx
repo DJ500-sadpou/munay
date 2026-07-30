@@ -68,9 +68,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
     setTimeout(() => setAdded(false), 1500)
   }
 
-  // ----- Mystery Box: versión bloqueada y compacta -----
-  // Diseñado para que NO sea más alto que una card normal,
-  // así no fuerza a las demás cards de la fila a estirarse.
+  // ----- Mystery Box: producto bloqueado con preview -----
   if (isMysteryBox) {
     return (
       <Card className="group flex flex-col overflow-hidden border-dashed border-accent/40 bg-accent/5 transition-all hover:shadow-md gap-0 py-0">
@@ -87,10 +85,16 @@ export function ProductCard({ product }: { product: ProductCardData }) {
           </div>
         </div>
 
-        {/* Solo título — sin descripción, sin precio, sin botón */}
+        {/* Título + descripción + precio (sin botón de acción) */}
         <CardContent className="flex flex-1 flex-col px-3 pt-1 pb-1">
-          <div className="line-clamp-2 text-sm font-medium leading-snug text-accent/70">
+          <div className="line-clamp-2 text-sm font-medium leading-snug text-accent/80">
             {product.title}
+          </div>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">Contenido sorpresa — disponible pronto</p>
+          <div className="mt-1">
+            <span className="text-lg font-semibold text-accent">???
+              <span className="ml-1 text-xs font-normal text-muted-foreground">— sorpresa</span>
+            </span>
           </div>
         </CardContent>
       </Card>
@@ -126,7 +130,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
             {CONDITION_LABEL[product.condition]}
           </Badge>
           {hasFlashDiscount && (
-            <Badge className="bg-munay-red-600 text-white border-0">
+            <Badge className="bg-munay-terracota text-white border-0">
               <Tag className="mr-1 h-3 w-3" aria-hidden />
               -{product.flash_discount_percent}%
             </Badge>
@@ -153,7 +157,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
       <CardContent className="flex flex-1 flex-col px-3 pt-1 pb-1">
         <Link
           href={ROUTES.producto(product.slug)}
-          className="line-clamp-2 text-sm font-medium leading-snug text-munay-ink transition-colors hover:text-munay-red-600"
+          className="line-clamp-2 text-sm font-medium leading-snug text-munay-ink transition-colors hover:text-munay-terracota"
         >
           {product.title}
         </Link>
@@ -168,7 +172,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
               {formatCents(product.price_cents)}
             </span>
           )}
-          <span className={`text-base font-semibold ${hasFlashDiscount ? 'text-munay-red-600' : 'text-munay-ink'}`}>
+          <span className={`text-base font-semibold ${hasFlashDiscount ? 'text-munay-terracota' : 'text-munay-ink'}`}>
             {formatCents(finalPrice)}
           </span>
         </div>
@@ -180,7 +184,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
           </Button>
           <Button
             size="sm"
-            className="flex-1 h-8 text-xs bg-munay-red-600 text-white hover:bg-munay-red-800"
+            className="flex-1 h-8 text-xs bg-munay-terracota text-white hover:bg-munay-terracota-quemado"
             disabled={outOfStock}
             onClick={handleAddToCart}
           >

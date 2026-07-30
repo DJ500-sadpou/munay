@@ -43,7 +43,7 @@ export default function CarritoPage() {
         <p className="mt-2 text-munay-ink/60">
           Explora el catálogo y agrega piezas que resuenen contigo.
         </p>
-        <Button asChild className="mt-6 bg-munay-red-600 text-white hover:bg-munay-red-800">
+        <Button asChild className="mt-6 bg-munay-terracota text-white hover:bg-munay-terracota-quemado">
           <Link href={ROUTES.catalogo}>Ver catálogo</Link>
         </Button>
       </div>
@@ -85,7 +85,7 @@ export default function CarritoPage() {
                   <div className="flex-1 min-w-0">
                     <Link
                       href={ROUTES.producto(line.slug)}
-                      className="line-clamp-2 text-sm font-medium text-munay-ink hover:text-munay-red-600 transition-colors"
+                      className="line-clamp-2 text-sm font-medium text-munay-ink hover:text-munay-terracota transition-colors"
                     >
                       {line.title}
                     </Link>
@@ -146,7 +146,7 @@ export default function CarritoPage() {
                     <span>{formatCents(subtotalCents)}</span>
                   </div>
                   {discountCents > 0 && (
-                    <div className="flex justify-between text-munay-red-600">
+                    <div className="flex justify-between text-munay-terracota">
                       <span>Descuento flash</span>
                       <span>−{formatCents(discountCents)}</span>
                     </div>
@@ -157,7 +157,7 @@ export default function CarritoPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-munay-ink/60">Puntos a ganar</span>
-                    <span className="text-munay-red-600">{pointsToEarn} pts</span>
+                    <span className="text-munay-terracota">{pointsToEarn} pts</span>
                   </div>
                 </div>
 
@@ -170,7 +170,7 @@ export default function CarritoPage() {
 
                 <CartFlashCodeInput />
 
-                <Button asChild size="lg" className="w-full bg-munay-red-600 text-white hover:bg-munay-red-800">
+                <Button asChild size="lg" className="w-full bg-munay-terracota text-white hover:bg-munay-terracota-quemado">
                   <Link href={ROUTES.checkout}>
                     Continuar al checkout
                     <ArrowRight className="ml-2 h-4 w-4" aria-hidden />

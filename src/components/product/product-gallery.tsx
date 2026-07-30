@@ -88,7 +88,7 @@ export function ProductGallery({
 
         {/* Flash discount badge */}
         {flashDiscountPercent != null && flashDiscountPercent > 0 && (
-          <span className="absolute right-3 top-3 inline-flex items-center rounded-full bg-munay-red-600 px-2.5 py-1 text-xs font-semibold text-white shadow-sm">
+          <span className="absolute right-3 top-3 inline-flex items-center rounded-full bg-munay-terracota px-2.5 py-1 text-xs font-semibold text-white shadow-sm">
             -{flashDiscountPercent}%
           </span>
         )}
@@ -133,7 +133,7 @@ export function ProductGallery({
               onClick={() => goTo(i)}
               className={`relative w-16 h-16 shrink-0 rounded-lg overflow-hidden border-2 transition-all ${
                 i === currentIndex
-                  ? 'border-munay-red-600 ring-1 ring-munay-red-600/30'
+                  ? 'border-munay-terracota ring-1 ring-munay-terracota/30'
                   : 'border-transparent hover:border-black/10'
               }`}
               aria-label={`Ir a imagen ${i + 1}`}

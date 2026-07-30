@@ -266,7 +266,7 @@ export function ImageUpload({
 
             {/* Badge principal (siempre visible) */}
             {i === 0 && (
-              <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-munay-red-600/80 text-white shadow-sm">
+              <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-munay-terracota/80 text-white shadow-sm">
                 Principal
               </span>
             )}
@@ -279,7 +279,7 @@ export function ImageUpload({
             type="button"
             onClick={openWidget}
             disabled={!loaded || loading}
-            className="aspect-square rounded-lg border-2 border-dashed border-black/10 hover:border-munay-red-600/50 transition-colors flex flex-col items-center justify-center gap-1 text-munay-ink/40 hover:text-munay-red-600/60 disabled:opacity-50 bg-munay-cream/10"
+            className="aspect-square rounded-lg border-2 border-dashed border-black/10 hover:border-munay-terracota/50 transition-colors flex flex-col items-center justify-center gap-1 text-munay-ink/40 hover:text-munay-terracota/60 disabled:opacity-50 bg-munay-cream/10"
             aria-label="Agregar imagen"
           >
             {loading ? (

@@ -54,9 +54,9 @@ export function TicketForm() {
 
   if (step === 'success') {
     return (
-      <Card className="border-munay-red-500/15 shadow-sm">
+      <Card className="border-munay-terracota/15 shadow-sm">
         <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
-          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-munay-red-500/10 text-munay-red-600">
+          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-munay-terracota/10 text-munay-terracota">
             <CheckCircle2 className="h-8 w-8" aria-hidden />
           </span>
           <h2 className="font-display text-2xl font-semibold text-munay-ink">¡Mensaje enviado!</h2>
@@ -99,7 +99,7 @@ export function TicketForm() {
     <Card className="border-black/5 shadow-sm">
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
-          <MessageCircle className="h-4 w-4 text-munay-red-600" aria-hidden />
+          <MessageCircle className="h-4 w-4 text-munay-terracota" aria-hidden />
           Contáctanos
         </CardTitle>
         <CardDescription>
@@ -109,7 +109,7 @@ export function TicketForm() {
             href="https://wa.me/+593959756845"
             target="_blank"
             rel="noopener noreferrer"
-            className="font-medium text-munay-red-600 underline underline-offset-2"
+            className="font-medium text-munay-terracota underline underline-offset-2"
           >
             WhatsApp
           </a>
@@ -176,7 +176,7 @@ export function TicketForm() {
           </div>
 
           {error && (
-            <div className="flex items-start gap-2 rounded-lg border border-munay-red-500/20 bg-munay-red-500/5 px-4 py-3 text-sm text-munay-red-600">
+            <div className="flex items-start gap-2 rounded-lg border border-munay-terracota/20 bg-munay-terracota/5 px-4 py-3 text-sm text-munay-terracota">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
               <span>{error}</span>
             </div>
@@ -185,7 +185,7 @@ export function TicketForm() {
           <Button
             type="submit"
             size="lg"
-            className="w-full bg-munay-red-600 text-white hover:bg-munay-red-800"
+            className="w-full bg-munay-terracota text-white hover:bg-munay-terracota-quemado"
             disabled={step === 'sending'}
           >
             {step === 'sending' ? (

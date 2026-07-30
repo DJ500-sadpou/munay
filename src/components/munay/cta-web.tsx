@@ -4,7 +4,7 @@ import { ROUTES } from '@/lib/constants'
 
 export function MunayCtaWeb() {
   return (
-    <section className="flex flex-col items-center justify-between gap-6 rounded-2xl bg-gradient-to-r from-munay-red-500 to-munay-red-800 px-6 py-10 shadow-sm sm:px-10 lg:flex-row">
+    <section className="flex flex-col items-center justify-between gap-6 rounded-2xl bg-gradient-to-r from-munay-terracota to-munay-terracota-quemado px-6 py-10 shadow-sm sm:px-10 lg:flex-row">
       <h2 className="font-display text-2xl font-extrabold tracking-tight text-white text-balance sm:text-3xl">
         Sumate a Munay y encontrá tu próxima pinta
       </h2>
@@ -13,7 +13,7 @@ export function MunayCtaWeb() {
         <Button
           asChild
           size="lg"
-          className="rounded-xl bg-white px-7 font-semibold text-munay-red-600 hover:bg-white/90"
+          className="rounded-xl bg-white px-7 font-semibold text-munay-terracota hover:bg-white/90"
         >
           <Link href="/sign-up">Crear cuenta</Link>
         </Button>

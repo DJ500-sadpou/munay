@@ -63,7 +63,7 @@ export default async function MyOrdersPage() {
             <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
               <Package className="h-10 w-10 text-munay-ink/30" aria-hidden />
               <p className="text-munay-ink/60">Aún no tienes órdenes.</p>
-              <Button asChild className="bg-munay-red-600 text-white hover:bg-munay-red-800">
+              <Button asChild className="bg-munay-terracota text-white hover:bg-munay-terracota-quemado">
                 <Link href="/catalogo">Explorar catálogo</Link>
               </Button>
             </CardContent>
@@ -71,7 +71,7 @@ export default async function MyOrdersPage() {
         ) : (
           <div className="space-y-2">
             {orders.map((o) => (
-              <Card key={o.id} className="border-black/5 shadow-sm hover:border-munay-red-500/20 transition-colors">
+              <Card key={o.id} className="border-black/5 shadow-sm hover:border-munay-terracota/20 transition-colors">
                 <CardContent className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-3">
                     <Calendar className="h-5 w-5 text-munay-ink/30" aria-hidden />

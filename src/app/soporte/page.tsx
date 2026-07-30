@@ -63,9 +63,9 @@ export default function SoportePage() {
 
                 <a
                   href={`mailto:${SITE.email}`}
-                  className="flex items-center gap-3 rounded-lg border border-black/5 bg-munay-red-500/5 p-3 text-sm transition-colors hover:bg-munay-red-500/10"
+                  className="flex items-center gap-3 rounded-lg border border-black/5 bg-munay-terracota/5 p-3 text-sm transition-colors hover:bg-munay-terracota/10"
                 >
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-munay-red-600 text-white">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-munay-terracota text-white">
                     <Mail className="h-5 w-5" aria-hidden />
                   </span>
                   <div className="flex-1">
@@ -86,7 +86,7 @@ export default function SoportePage() {
                 <div className="space-y-3">
                   {FAQ.map((item) => (
                     <details key={item.q} className="group">
-                      <summary className="cursor-pointer list-none text-sm font-medium text-munay-ink transition-colors hover:text-munay-red-600">
+                      <summary className="cursor-pointer list-none text-sm font-medium text-munay-ink transition-colors hover:text-munay-terracota">
                         {item.q}
                       </summary>
                       <p className="mt-2 pl-0 text-xs leading-relaxed text-munay-ink/60">

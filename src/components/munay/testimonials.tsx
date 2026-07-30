@@ -6,7 +6,7 @@ function Stars({ className = '' }: { className?: string }) {
   return (
     <div className={`flex gap-0.5 ${className}`} aria-hidden>
       {Array.from({ length: 5 }).map((_, i) => (
-        <Star key={i} className="h-3.5 w-3.5 fill-munay-red-500 text-munay-red-500" />
+        <Star key={i} className="h-3.5 w-3.5 fill-munay-terracota text-munay-terracota" />
       ))}
     </div>
   )
@@ -34,7 +34,7 @@ export function MunayTestimonials() {
           >
             <div className="flex items-center gap-2">
               <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-munay-red-500/10 text-[10px] font-bold text-munay-red-800">
+                <AvatarFallback className="bg-munay-terracota/10 text-[10px] font-bold text-munay-cacao">
                   {t.initials}
                 </AvatarFallback>
               </Avatar>

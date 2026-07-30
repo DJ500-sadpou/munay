@@ -27,7 +27,7 @@ export function MunayFlashOffers() {
   const s = seconds % 60
 
   return (
-    <div className="relative flex h-full overflow-hidden rounded-2xl border border-black/5 bg-gradient-to-br from-munay-red-500 to-munay-red-800 shadow-sm">
+    <div className="relative flex h-full overflow-hidden rounded-2xl border border-black/5 bg-gradient-to-br from-munay-terracota to-munay-terracota-quemado shadow-sm">
       <div className="relative z-10 flex flex-col gap-4 p-6 sm:p-7">
         <h2 className="flex items-center gap-2 text-lg font-extrabold uppercase tracking-wide text-white">
           <Zap className="h-5 w-5 fill-white" aria-hidden />
@@ -49,7 +49,7 @@ export function MunayFlashOffers() {
 
         <Button
           asChild
-          className="mt-2 w-fit rounded-xl bg-white px-5 font-semibold text-munay-red-600 hover:bg-white/90"
+          className="mt-2 w-fit rounded-xl bg-white px-5 font-semibold text-munay-terracota hover:bg-white/90"
         >
           <Link href="/flash">Ver todas las ofertas</Link>
         </Button>
@@ -63,7 +63,7 @@ export function MunayFlashOffers() {
           sizes="(max-width: 1024px) 50vw, 25vw"
           className="object-cover object-center"
         />
-        <div className="absolute inset-y-0 left-0 w-2/5 bg-gradient-to-r from-munay-red-600 to-transparent" />
+        <div className="absolute inset-y-0 left-0 w-2/5 bg-gradient-to-r from-munay-terracota-quemado to-transparent" />
       </div>
     </div>
   )

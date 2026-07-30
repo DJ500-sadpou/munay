@@ -35,8 +35,8 @@ export function MunayTrustBar() {
         <ul className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
           {ITEMS.map((i) => (
             <li key={i.title} className="flex gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-munay-red-500/25 bg-white">
-                <i.icon className="h-4 w-4 text-munay-red-500" aria-hidden />
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-munay-turquesa/25 bg-white">
+                <i.icon className="h-4 w-4 text-munay-turquesa" aria-hidden />
               </span>
               <div>
                 <h3 className="text-sm font-semibold text-munay-ink">{i.title}</h3>

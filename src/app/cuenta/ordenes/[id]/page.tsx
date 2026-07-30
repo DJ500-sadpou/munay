@@ -98,7 +98,7 @@ export default async function MyOrderDetailPage({ params }: PageProps) {
                 <span>{formatCents(order.subtotal_cents)}</span>
               </div>
               {order.discount_cents > 0 && (
-                <div className="flex justify-between text-munay-red-600">
+                <div className="flex justify-between text-munay-terracota">
                   <span>Descuento</span>
                   <span>−{formatCents(order.discount_cents)}</span>
                 </div>
@@ -144,7 +144,7 @@ export default async function MyOrderDetailPage({ params }: PageProps) {
                     <tr key={item.id}>
                       <td className="px-2 py-3">
                         {item.slug ? (
-                          <Link href={`/p/${item.slug}`} className="text-munay-ink hover:text-munay-red-600 transition-colors">
+                          <Link href={`/p/${item.slug}`} className="text-munay-ink hover:text-munay-terracota transition-colors">
                             {item.title ?? 'Producto'}
                           </Link>
                         ) : (
@@ -168,7 +168,7 @@ export default async function MyOrderDetailPage({ params }: PageProps) {
           <Button asChild variant="outline">
             <Link href="/cuenta/ordenes">Mis órdenes</Link>
           </Button>
-          <Button asChild className="bg-munay-red-600 text-white hover:bg-munay-red-800">
+          <Button asChild className="bg-munay-terracota text-white hover:bg-munay-terracota-quemado">
             <Link href="/catalogo">Seguir comprando</Link>
           </Button>
         </div>

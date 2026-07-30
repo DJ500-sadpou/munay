@@ -187,7 +187,7 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
             </div>
             <Link
               href="/admin/tickets"
-              className="mt-2 inline-flex items-center gap-1 text-xs text-munay-red-600 hover:text-munay-red-800 transition-colors"
+              className="mt-2 inline-flex items-center gap-1 text-xs text-munay-terracota hover:text-munay-terracota-quemado transition-colors"
             >
               Ver todos los tickets →
             </Link>

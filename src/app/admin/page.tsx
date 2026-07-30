@@ -73,7 +73,7 @@ export default async function AdminHomePage() {
     <div className="mx-auto max-w-7xl px-4 py-10 lg:px-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <span className="mb-3 inline-block rounded-full bg-munay-red-500/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-munay-red-600">
+          <span className="mb-3 inline-block rounded-full bg-munay-terracota/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-munay-terracota">
             Panel admin
           </span>
           <h1 className="font-display text-3xl font-bold tracking-tight text-munay-ink">

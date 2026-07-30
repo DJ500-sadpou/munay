@@ -23,7 +23,7 @@ export function MunayHero() {
           <h1 className="font-display text-4xl font-extrabold leading-[1.05] tracking-tight text-munay-ink text-balance sm:text-5xl xl:text-6xl">
             Moda circular,
             <br />
-            <span className="text-munay-red-600">nueva y usada.</span>
+            <span className="text-munay-terracota">nueva y usada.</span>
           </h1>
 
           <p className="mt-5 text-base font-semibold text-munay-ink/85 sm:text-lg">
@@ -33,8 +33,8 @@ export function MunayHero() {
           <ul className="mt-7 flex flex-wrap gap-x-8 gap-y-4">
             {BULLETS.map((b) => (
               <li key={b.title} className="flex items-center gap-2.5">
-                <span className="flex h-9 w-9 items-center justify-center rounded-full border border-munay-red-500/25 bg-white">
-                  <b.icon className="h-4 w-4 text-munay-red-500" aria-hidden />
+                <span className="flex h-9 w-9 items-center justify-center rounded-full border border-munay-terracota/25 bg-white">
+                  <b.icon className="h-4 w-4 text-munay-terracota" aria-hidden />
                 </span>
                 <span className="text-xs leading-tight text-munay-ink/80">
                   <span className="block font-semibold text-munay-ink">{b.title}</span>
@@ -48,7 +48,7 @@ export function MunayHero() {
             <Button
               asChild
               size="lg"
-              className="rounded-xl bg-gradient-to-b from-munay-red-500 to-munay-red-600 px-7 text-base font-semibold text-white shadow-sm hover:opacity-95"
+              className="rounded-xl bg-gradient-to-b from-munay-terracota to-munay-terracota-quemado px-7 text-base font-semibold text-white shadow-sm hover:opacity-95"
             >
               <Link href={ROUTES.catalogo}>Comprar ahora</Link>
             </Button>
@@ -56,7 +56,7 @@ export function MunayHero() {
               asChild
               size="lg"
               variant="outline"
-              className="rounded-xl border-munay-red-500/50 bg-white px-7 text-base font-semibold text-munay-red-600 hover:bg-munay-red-500/5 hover:text-munay-red-800"
+              className="rounded-xl border-munay-terracota/50 bg-white px-7 text-base font-semibold text-munay-terracota hover:bg-munay-terracota/5 hover:text-munay-terracota-quemado"
             >
               <Link href="/flash">Ver ofertas flash</Link>
             </Button>
@@ -66,7 +66,7 @@ export function MunayHero() {
             <div className="flex -space-x-2">
               {AVATARS.map((a) => (
                 <Avatar key={a} className="h-8 w-8 border-2 border-white">
-                  <AvatarFallback className="bg-munay-cream text-[10px] font-bold text-munay-red-800">
+                  <AvatarFallback className="bg-munay-cream text-[10px] font-bold text-munay-cacao">
                     {a}
                   </AvatarFallback>
                 </Avatar>

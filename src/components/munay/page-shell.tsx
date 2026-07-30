@@ -38,7 +38,7 @@ export function MunayPageShell({
     <div className={noGradient ? '' : 'bg-gradient-to-b from-white via-munay-cream/10 to-white'}>
       <div className={`mx-auto px-4 py-8 lg:px-6 lg:py-10 ${sizeMap[size]} ${className}`}>
         {badge && (
-          <span className="mb-3 inline-block rounded-full bg-munay-red-500/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-munay-red-600">
+          <span className="mb-3 inline-block rounded-full bg-munay-terracota/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-munay-terracota">
             {badge}
           </span>
         )}

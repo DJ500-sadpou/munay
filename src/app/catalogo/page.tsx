@@ -79,7 +79,7 @@ export default async function CatalogoPage({ searchParams }: PageProps) {
         </div>
 
         {filters.q && looksLikeFlashCode(filters.q) && !activeFlashInfo && supabaseReady && (
-          <div className="mb-6 rounded-lg border border-munay-red-500/20 bg-munay-red-500/5 px-4 py-3 text-sm text-munay-ink">
+          <div className="mb-6 rounded-lg border border-munay-terracota/20 bg-munay-terracota/5 px-4 py-3 text-sm text-munay-ink">
             <strong>{filters.q.toUpperCase()}</strong> no es un código flash válido.
             Mostrando resultados de búsqueda normales.
           </div>
@@ -92,8 +92,8 @@ export default async function CatalogoPage({ searchParams }: PageProps) {
         )}
 
         {activeFlashInfo && (
-          <div className="mb-6 rounded-lg border border-munay-red-500/15 bg-munay-red-500/5 px-4 py-3 text-sm text-munay-ink">
-            <Zap className="mr-1 inline h-4 w-4 text-munay-red-600" aria-hidden />
+          <div className="mb-6 rounded-lg border border-munay-terracota/15 bg-munay-terracota/5 px-4 py-3 text-sm text-munay-ink">
+            <Zap className="mr-1 inline h-4 w-4 text-munay-terracota" aria-hidden />
             Código <strong className="font-mono">{activeFlashInfo.code}</strong> activo:
             {' '}
             {activeFlashInfo.type === 'discount' && activeFlashInfo.discount_percent != null

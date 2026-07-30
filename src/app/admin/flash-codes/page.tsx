@@ -71,7 +71,7 @@ export default async function AdminFlashCodesPage() {
             {flashCodes.length} {flashCodes.length === 1 ? 'código' : 'códigos'} configurados.
           </p>
         </div>
-        <Button asChild className="bg-munay-red-600 text-white hover:bg-munay-red-800">
+        <Button asChild className="bg-munay-terracota text-white hover:bg-munay-terracota-quemado">
           <Link href="/admin/flash-codes/new">
             <Plus className="mr-2 h-4 w-4" aria-hidden />
             Nuevo código
@@ -84,7 +84,7 @@ export default async function AdminFlashCodesPage() {
           <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
             <Zap className="h-10 w-10 text-munay-ink/30" aria-hidden />
             <p className="text-munay-ink/60">Aún no hay códigos flash.</p>
-            <Button asChild className="bg-munay-red-600 text-white hover:bg-munay-red-800">
+            <Button asChild className="bg-munay-terracota text-white hover:bg-munay-terracota-quemado">
               <Link href="/admin/flash-codes/new">
                 <Plus className="mr-2 h-4 w-4" aria-hidden />
                 Crear el primero

@@ -7,7 +7,7 @@ export function MunayMetrics() {
         <div key={m.label}>
           <dt className="sr-only">{m.label}</dt>
           <dd>
-            <span className="block font-display text-2xl font-extrabold tracking-tight text-munay-red-600">
+            <span className="block font-display text-2xl font-extrabold tracking-tight text-munay-terracota">
               {m.value}
             </span>
             <span className="mt-1 block text-[11px] font-medium text-munay-ink/60">

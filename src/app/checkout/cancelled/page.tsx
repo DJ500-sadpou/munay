@@ -10,9 +10,9 @@ export default function CheckoutCancelledPage() {
   return (
     <div className="flex min-h-[80vh] items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
-        <Card className="border-munay-red-500/15 shadow-sm">
+        <Card className="border-munay-terracota/15 shadow-sm">
           <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
-            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-munay-red-500/10 text-munay-red-600">
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-munay-terracota/10 text-munay-terracota">
               <MessageCircle className="h-8 w-8" aria-hidden />
             </span>
 
@@ -24,7 +24,7 @@ export default function CheckoutCancelledPage() {
             </p>
 
             <div className="mt-4 flex flex-col gap-2 w-full">
-              <Button asChild className="bg-munay-red-600 text-white hover:bg-munay-red-800">
+              <Button asChild className="bg-munay-terracota text-white hover:bg-munay-terracota-quemado">
                 <Link href={ROUTES.checkout}>
                   <RefreshCw className="mr-2 h-4 w-4" aria-hidden />
                   Intentar nuevamente

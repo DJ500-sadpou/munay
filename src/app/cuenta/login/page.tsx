@@ -28,7 +28,7 @@ export default function UserLoginPage() {
         />
         <p className="mt-6 text-center text-xs text-munay-ink/60">
           ¿Eres admin?{' '}
-          <a href="/admin/login" className="text-munay-red-600 underline hover:no-underline">
+          <a href="/admin/login" className="text-munay-terracota underline hover:no-underline">
             Acceder al panel admin
           </a>
         </p>

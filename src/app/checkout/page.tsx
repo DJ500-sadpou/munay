@@ -88,7 +88,7 @@ export default function CheckoutPage() {
         <p className="mt-2 text-munay-ink/60">
           Agrega piezas al carrito antes de continuar.
         </p>
-        <Button asChild className="mt-6 bg-munay-red-600 text-white hover:bg-munay-red-800">
+        <Button asChild className="mt-6 bg-munay-terracota text-white hover:bg-munay-terracota-quemado">
           <Link href={ROUTES.catalogo}>Ver catálogo</Link>
         </Button>
       </div>

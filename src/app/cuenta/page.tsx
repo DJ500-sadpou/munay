@@ -68,7 +68,7 @@ export default async function CuentaHomePage() {
       <div className="mx-auto max-w-7xl px-4 py-10 lg:px-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <span className="mb-3 inline-block rounded-full bg-munay-red-500/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-munay-red-600">
+            <span className="mb-3 inline-block rounded-full bg-munay-red-500/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-munay-terracota">
               Mi cuenta
             </span>
             <h1 className="font-display text-3xl font-bold tracking-tight text-munay-ink">Mi cuenta</h1>
@@ -94,7 +94,7 @@ export default async function CuentaHomePage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-munay-red-600">{user.points_balance ?? 0}</p>
+              <p className="text-3xl font-bold text-munay-terracota">{user.points_balance ?? 0}</p>
               <p className="mt-1 text-xs text-munay-ink/60">
                 ≈ {formatCents(Math.floor((user.points_balance ?? 0) / 10) * 100)} en descuento
               </p>
@@ -142,14 +142,14 @@ export default async function CuentaHomePage() {
             </Link>
           </Button>
           {activeCoupons.length > 0 && (
-            <Button asChild variant="outline" className="border-munay-red-500/30 text-munay-red-600 hover:bg-munay-red-500/5">
+            <Button asChild variant="outline" className="border-munay-red-500/30 text-munay-terracota hover:bg-munay-red-500/5">
               <Link href="/catalogo">
                 <Tag className="mr-2 h-4 w-4" aria-hidden />
                 Usar cupón ({activeCoupons.length})
               </Link>
             </Button>
           )}
-          <Button asChild className="bg-munay-red-600 text-white hover:bg-munay-red-800">
+          <Button asChild className="bg-munay-terracota text-white hover:bg-munay-terracota-quemado">
             <Link href={ROUTES.catalogo}>
               Seguir comprando
               <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
@@ -172,7 +172,7 @@ export default async function CuentaHomePage() {
               <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
                 <Package className="h-10 w-10 text-munay-ink/30" aria-hidden />
                 <p className="text-munay-ink/60">Aún no tienes órdenes.</p>
-                <Button asChild className="bg-munay-red-600 text-white hover:bg-munay-red-800">
+                <Button asChild className="bg-munay-terracota text-white hover:bg-munay-terracota-quemado">
                   <Link href={ROUTES.catalogo}>Explorar catálogo</Link>
                 </Button>
               </CardContent>
@@ -180,7 +180,7 @@ export default async function CuentaHomePage() {
           ) : (
             <div className="space-y-2">
               {recentOrders.map((o) => (
-                <Card key={o.id} className="border-black/5 shadow-sm hover:border-munay-red-500/20 transition-colors">
+                <Card key={o.id} className="border-black/5 shadow-sm hover:border-munay-terracota/20 transition-colors">
                   <CardContent className="flex items-center justify-between p-4">
                     <div className="flex items-center gap-3">
                       <Calendar className="h-5 w-5 text-munay-ink/30" aria-hidden />

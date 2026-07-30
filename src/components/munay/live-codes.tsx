@@ -25,14 +25,14 @@ export function MunayLiveCodes() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 text-lg font-extrabold uppercase tracking-wide text-munay-ink">
           Códigos en vivo
-          <Badge className="rounded-full bg-munay-red-500/10 px-2 text-[10px] font-bold text-munay-red-600 hover:bg-munay-red-500/15">
-            <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-munay-red-500" />
+          <Badge className="rounded-full bg-munay-terracota/10 px-2 text-[10px] font-bold text-munay-terracota hover:bg-munay-terracota/15">
+            <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-munay-terracota-quemado" />
             LIVE
           </Badge>
         </h2>
         <Link
           href="/flash"
-          className="flex items-center gap-1 text-xs font-semibold text-munay-red-600 hover:text-munay-red-800"
+          className="flex items-center gap-1 text-xs font-semibold text-munay-terracota hover:text-munay-terracota-quemado"
         >
           Ver todos los códigos
           <ArrowRight className="h-3.5 w-3.5" aria-hidden />
@@ -47,7 +47,7 @@ export function MunayLiveCodes() {
             key={c.code}
             className="flex flex-col rounded-xl border border-black/5 bg-munay-cream/15 p-4 text-center"
           >
-            <p className="font-mono text-sm font-bold tracking-tight text-munay-red-600">
+            <p className="font-mono text-sm font-bold tracking-tight text-munay-terracota">
               {c.code}
             </p>
             <p className="mt-2 text-xl font-extrabold text-munay-ink">{c.discount}</p>
@@ -61,7 +61,7 @@ export function MunayLiveCodes() {
               size="sm"
               onClick={() => copy(c.code)}
               aria-live="polite"
-              className="mt-3 rounded-lg border-munay-red-500/40 bg-white text-xs font-semibold text-munay-red-600 hover:bg-munay-red-500/5 hover:text-munay-red-800"
+              className="mt-3 rounded-lg border-munay-terracota/40 bg-white text-xs font-semibold text-munay-terracota hover:bg-munay-terracota/5 hover:text-munay-terracota-quemado"
             >
               {copied === c.code ? (
                 <>

@@ -86,11 +86,11 @@ export default async function MyPointsPage() {
           Gana 1 punto por cada $1 gastado. Cada {POINTS_RULES.POINTS_PER_DISCOUNT_DOLLAR} puntos = $1 de descuento.
         </p>
 
-        <Card className="border-munay-red-500/15 bg-munay-red-500/5 shadow-sm">
+        <Card className="border-munay-terracota/15 bg-munay-terracota/5 shadow-sm">
           <CardContent className="p-8 text-center">
-            <Sparkles className="mx-auto h-10 w-10 text-munay-red-600" aria-hidden />
+            <Sparkles className="mx-auto h-10 w-10 text-munay-terracota" aria-hidden />
             <p className="mt-3 text-xs uppercase tracking-wider text-munay-ink/60">Saldo disponible</p>
-            <p className="mt-1 text-5xl font-bold text-munay-red-600">{balance}</p>
+            <p className="mt-1 text-5xl font-bold text-munay-terracota">{balance}</p>
             <p className="mt-2 text-sm text-munay-ink/60">
               Equivalente a <strong className="text-munay-ink">{formatCents(Math.floor(balance / 10) * 100)}</strong> en descuento
             </p>
@@ -100,7 +100,7 @@ export default async function MyPointsPage() {
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <Card className="border-black/5 shadow-sm">
             <CardContent className="flex items-center gap-4 p-4">
-              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-munay-red-500/10 text-munay-red-600">
+              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-munay-red-500/10 text-munay-terracota">
                 <TrendingUp className="h-5 w-5" aria-hidden />
               </span>
               <div>
@@ -111,7 +111,7 @@ export default async function MyPointsPage() {
           </Card>
           <Card className="border-black/5 shadow-sm">
             <CardContent className="flex items-center gap-4 p-4">
-              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-munay-red-500/10 text-munay-red-600">
+              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-munay-red-500/10 text-munay-terracota">
                 <TrendingDown className="h-5 w-5" aria-hidden />
               </span>
               <div>
@@ -150,7 +150,7 @@ export default async function MyPointsPage() {
                 <p className="text-munay-ink/60">
                   Aún no tienes movimientos de puntos.
                 </p>
-                <Button asChild className="bg-munay-red-600 text-white hover:bg-munay-red-800">
+                <Button asChild className="bg-munay-terracota text-white hover:bg-munay-terracota-quemado">
                   <Link href="/catalogo">Haz tu primera compra</Link>
                 </Button>
               </CardContent>
@@ -187,7 +187,7 @@ export default async function MyPointsPage() {
 
         <Separator className="my-8" />
 
-        <Button asChild className="w-full sm:w-auto bg-munay-red-600 text-white hover:bg-munay-red-800">
+        <Button asChild className="w-full sm:w-auto bg-munay-terracota text-white hover:bg-munay-terracota-quemado">
           <Link href="/catalogo">
             <Sparkles className="mr-2 h-4 w-4" aria-hidden />
             Seguir acumulando puntos
