@@ -4,6 +4,9 @@
 --   p_minutes_standard (60): órdenes normales sin ticket
 --   p_max_hours_whatsapp (72): órdenes con ticket (WhatsApp)
 
+-- Limpiar RPC antigua que ya no se usa
+DROP FUNCTION IF EXISTS public.expire_stale_pending_orders(integer);
+
 CREATE OR REPLACE FUNCTION public.expire_stale_orders_v2(
   p_minutes_standard integer DEFAULT 60,
   p_max_hours_whatsapp integer DEFAULT 72

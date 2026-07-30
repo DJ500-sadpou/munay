@@ -8,10 +8,15 @@ CREATE TABLE IF NOT EXISTS public.app_config (
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Config inicial del sistema de cupones de fidelidad
+-- Config inicial del sistema de cupones de fidelidad (idempotente)
 INSERT INTO public.app_config (key, value)
 VALUES ('loyalty_coupons', '{"enabled": true, "discount_percent": 25}')
 ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now();
+
+-- Insertar fila por defecto si no existe (para consultas que usan SELECT simple)
+INSERT INTO public.app_config (key, value)
+VALUES ('loyalty_coupon_settings', '{"enabled": true, "discount_percent": 25, "validity_days": 7}')
+ON CONFLICT (key) DO NOTHING;
 
 -- Tabla de cupones de fidelidad
 CREATE TABLE IF NOT EXISTS public.loyalty_coupons (

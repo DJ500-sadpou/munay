@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Sparkles, Tag, ShoppingCart, Check, Lock, Gift } from 'lucide-react'
+import { ImageOff, Sparkles, Tag, ShoppingCart, Check, Lock, Gift } from 'lucide-react'
 import { useState } from 'react'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -127,7 +127,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-munay-ink/30">
-            <Sparkles className="h-12 w-12" aria-hidden />
+            <ImageOff className="h-12 w-12" aria-hidden />
           </div>
         )}
 

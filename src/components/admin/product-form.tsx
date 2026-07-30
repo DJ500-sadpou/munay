@@ -127,7 +127,7 @@ export function ProductForm({ product }: Props) {
         {isEdit ? 'Editar producto' : 'Nuevo producto'}
       </h1>
       <p className="text-muted-foreground mb-8">
-        Los cambios se guardan en Supabase. La creación usa service role (bypass RLS).
+        Los cambios se guardan en Neon. La creación usa service role (bypass RLS).
       </p>
 
       <Card className="border-border/60">

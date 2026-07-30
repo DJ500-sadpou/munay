@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { ROUTES, SITE } from '@/lib/constants'
 
-export const metadata = { title: 'Pedido pendiente · Munay' }
+export const metadata = { title: 'Pedido no completado · Munay' }
 
 export default function CheckoutCancelledPage() {
   return (
@@ -24,18 +24,17 @@ export default function CheckoutCancelledPage() {
             </p>
 
             <div className="mt-4 flex flex-col gap-2 w-full">
-              <Button asChild className="bg-[#25D366] text-white hover:bg-[#1DA851]">
-                <a href={SITE.whatsappLink} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="mr-2 h-4 w-4" aria-hidden />
-                  Contactar por WhatsApp
-                  <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
-                </a>
-              </Button>
-              <Button asChild variant="outline">
+              <Button asChild className="bg-munay-red-600 text-white hover:bg-munay-red-800">
                 <Link href={ROUTES.checkout}>
                   <RefreshCw className="mr-2 h-4 w-4" aria-hidden />
                   Intentar nuevamente
                 </Link>
+              </Button>
+              <Button asChild variant="outline" className="border-[#25D366] text-[#25D366] hover:bg-[#25D366]/10">
+                <a href={SITE.whatsappLink} target="_blank" rel="noopener noreferrer">
+                  <MessageCircle className="mr-2 h-4 w-4" aria-hidden />
+                  Contactar por WhatsApp
+                </a>
               </Button>
               <Button asChild variant="ghost" size="sm">
                 <Link href={ROUTES.catalogo}>Volver al catálogo</Link>

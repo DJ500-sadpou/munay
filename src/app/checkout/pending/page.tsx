@@ -36,8 +36,8 @@ export default function CheckoutPendingPage() {
                 </a>
               </Button>
               <Button asChild variant="outline">
-                <Link href={ROUTES.home}>
-                  Volver al inicio
+                <Link href={ROUTES.catalogo}>
+                  Volver al catálogo
                   <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
                 </Link>
               </Button>
