@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
+import { WhatsAppFloat } from "@/components/support/whatsapp-float";
 import { SITE } from "@/lib/constants";
 import { ClerkProvider } from "@clerk/nextjs";
 
@@ -98,6 +99,7 @@ export default function RootLayout({
             <Navbar />
             <main className="flex-1">{children}</main>
             <Footer />
+            <WhatsAppFloat />
           </div>
           <Toaster />
         </body>

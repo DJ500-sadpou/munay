@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { Instagram, Facebook, Twitter } from 'lucide-react'
 import { SITE, ROUTES } from '@/lib/constants'
 
 const COLUMNS = [
@@ -25,6 +24,7 @@ const COLUMNS = [
       { label: 'Envíos', href: '/info' },
       { label: 'Devoluciones', href: '/info' },
       { label: 'Contacto', href: `mailto:${SITE.email}` },
+      { label: 'Soporte', href: '/soporte' },
     ],
   },
   {
@@ -36,10 +36,35 @@ const COLUMNS = [
   },
 ]
 
+// SVGs inline de redes sociales (reconocibles, sin dependencias externas)
+// SVGs inline que aceptan y propagan props (className, aria-hidden, etc.)
+const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21" />
+    <path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1Z" />
+    <path d="M14 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1Z" />
+    <path d="M9.5 13.5c.5 1 1.5 1.5 2.5 1.5s2-.5 2.5-1.5" />
+  </svg>
+)
+
+const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+  </svg>
+)
+
+const TikTokIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
+  </svg>
+)
+
 const SOCIAL = [
-  { label: 'Instagram', icon: Instagram },
-  { label: 'Facebook', icon: Facebook },
-  { label: 'Twitter', icon: Twitter },
+  { label: 'WhatsApp', icon: WhatsAppIcon, href: SITE.whatsappLink },
+  { label: 'Instagram', icon: InstagramIcon, href: SITE.instagram },
+  { label: 'TikTok', icon: TikTokIcon, href: SITE.tiktok },
 ]
 
 export function MunayFooter() {
@@ -89,7 +114,9 @@ export function MunayFooter() {
               {SOCIAL.map((s) => (
                 <li key={s.label}>
                   <Link
-                    href="#"
+                    href={s.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     aria-label={s.label}
                     className="flex h-9 w-9 items-center justify-center rounded-full border border-black/5 bg-munay-cream/20 text-munay-ink/60 transition-colors hover:text-munay-red-600"
                   >
