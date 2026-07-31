@@ -5,6 +5,7 @@ import { Plus, X, Search, Loader2, AlertCircle, CheckCircle2, Package, Tag, EyeO
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { formatCents } from '@/lib/format'
@@ -17,12 +18,12 @@ interface ProductItem {
   condition: string
   active: boolean
   stock: number
+  precio_especial_cents?: number | null
 }
 
 interface FlashCodeInfo {
   code: string
   type: string
-  discount_percent: number | null
 }
 
 interface Props {
@@ -35,6 +36,7 @@ export function FlashCodeProductsManager({ flashCode }: Props) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [specialPrice, setSpecialPrice] = useState<string>('') // precio especial (USD) al asociar
   const [actionStatus, setActionStatus] = useState<{ type: 'saving' | 'saved' | 'error'; msg?: string } | null>(null)
 
   const loadData = useCallback(async () => {
@@ -63,14 +65,22 @@ export function FlashCodeProductsManager({ flashCode }: Props) {
   const handleAssociate = async (productId: string) => {
     setActionStatus({ type: 'saving' })
     try {
+      // F0/BLOQUE B: precio especial opcional en USD → centavos (o null para usar price_cents)
+      const trimmed = specialPrice.trim()
+      const parsed = parseFloat(trimmed.replace(',', '.'))
+      const precio_especial_cents =
+        trimmed && Number.isFinite(parsed) && parsed >= 0
+          ? Math.round(parsed * 100)
+          : null
       const res = await fetch(`/api/flash-codes/${flashCode.code}/products`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ product_id: productId }),
+        body: JSON.stringify({ product_id: productId, precio_especial_cents }),
       })
       const data = await res.json()
       if (data.ok) {
         setActionStatus({ type: 'saved', msg: 'Producto asociado' })
+        setSpecialPrice('')
         setTimeout(() => setActionStatus(null), 2000)
         loadData()
       } else {
@@ -143,11 +153,9 @@ export function FlashCodeProductsManager({ flashCode }: Props) {
           Productos asociados
         </CardTitle>
         <CardDescription>
-          Este código da{' '}
-          <strong>{flashCode.discount_percent != null ? `${flashCode.discount_percent}%` : 'descuento'}</strong>
-          {' '}a los productos que asocies abajo. {flashCode.type === 'unlock'
-            ? 'Los productos ocultos (active=false) solo serán visibles a través de este código.'
-            : 'Los productos activos se verán con descuento en el catálogo cuando se use este código.'}
+          Este código <strong>desbloquea</strong> los productos que asocies abajo. Los productos
+          ocultos (active=false) solo serán visibles a través de este código. Opcionalmente puedes
+          fijar un <strong>precio especial</strong> por producto (vacío → precio de catálogo).
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -175,7 +183,7 @@ export function FlashCodeProductsManager({ flashCode }: Props) {
                       {p.active ? 'Activo' : 'Oculto'}
                     </Badge>
                     <span className="text-xs text-muted-foreground">
-                      {formatCents(p.price_cents)} · stock: {p.stock}
+                      {p.precio_especial_cents != null ? `${formatCents(p.precio_especial_cents)} (especial)` : formatCents(p.price_cents)} · stock: {p.stock}
                     </span>
                     <Button
                       size="sm"
@@ -217,6 +225,21 @@ export function FlashCodeProductsManager({ flashCode }: Props) {
             <Badge variant="secondary" className="text-xs">
               {availableProducts.length} disponibles
             </Badge>
+          </div>
+
+          {/* Precio especial (USD) para el próximo producto a asociar */}
+          <div className="flex items-center gap-2">
+            <Label htmlFor="special-price" className="text-xs whitespace-nowrap">Precio especial (USD):</Label>
+            <Input
+              id="special-price"
+              type="number"
+              min="0"
+              step="0.01"
+              value={specialPrice}
+              onChange={(e) => setSpecialPrice(e.target.value)}
+              placeholder="opcional — ej: 15.00"
+              className="h-9 max-w-[160px]"
+            />
           </div>
 
           {search && filteredAvailable.length === 0 ? (

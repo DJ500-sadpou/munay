@@ -7,7 +7,7 @@
 import { PendingCouponBanner } from '@/components/cart/pending-coupon-banner'
 import { MunayHero } from '@/components/munay/hero'
 import { MunayCategoryBar } from '@/components/munay/category-bar'
-import { MunayLiveCodes } from '@/components/munay/live-codes'
+import { MunayCouponCards } from '@/components/munay/coupon-cards'
 import { MunayTrustBar } from '@/components/munay/trust-bar'
 import { MunayHowItWorks } from '@/components/munay/how-it-works'
 import { MunayTestimonials } from '@/components/munay/testimonials'
@@ -16,14 +16,65 @@ import { MunayCtaWeb } from '@/components/munay/cta-web'
 import { MunayNewsletter } from '@/components/munay/newsletter'
 import { CampaignBanner, CampaignBannerSkeleton } from '@/components/loyalty/campaign-banner'
 import { getActiveCampaign } from '@/lib/queries/flash-campaigns'
+import { getActiveCoupons } from '@/lib/queries/coupons'
+import { WeekBuyBanner } from '@/components/loyalty/week-buy-banner'
+import { getActiveWeekBuy, hasUserCommitted } from '@/lib/queries/week-buy'
+import { currentUser } from '@clerk/nextjs/server'
 import { Suspense } from 'react'
 
-async function CampaignSection() {
-  const campaign = await getActiveCampaign()
+async function safeFetchActiveWeekBuy() {
+  try { return await getActiveWeekBuy() } catch { return null }
+}
 
-  if (!campaign) return null
+async function safeFetchActiveCampaign() {
+  try { return await getActiveCampaign() } catch { return null }
+}
 
-  return <CampaignBanner campaign={campaign} />
+async function safeFetchActiveCoupons() {
+  try { return await getActiveCoupons() } catch { return [] }
+}
+
+async function safeHasUserCommitted(campaignId: string, userId: string) {
+  try { return await hasUserCommitted(campaignId, userId) } catch { return false }
+}
+
+async function WeekBuySection() {
+  const campaign = await safeFetchActiveWeekBuy()
+
+  if (!campaign) {
+    return <WeekBuyBanner campaign={null} />
+  }
+
+  const user = await currentUser()
+  const hasCommitted = user ? await safeHasUserCommitted(campaign.id, user.id) : false
+
+  return (
+    <WeekBuyBanner
+      campaign={campaign}
+      userId={user?.id}
+      userEmail={user?.emailAddresses?.[0]?.emailAddress}
+      hasCommitted={hasCommitted}
+    />
+  )
+}
+
+async function FlashCampaignsGrid() {
+  const [campaign, coupons] = await Promise.all([
+    safeFetchActiveCampaign(),
+    safeFetchActiveCoupons(),
+  ])
+  const hasCampaign = !!campaign
+
+  return (
+    <section
+      id="cupones-y-ofertas"
+      aria-label="Cupones y ofertas"
+      className={`grid gap-6 ${hasCampaign ? 'lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]' : 'lg:grid-cols-1'}`}
+    >
+      {campaign ? <CampaignBanner campaign={campaign} /> : null}
+      <MunayCouponCards coupons={coupons} />
+    </section>
+  )
 }
 
 export default function Home() {
@@ -36,15 +87,17 @@ export default function Home() {
 
         <MunayCategoryBar />
 
-        <section
-          aria-label="Ofertas flash y códigos en vivo"
-          className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]"
-        >
-          <Suspense fallback={<CampaignBannerSkeleton />}>
-            <CampaignSection />
-          </Suspense>
-          <MunayLiveCodes />
-        </section>
+        <Suspense fallback={
+          <div className="h-48 animate-pulse rounded-2xl bg-munay-crema/20" />
+        }>
+          <FlashCampaignsGrid />
+        </Suspense>
+
+        <Suspense fallback={
+          <div className="h-[200px] animate-pulse rounded-2xl bg-munay-crema/20" />
+        }>
+          <WeekBuySection />
+        </Suspense>
 
         <MunayTrustBar />
 

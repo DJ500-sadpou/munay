@@ -4,7 +4,7 @@ import { Zap, Package, Search } from 'lucide-react'
 import { ProductCard } from '@/components/product/product-card'
 import { CatalogSearch } from '@/components/catalogo/catalog-search'
 import { CatalogFilters } from '@/components/catalogo/catalog-filters'
-import { SupabaseNotConfiguredBanner } from '@/components/catalogo/supabase-not-configured-banner'
+import { DbNotConfiguredBanner } from '@/components/catalogo/db-not-configured-banner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -14,7 +14,7 @@ import {
   looksLikeFlashCode,
 } from '@/lib/queries/products'
 import { ROUTES } from '@/lib/constants'
-import { isSupabaseConfigured } from '@/lib/supabase/configured'
+import { isDbConfigured } from '@/lib/db/neon'
 
 export const metadata = {
   title: 'Catálogo',
@@ -41,20 +41,25 @@ export default async function CatalogoPage({ searchParams }: PageProps) {
   }
 
   const products = await listProducts(filters)
-  const supabaseReady = isSupabaseConfigured()
+  const dbReady = isDbConfigured()
 
   // Verificar si hay un flash code activo en los filtros (vía ?flash=)
-  let activeFlashInfo: { code: string; type: string; discount_percent: number | null } | null = null
+  // F0/BLOQUE B: los códigos flash son SOLO 'unlock' (desbloqueo de piezas).
+  let activeFlashInfo: { code: string; type: string } | null = null
   if (filters.flashCode) {
     const fc = await getValidFlashCode(filters.flashCode)
     if (fc) {
       activeFlashInfo = {
         code: fc.code,
         type: fc.type,
-        discount_percent: fc.discount_percent,
       }
     }
   }
+
+  // Agrupar por condición: nuevos primero, usados después
+  // Mystery Box (condition='new') se agrupa como nuevo automáticamente
+  const newProducts = products.filter(p => p.condition === 'new')
+  const usedProducts = products.filter(p => p.condition === 'used')
 
   return (
     <div className="bg-gradient-to-b from-white via-munay-crema/10 to-white">
@@ -78,16 +83,16 @@ export default async function CatalogoPage({ searchParams }: PageProps) {
           </Button>
         </div>
 
-        {filters.q && looksLikeFlashCode(filters.q) && !activeFlashInfo && supabaseReady && (
+        {filters.q && looksLikeFlashCode(filters.q) && !activeFlashInfo && dbReady && (
           <div className="mb-6 rounded-lg border border-munay-terracota/20 bg-munay-terracota/5 px-4 py-3 text-sm text-munay-ink">
             <strong>{filters.q.toUpperCase()}</strong> no es un código flash válido.
             Mostrando resultados de búsqueda normales.
           </div>
         )}
 
-        {!supabaseReady && (
+        {!dbReady && (
           <div className="mb-6">
-            <SupabaseNotConfiguredBanner />
+            <DbNotConfiguredBanner />
           </div>
         )}
 
@@ -96,11 +101,7 @@ export default async function CatalogoPage({ searchParams }: PageProps) {
             <Zap className="mr-1 inline h-4 w-4 text-munay-terracota" aria-hidden />
             Código <strong className="font-mono">{activeFlashInfo.code}</strong> activo:
             {' '}
-            {activeFlashInfo.type === 'discount' && activeFlashInfo.discount_percent != null
-              ? `${activeFlashInfo.discount_percent}% de descuento en todas las piezas.`
-              : activeFlashInfo.type === 'unlock'
-              ? 'Piezas exclusivas desbloqueadas.'
-              : 'Descuento aplicado.'}
+            Piezas exclusivas desbloqueadas.
           </div>
         )}
 
@@ -111,28 +112,63 @@ export default async function CatalogoPage({ searchParams }: PageProps) {
             flashCodeActive={activeFlashInfo?.code ?? null}
           />
 
-          <div>
-            {products.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
-                {products.map((p) => (
-                  <ProductCard
-                    key={p.id}
-                    product={{
-                      id: p.id,
-                      slug: p.slug,
-                      title: p.title,
-                      price_cents: p.price_cents,
-                      condition: p.condition,
-                      grading: p.grading,
-                      image_url: p.image_url,
-                      stock: p.stock,
-                      flash_discount_percent: p.flash_discount_percent,
-                      flash_code: p.flash_code,
-                    }}
-                  />
-                ))}
-              </div>
-            ) : (
+          <div className="space-y-8">
+            {products.length > 0 ? (<>
+              {newProducts.length > 0 && (
+                <section>
+                  <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-munay-ink/40">
+                    Nuevo
+                    <span className="ml-2 font-normal normal-case text-munay-ink/30">({newProducts.length})</span>
+                  </h2>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
+                    {newProducts.map((p) => (
+                      <ProductCard
+                        key={p.id}
+                        product={{
+                          id: p.id,
+                          slug: p.slug,
+                          title: p.title,
+                          price_cents: p.price_cents,
+                          condition: p.condition,
+                          grading: p.grading,
+                          image_url: p.image_url,
+                          stock: p.stock,
+                          flash_discount_percent: p.flash_discount_percent,
+                          flash_code: p.flash_code,
+                        }}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+              {usedProducts.length > 0 && (
+                <section>
+                  <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-munay-ink/40">
+                    Segunda mano
+                    <span className="ml-2 font-normal normal-case text-munay-ink/30">({usedProducts.length})</span>
+                  </h2>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
+                    {usedProducts.map((p) => (
+                      <ProductCard
+                        key={p.id}
+                        product={{
+                          id: p.id,
+                          slug: p.slug,
+                          title: p.title,
+                          price_cents: p.price_cents,
+                          condition: p.condition,
+                          grading: p.grading,
+                          image_url: p.image_url,
+                          stock: p.stock,
+                          flash_discount_percent: p.flash_discount_percent,
+                          flash_code: p.flash_code,
+                        }}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+            </>) : (
               <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-black/10 py-20 text-center">
                 {filters.q ? (
                   <>

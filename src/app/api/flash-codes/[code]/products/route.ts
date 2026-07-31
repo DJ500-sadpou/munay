@@ -1,9 +1,11 @@
 /**
  * GET /api/flash-codes/[code]/products
- * POST /api/flash-codes/[code]/products  body: { product_id }
+ * POST /api/flash-codes/[code]/products  body: { product_id, precio_especial_cents? }
  * DELETE /api/flash-codes/[code]/products/[productId]
  *
  * Gestiona las asociaciones entre un código flash y sus productos (flash_code_products).
+ * [F0/BLOQUE B] El precio especial por producto (precio_especial_cents) se puede
+ * fijar/actualizar al asociar. NULL → se usa el price_cents del producto.
  * Solo admins.
  */
 
@@ -17,7 +19,7 @@ export const runtime = 'nodejs'
  * GET — Retorna:
  * - associated: productos vinculados a este código (con datos completos)
  * - available: todos los productos del catálogo (para el selector admin)
- * - flashCode: datos del código flash (type, discount_percent)
+ * - flashCode: datos del código flash (type='unlock', code)
  */
 export async function GET(
   _req: NextRequest,
@@ -33,15 +35,16 @@ export async function GET(
   }
 
   // Verificar que el código flash existe
-  const fc = await queryOne<any>(`SELECT code, type, discount_percent FROM flash_codes WHERE code = $1`, [cleanCode])
+  const fc = await queryOne<any>(`SELECT code, type FROM flash_codes WHERE code = $1`, [cleanCode])
   if (!fc) {
     return NextResponse.json({ ok: false, error: 'Código flash no encontrado' }, { status: 404 })
   }
 
-  // Productos asociados
+  // Productos asociados (incluye precio_especial_cents — F0/BLOQUE B)
   const associated = await query<any>(`
     SELECT
       fcp.product_id AS id,
+      fcp.precio_especial_cents,
       p.slug, p.title, p.price_cents, p.condition, p.active,
       COALESCE(i.stock, 0) AS stock
     FROM flash_code_products fcp
@@ -66,7 +69,6 @@ export async function GET(
     flashCode: {
       code: fc.code,
       type: fc.type,
-      discount_percent: fc.discount_percent !== null ? Number(fc.discount_percent) : null,
     },
     associated,
     available: allProducts,
@@ -86,7 +88,7 @@ export async function POST(
   const { code } = await params
   const cleanCode = decodeURIComponent(code).toUpperCase()
 
-  let body: { product_id?: string }
+  let body: { product_id?: string; precio_especial_cents?: number | null }
   try {
     body = await req.json()
   } catch {
@@ -95,6 +97,15 @@ export async function POST(
 
   if (!body.product_id) {
     return NextResponse.json({ ok: false, error: 'product_id requerido' }, { status: 400 })
+  }
+
+  // Validar precio especial (F0/BLOQUE B): entero positivo o null/undefined
+  let specialCents: number | null = null
+  if (body.precio_especial_cents != null) {
+    if (!Number.isInteger(body.precio_especial_cents) || body.precio_especial_cents < 0) {
+      return NextResponse.json({ ok: false, error: 'precio_especial_cents inválido (entero >= 0)' }, { status: 400 })
+    }
+    specialCents = body.precio_especial_cents
   }
 
   // Validar UUID
@@ -120,11 +131,16 @@ export async function POST(
   }
 
   try {
+    // ON CONFLICT DO UPDATE: re-asociar el mismo producto actualiza el precio
+    // especial (NULL → usar price_cents). PK = (code, product_id).
     await query(
-      `INSERT INTO flash_code_products (code, product_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
-      [cleanCode, body.product_id]
+      `INSERT INTO flash_code_products (code, product_id, precio_especial_cents)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (code, product_id)
+       DO UPDATE SET precio_especial_cents = EXCLUDED.precio_especial_cents`,
+      [cleanCode, body.product_id, specialCents]
     )
-    return NextResponse.json({ ok: true, code: cleanCode, product_id: body.product_id })
+    return NextResponse.json({ ok: true, code: cleanCode, product_id: body.product_id, precio_especial_cents: specialCents })
   } catch (err: any) {
     return NextResponse.json({ ok: false, error: 'Error al asociar producto' }, { status: 500 })
   }

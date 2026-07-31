@@ -39,11 +39,34 @@ export async function PATCH(
     )
   }
 
+  // Validar transiciones permitidas (backend: evitar que completed→new vía API)
+  const current = await queryOne<any>(
+    `SELECT status FROM tickets WHERE id = $1`,
+    [id]
+  )
+  if (!current) {
+    return NextResponse.json({ ok: false, error: 'Ticket no encontrado' }, { status: 404 })
+  }
+
+  const ALLOWED_TRANSITIONS: Record<string, string[]> = {
+    new: ['in_progress', 'cancelled'],
+    in_progress: ['completed', 'cancelled'],
+    completed: [],
+    cancelled: [],
+  }
+
+  if (!ALLOWED_TRANSITIONS[current.status]?.includes(body.status)) {
+    return NextResponse.json(
+      { ok: false, error: `No se puede cambiar de ${current.status} a ${body.status}` },
+      { status: 422 }
+    )
+  }
+
   const result = await queryOne<any>(
     `UPDATE tickets SET status = $1, updated_at = now()
-     WHERE id = $2
+     WHERE id = $2 AND status = $3
      RETURNING id, status, updated_at`,
-    [body.status, id]
+    [body.status, id, current.status]
   )
 
   if (!result) {

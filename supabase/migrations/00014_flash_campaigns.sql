@@ -39,7 +39,7 @@ create table if not exists public.flash_campaign_products (
   primary key (campaign_id, product_id)
 );
 
-comment on table public.flash_campaigns is 'Campañas de ofertas flash / week sale con fechas reales';
+comment on table public.flash_campaigns is 'Campañas de ofertas flash / Quincena MUNAY con fechas reales';
 comment on table public.flash_campaign_products is 'Productos asociados a cada campaña';
 
 -- Vista: campañas activas en este momento

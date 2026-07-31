@@ -19,9 +19,8 @@ import { ROUTES } from '@/lib/constants'
 
 const NAV_LINKS = [
   { href: ROUTES.catalogo, label: 'Comprar' },
-  { href: '/flash', label: 'Ofertas Flash' },
-  { href: '/flash', label: 'En vivo', live: true },
-  { href: ROUTES.miCuenta, label: 'Vende tu ropa' },
+  { href: '/#cupones-y-ofertas', label: 'Cupones y Ofertas', live: true },
+  { href: '/cuenta/mis-publicaciones', label: 'Mis publicaciones' },
   { href: '/#como-funciona', label: 'Cómo funciona' },
 ]
 
@@ -122,7 +121,7 @@ export function MunayHeader() {
             asChild
             className="hidden rounded-full bg-gradient-to-b from-munay-terracota to-munay-terracota-quemado px-5 text-sm font-semibold text-white shadow-sm hover:opacity-95 md:inline-flex"
           >
-            <Link href={ROUTES.miCuenta}>Publicar prenda</Link>
+            <Link href="/publicar">Publicar prenda</Link>
           </Button>
 
           <Sheet>
@@ -167,7 +166,7 @@ export function MunayHeader() {
                   asChild
                   className="mt-3 rounded-full bg-gradient-to-b from-munay-terracota to-munay-terracota-quemado text-white"
                 >
-                  <Link href={ROUTES.miCuenta}>Publicar prenda</Link>
+                  <Link href="/publicar">Publicar prenda</Link>
                 </Button>
               </nav>
             </SheetContent>

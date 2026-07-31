@@ -2,23 +2,18 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Save, AlertCircle, ArrowLeft, Zap, Plus, X } from 'lucide-react'
+import { Loader2, Save, AlertCircle, ArrowLeft, Unlock } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { Badge } from '@/components/ui/badge'
-import { slugify } from '@/lib/format'
 
 interface Props {
   flashCode?: {
     code: string
-    type: 'discount' | 'unlock'
-    discount_percent: number | null
-    discount_cents: number | null
+    type: 'unlock'
     starts_at: string
     ends_at: string
     max_uses: number | null
@@ -30,19 +25,11 @@ interface Props {
 export function FlashCodeForm({ flashCode }: Props) {
   const router = useRouter()
   const isEdit = !!flashCode
+  // [F2 + F0/BLOQUE B] Los códigos flash son SOLO de tipo 'unlock' (desbloqueo de
+  // productos). Los descuentos generales viven en el módulo de Cupones (/admin/coupons).
+  // Las columnas discount_percent/discount_cents ya no existen en flash_codes.
 
   const [code, setCode] = useState(flashCode?.code ?? '')
-  const [type, setType] = useState<'discount' | 'unlock'>(flashCode?.type ?? 'discount')
-  const [discountType, setDiscountType] = useState<'percent' | 'fixed'>(
-    flashCode?.discount_percent != null ? 'percent' : flashCode?.discount_cents != null ? 'fixed' : 'percent'
-  )
-  const [discountValue, setDiscountValue] = useState(
-    flashCode?.discount_percent != null
-      ? String(flashCode.discount_percent)
-      : flashCode?.discount_cents != null
-      ? String(flashCode.discount_cents / 100)
-      : '10'
-  )
   const [startsAt, setStartsAt] = useState(
     flashCode?.starts_at
       ? new Date(flashCode.starts_at).toISOString().slice(0, 16)
@@ -70,38 +57,19 @@ export function FlashCodeForm({ flashCode }: Props) {
       setLoading(false)
       return
     }
+    if (!/^[A-Z0-9]+$/.test(cleanCode)) {
+      setError('Solo letras mayúsculas y números.')
+      setLoading(false)
+      return
+    }
 
     const payload: any = {
       code: cleanCode,
-      type,
+      type: 'unlock', // [F2 + F0] fijo: desbloqueo. Descuentos → /admin/coupons.
       starts_at: new Date(startsAt).toISOString(),
       ends_at: new Date(endsAt).toISOString(),
       max_uses: maxUses ? Number(maxUses) : null,
       active,
-    }
-
-    if (type === 'discount') {
-      const v = Number(discountValue)
-      if (isNaN(v) || v <= 0) {
-        setError('Valor de descuento inválido.')
-        setLoading(false)
-        return
-      }
-      if (discountType === 'percent') {
-        if (v < 0 || v > 100) {
-          setError('El porcentaje debe estar entre 0 y 100.')
-          setLoading(false)
-          return
-        }
-        payload.discount_percent = v
-        payload.discount_cents = null
-      } else {
-        payload.discount_cents = Math.round(v * 100)
-        payload.discount_percent = null
-      }
-    } else {
-      payload.discount_percent = null
-      payload.discount_cents = null
     }
 
     if (new Date(payload.ends_at) <= new Date(payload.starts_at)) {
@@ -145,12 +113,19 @@ export function FlashCodeForm({ flashCode }: Props) {
         {isEdit ? 'Editar código flash' : 'Nuevo código flash'}
       </h1>
       <p className="text-muted-foreground mb-8">
-        Configura descuentos o desbloquea piezas exclusivas.
+        Desbloquea piezas exclusivas ocultas en el catálogo. Los descuentos generales se gestionan en{' '}
+        <Link href="/admin/coupons" className="underline text-primary">Cupones</Link>.
       </p>
+
+      {/* [F0/BLOQUE B] Ya no hay códigos 'discount' legacy — los descuentos se
+          gestionan exclusivamente en /admin/coupons. */}
 
       <Card className="border-border/60">
         <CardHeader>
-          <CardTitle className="text-lg">Configuración</CardTitle>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Unlock className="h-5 w-5" aria-hidden />
+            Configuración
+          </CardTitle>
           <CardDescription>
             Los campos marcados con * son obligatorios.
           </CardDescription>
@@ -167,71 +142,13 @@ export function FlashCodeForm({ flashCode }: Props) {
                 maxLength={32}
                 minLength={4}
                 className="font-mono uppercase tracking-widest"
-                placeholder="MUNAY10"
+                placeholder="FLASH-EC"
                 disabled={isEdit}
               />
               <p className="text-xs text-muted-foreground">
-                Solo letras mayúsculas y números. 4-32 caracteres.
+                Solo letras mayúsculas y números. 4-32 caracteres. Se escribe en la barra de búsqueda del catálogo.
               </p>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="type">Tipo *</Label>
-              <Select value={type} onValueChange={(v) => setType(v as 'discount' | 'unlock')}>
-                <SelectTrigger id="type">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="discount">
-                    <span className="flex items-center gap-2">
-                      <Zap className="h-3 w-3" />
-                      Descuento (en todo el catálogo)
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="unlock">
-                    <span className="flex items-center gap-2">
-                      <Plus className="h-3 w-3" />
-                      Desbloqueo (pieza oculta)
-                    </span>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {type === 'discount' && (
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="discount-type">Tipo de descuento</Label>
-                  <Select
-                    value={discountType}
-                    onValueChange={(v) => setDiscountType(v as 'percent' | 'fixed')}
-                  >
-                    <SelectTrigger id="discount-type">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="percent">Porcentaje (%)</SelectItem>
-                      <SelectItem value="fixed">Monto fijo (USD)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="discount-value">
-                    {discountType === 'percent' ? 'Porcentaje *' : 'Monto USD *'}
-                  </Label>
-                  <Input
-                    id="discount-value"
-                    type="number"
-                    step={discountType === 'percent' ? '1' : '0.01'}
-                    min="0"
-                    max={discountType === 'percent' ? '100' : undefined}
-                    value={discountValue}
-                    onChange={(e) => setDiscountValue(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-            )}
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">

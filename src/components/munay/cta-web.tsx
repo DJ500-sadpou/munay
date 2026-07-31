@@ -23,7 +23,7 @@ export function MunayCtaWeb() {
           variant="outline"
           className="rounded-xl border-white/60 bg-transparent px-7 font-semibold text-white hover:bg-white/10 hover:text-white"
         >
-          <Link href={ROUTES.miCuenta}>Publicar prenda</Link>
+          <Link href="/publicar">Publicar prenda</Link>
         </Button>
       </div>
     </section>

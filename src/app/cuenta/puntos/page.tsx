@@ -132,7 +132,7 @@ export default async function MyPointsPage() {
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <Card className="border-black/5 shadow-sm">
             <CardContent className="flex items-center gap-4 p-4">
-              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-munay-red-500/10 text-munay-terracota">
+              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-munay-terracota/10 text-munay-terracota">
                 <TrendingUp className="h-5 w-5" aria-hidden />
               </span>
               <div>
@@ -143,7 +143,7 @@ export default async function MyPointsPage() {
           </Card>
           <Card className="border-black/5 shadow-sm">
             <CardContent className="flex items-center gap-4 p-4">
-              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-munay-red-500/10 text-munay-terracota">
+              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-munay-terracota/10 text-munay-terracota">
                 <TrendingDown className="h-5 w-5" aria-hidden />
               </span>
               <div>

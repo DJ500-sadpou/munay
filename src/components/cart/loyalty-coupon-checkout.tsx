@@ -18,7 +18,9 @@ interface Coupon {
 interface Props {
   subtotalCents: number
   loyaltyCode: string | undefined
-  onChange: (code: string | undefined) => void
+  /** [FIX Ronda 1] onChange(code, discountPercent) — expone el % del cupón
+   *  seleccionado para que el checkout calcule max(loyalty, coupon). */
+  onChange: (code: string | undefined, discountPercent?: number) => void
 }
 
 export function LoyaltyCouponCheckout({ subtotalCents, loyaltyCode, onChange }: Props) {
@@ -52,9 +54,10 @@ export function LoyaltyCouponCheckout({ subtotalCents, loyaltyCode, onChange }: 
 
   const handleSelect = (code: string) => {
     if (loyaltyCode === code) {
-      onChange(undefined) // deseleccionar
+      onChange(undefined, undefined) // deseleccionar
     } else {
-      onChange(code)
+      const c = coupons.find((x) => x.code === code)
+      onChange(code, c?.discount_percent)
     }
   }
 
@@ -136,7 +139,7 @@ export function LoyaltyCouponCheckout({ subtotalCents, loyaltyCode, onChange }: 
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => onChange(undefined)}
+              onClick={() => onChange(undefined, undefined)}
               className="w-full text-xs text-muted-foreground"
             >
               Quitar cupón

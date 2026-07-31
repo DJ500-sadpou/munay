@@ -41,6 +41,7 @@ export interface ProductFilters {
   maxPriceCents?: number
   sort?: 'recent' | 'price_asc' | 'price_desc' | 'title_asc'
   flashCode?: string
+  flashCampaign?: boolean
 }
 
 export const DEFAULT_FILTERS: ProductFilters = {
@@ -77,110 +78,174 @@ export function parseFiltersFromSearchParams(
     maxPriceCents: max && !isNaN(Number(max)) ? Math.max(0, Number(max) * 100) : undefined,
     sort: ['recent', 'price_asc', 'price_desc', 'title_asc'].includes(sort as string) ? sort : 'recent',
     flashCode: flashCode || undefined,
+    flashCampaign: get('flashCampaign') === 'true',
   }
 }
 
-// ---- Query principal: lista de productos ----
+// ---- Mapping de condición de listing a grading de producto ----
+const LISTING_CONDITION_TO_GRADING: Record<string, ProductGrading | null> = {
+  'new': null,       // nuevo → sin grading
+  'like_new': 'excelente',
+  'good': 'buena',
+  'fair': 'regular',
+}
+
+// ---- Query principal: lista de productos (incluye P2P listings) ----
 
 export async function listProducts(filters: ProductFilters = {}): Promise<ProductListItem[]> {
   if (!isDbConfigured()) return []
 
   const f = { ...DEFAULT_FILTERS, ...filters }
 
-  // Construir WHERE dinámico
-  const where: string[] = ['p.active = true']
-  const params: any[] = []
-  let paramIdx = 1
+  // Siempre buscar productos del admin (con filtro de condición en WHERE)
+  // P2P listings solo cuando el filtro NO es exclusivamente 'new'
+  const includeP2P = f.condition !== 'new'
 
-  if (f.q) {
-    where.push(`(p.title ILIKE $${paramIdx} OR p.description ILIKE $${paramIdx})`)
-    params.push(`%${f.q}%`)
-    paramIdx++
-  }
-  if (f.condition && f.condition !== 'all') {
-    where.push(`p.condition = $${paramIdx}`)
-    params.push(f.condition)
-    paramIdx++
-  }
-  if (f.grading && f.grading !== 'all') {
-    where.push(`p.grading = $${paramIdx}`)
-    params.push(f.grading)
-    paramIdx++
-  }
-  if (f.minPriceCents !== undefined) {
-    where.push(`p.price_cents >= $${paramIdx}`)
-    params.push(f.minPriceCents)
-    paramIdx++
-  }
-  if (f.maxPriceCents !== undefined) {
-    where.push(`p.price_cents <= $${paramIdx}`)
-    params.push(f.maxPriceCents)
-    paramIdx++
+  let items: ProductListItem[] = []
+  const paramIdxRef = { current: 1 }
+
+  // ── 1. Productos del admin (tabla products) — siempre ──
+  {
+    const where: string[] = ['p.active = true']
+    const params: any[] = []
+
+    if (f.q) {
+      where.push(`(p.title ILIKE $${paramIdxRef.current} OR p.description ILIKE $${paramIdxRef.current})`)
+      params.push(`%${f.q}%`)
+      paramIdxRef.current++
+    }
+    if (f.condition && f.condition !== 'all') {
+      where.push(`p.condition = $${paramIdxRef.current}`)
+      params.push(f.condition)
+      paramIdxRef.current++
+    }
+    if (f.grading && f.grading !== 'all') {
+      where.push(`p.grading = $${paramIdxRef.current}`)
+      params.push(f.grading)
+      paramIdxRef.current++
+    }
+    if (f.minPriceCents !== undefined) {
+      where.push(`p.price_cents >= $${paramIdxRef.current}`)
+      params.push(f.minPriceCents)
+      paramIdxRef.current++
+    }
+    if (f.maxPriceCents !== undefined) {
+      where.push(`p.price_cents <= $${paramIdxRef.current}`)
+      params.push(f.maxPriceCents)
+      paramIdxRef.current++
+    }
+    if (f.flashCampaign) {
+      where.push(`p.id IN (
+        SELECT fcp.product_id FROM flash_campaign_products fcp
+        JOIN flash_campaigns fc ON fc.id = fcp.campaign_id
+        WHERE fc.active = true AND fc.ends_at > now() AND fc.starts_at <= now()
+      )`)
+    }
+
+    let orderBy = 'p.created_at DESC'
+    switch (f.sort) {
+      case 'price_asc':   orderBy = 'p.price_cents ASC'; break
+      case 'price_desc':  orderBy = 'p.price_cents DESC'; break
+      case 'title_asc':   orderBy = 'p.title ASC'; break
+    }
+
+    const productRows = await query<any>(`
+      SELECT
+        p.id, p.slug, p.title, p.price_cents, p.currency, p.condition, p.grading,
+        COALESCE(
+          (SELECT pi.url FROM product_images pi
+           WHERE pi.product_id = p.id ORDER BY pi.sort ASC LIMIT 1),
+          NULL
+        ) AS image_url,
+        COALESCE(i.stock, 0) - COALESCE(i.reserved, 0) AS stock
+      FROM products p
+      LEFT JOIN inventory i ON i.product_id = p.id
+      WHERE ${where.join(' AND ')}
+      ORDER BY ${orderBy}
+    `, params)
+
+    items = productRows.map((r: any) => ({
+      id: r.id,
+      slug: r.slug,
+      title: r.title,
+      price_cents: Number(r.price_cents),
+      currency: r.currency,
+      condition: r.condition as ProductCondition,
+      grading: r.grading as ProductGrading | null,
+      image_url: r.image_url,
+      stock: Math.max(0, Number(r.stock)),
+      flash_discount_percent: null,
+      flash_code: null,
+    }))
   }
 
-  // ORDER BY
-  let orderBy = 'p.created_at DESC'
-  switch (f.sort) {
-    case 'price_asc':   orderBy = 'p.price_cents ASC'; break
-    case 'price_desc':  orderBy = 'p.price_cents DESC'; break
-    case 'title_asc':   orderBy = 'p.title ASC'; break
+  // ── 2. P2P listings publicados (user_listings) — solo cuando no es filtro 'new' ──
+  if (includeP2P) {
+    const listingWhere: string[] = ["ul.status IN ('verified', 'published')", 'ul.active = true']
+    const listingParams: any[] = []
+
+    if (f.q) {
+      listingWhere.push(`(ul.title ILIKE $${paramIdxRef.current} OR ul.description ILIKE $${paramIdxRef.current})`)
+      listingParams.push(`%${f.q}%`)
+      paramIdxRef.current++
+    }
+    if (f.minPriceCents !== undefined) {
+      listingWhere.push(`ul.price_cents >= $${paramIdxRef.current}`)
+      listingParams.push(f.minPriceCents)
+      paramIdxRef.current++
+    }
+    if (f.maxPriceCents !== undefined) {
+      listingWhere.push(`ul.price_cents <= $${paramIdxRef.current}`)
+      listingParams.push(f.maxPriceCents)
+      paramIdxRef.current++
+    }
+
+    const listingRows = await query<any>(`
+      SELECT
+        ul.id, ul.title, ul.price_cents, ul.condition, ul.images, ul.size, ul.brand
+      FROM user_listings ul
+      WHERE ${listingWhere.join(' AND ')}
+      ORDER BY ul.created_at DESC
+    `, listingParams)
+
+    const listingItems: ProductListItem[] = listingRows.map((r: any) => {
+      const images = typeof r.images === 'string' ? JSON.parse(r.images) : (r.images ?? [])
+      return {
+        id: `p2p_${r.id}`,  // prefijo para evitar colisión con IDs de productos
+        slug: `listing-${r.id.slice(0, 8)}`,
+        title: r.title,
+        price_cents: Number(r.price_cents),
+        currency: 'USD',
+        condition: 'used' as ProductCondition,
+        grading: LISTING_CONDITION_TO_GRADING[r.condition] ?? 'buena',
+        image_url: images.length > 0 ? images[0] : null,
+        stock: 1,  // cada listing es una unidad única
+        flash_discount_percent: null,
+        flash_code: null,
+      }
+    })
+
+    items = [...items, ...listingItems]
   }
 
-  const sql = `
-    SELECT
-      p.id, p.slug, p.title, p.price_cents, p.currency, p.condition, p.grading,
-      COALESCE(
-        (SELECT pi.url FROM product_images pi
-         WHERE pi.product_id = p.id ORDER BY pi.sort ASC LIMIT 1),
-        NULL
-      ) AS image_url,
-      COALESCE(i.stock, 0) - COALESCE(i.reserved, 0) AS stock
-    FROM products p
-    LEFT JOIN inventory i ON i.product_id = p.id
-    WHERE ${where.join(' AND ')}
-    ORDER BY ${orderBy}
-  `
-
-  const rows = await query<any>(sql, params)
-
-  const items: ProductListItem[] = rows.map((r) => ({
-    id: r.id,
-    slug: r.slug,
-    title: r.title,
-    price_cents: Number(r.price_cents),
-    currency: r.currency,
-    condition: r.condition as ProductCondition,
-    grading: r.grading as ProductGrading | null,
-    image_url: r.image_url,
-    stock: Math.max(0, Number(r.stock)),
-    flash_discount_percent: null,
-    flash_code: null,
-  }))
-
-  // Aplicar flash code si está presente
-  // FIX v2: solo aplicar descuento a productos en flash_code_products
+  // Aplicar flash code si está presente (solo unlock — F0/BLOQUE B)
+  // El descuento de un código flash proviene de precio_especial_cents
+  // por producto (NULL → sin descuento, solo badge 'Desbloqueado').
   if (f.flashCode) {
     const flash = await getValidFlashCode(f.flashCode)
     if (flash) {
-      // Obtener los productos asociados a este código
-      const associatedIds = await getUnlockedProductIds(flash.code)
-      const pct = flash.discount_percent
-      const flat = flash.discount_cents
+      const unlocked = await getUnlockedProducts(flash.code)
+      const specialByProduct = new Map(unlocked.map((u) => [u.product_id, u.precio_especial_cents]))
 
       items.forEach((it) => {
-        if (associatedIds.includes(it.id)) {
+        const special = specialByProduct.get(it.id)
+        if (specialByProduct.has(it.id)) {
           it.flash_code = flash.code
-          if (flash.type === 'discount') {
-            // type=discount: aplicar descuento (porcentual o fijo)
-            if (pct != null) {
-              it.flash_discount_percent = pct
-            } else if (flat != null && flat > 0) {
-              const approx = Math.round((flat / Math.max(1, it.price_cents)) * 100)
-              it.flash_discount_percent = Math.min(99, Math.max(0, approx))
-            }
-          } else if (flash.type === 'unlock') {
-            // type=unlock: mostrar sin descuento (solo visibilidad)
-            it.flash_discount_percent = pct ?? 0
+          if (special != null && special > 0 && special < it.price_cents) {
+            const approx = Math.round((1 - special / Math.max(1, it.price_cents)) * 100)
+            it.flash_discount_percent = Math.min(99, Math.max(0, approx))
+          } else {
+            it.flash_discount_percent = null
           }
         }
       })
@@ -228,13 +293,12 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
   }
 }
 
-// ---- Flash codes ----
+// ---- Flash codes (solo unlock — F0/BLOQUE B) ----
 
 export interface FlashCodeInfo {
   code: string
-  type: 'discount' | 'unlock'
-  discount_percent: number | null
-  discount_cents: number | null
+  type: 'unlock'
+  starts_at: string
   ends_at: string
   max_uses: number | null
   uses_count: number
@@ -246,7 +310,7 @@ export async function getValidFlashCode(code: string): Promise<FlashCodeInfo | n
 
   const upper = code.trim().toUpperCase()
   const fc = await queryOne<any>(`
-    SELECT code, type, discount_percent, discount_cents, starts_at, ends_at, max_uses, uses_count, active
+    SELECT code, starts_at, ends_at, max_uses, uses_count, active
     FROM flash_codes WHERE code = $1
   `, [upper])
 
@@ -257,9 +321,8 @@ export async function getValidFlashCode(code: string): Promise<FlashCodeInfo | n
 
   return {
     code: fc.code,
-    type: fc.type,
-    discount_percent: fc.discount_percent !== null ? Number(fc.discount_percent) : null,
-    discount_cents: fc.discount_cents !== null ? Number(fc.discount_cents) : null,
+    type: 'unlock',
+    starts_at: fc.starts_at,
     ends_at: fc.ends_at,
     max_uses: fc.max_uses !== null ? Number(fc.max_uses) : null,
     uses_count: Number(fc.uses_count),
@@ -267,12 +330,30 @@ export async function getValidFlashCode(code: string): Promise<FlashCodeInfo | n
   }
 }
 
-export async function getUnlockedProductIds(code: string): Promise<string[]> {
+export interface UnlockedProduct {
+  product_id: string
+  precio_especial_cents: number | null
+}
+
+export async function getUnlockedProducts(code: string): Promise<UnlockedProduct[]> {
   if (!isDbConfigured()) return []
   const rows = await query<any>(`
-    SELECT product_id FROM flash_code_products WHERE code = $1
+    SELECT product_id, precio_especial_cents FROM flash_code_products WHERE code = $1
   `, [code.trim().toUpperCase()])
-  return rows.map((r) => r.product_id as string)
+  return rows.map((r) => ({
+    product_id: r.product_id as string,
+    precio_especial_cents: r.precio_especial_cents != null ? Number(r.precio_especial_cents) : null,
+  }))
+}
+
+/** Precio especial de un producto para un código flash (NULL → usar price_cents). */
+export async function getFlashSpecialPrice(code: string, productId: string): Promise<number | null> {
+  if (!isDbConfigured()) return null
+  const row = await queryOne<any>(`
+    SELECT precio_especial_cents FROM flash_code_products
+    WHERE code = $1 AND product_id = $2 LIMIT 1
+  `, [code.trim().toUpperCase(), productId])
+  return row?.precio_especial_cents != null ? Number(row.precio_especial_cents) : null
 }
 
 export function looksLikeFlashCode(input: string): boolean {
@@ -286,29 +367,12 @@ export function looksLikeFlashCode(input: string): boolean {
   return hasDigit || isAllUpperOrDigits
 }
 
-export function applyFlashDiscount(
-  priceCents: number,
-  flash: Pick<FlashCodeInfo, 'type' | 'discount_percent' | 'discount_cents'>
-): { finalCents: number; discountCents: number; discountPercent: number } | null {
-  if (flash.type !== 'discount') return null
-  if (flash.discount_percent != null) {
-    const d = Math.round(priceCents * (flash.discount_percent / 100))
-    return {
-      finalCents: Math.max(0, priceCents - d),
-      discountCents: d,
-      discountPercent: flash.discount_percent,
-    }
-  }
-  if (flash.discount_cents != null && flash.discount_cents > 0) {
-    const d = Math.min(priceCents, flash.discount_cents)
-    return {
-      finalCents: Math.max(0, priceCents - d),
-      discountCents: d,
-      discountPercent: Math.round((d / Math.max(1, priceCents)) * 100),
-    }
-  }
-  return null
-}
+/**
+ * [Eliminado en F0/BLOQUE B] applyFlashDiscount ya no existe:
+ * los códigos flash son SOLO 'unlock' y su descuento proviene de
+ * flash_code_products.precio_especial_cents. Los descuentos por
+ * porcentaje generales viven en la tabla coupons.
+ */
 
 // ---- Queries para admin (sin filtro active=true) ----
 
@@ -326,7 +390,7 @@ export async function listAllProductsForAdmin(): Promise<Array<{
   const rows = await query<any>(`
     SELECT
       p.id, p.slug, p.title, p.price_cents, p.condition, p.grading, p.active,
-      COALESCE(i.stock, 0) AS stock
+      COALESCE(i.stock, 0) - COALESCE(i.reserved, 0) AS stock
     FROM products p
     LEFT JOIN inventory i ON i.product_id = p.id
     ORDER BY p.created_at DESC

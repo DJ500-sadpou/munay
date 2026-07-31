@@ -17,7 +17,7 @@ export type PaymentProvider = 'kushki' | 'payphone' | 'paypal' | 'manual'
 
 export type PaymentStatus = 'pending' | 'authorized' | 'captured' | 'failed' | 'refunded'
 
-export type FlashCodeType = 'discount' | 'unlock'
+export type FlashCodeType = 'unlock'  // [F0/BLOQUE B] los códigos flash ya NO tienen tipo discount (descuentos → tabla coupons)
 
 export type PointTxType = 'earn' | 'redeem' | 'adjust'
 
@@ -85,8 +85,6 @@ export interface Database {
         Row: {
           code: string
           type: FlashCodeType
-          discount_percent: number | null
-          discount_cents: number | null
           starts_at: string
           ends_at: string
           max_uses: number | null
@@ -96,8 +94,6 @@ export interface Database {
         Insert: {
           code: string
           type: FlashCodeType
-          discount_percent?: number | null
-          discount_cents?: number | null
           starts_at: string
           ends_at: string
           max_uses?: number | null
@@ -110,10 +106,12 @@ export interface Database {
         Row: {
           code: string
           product_id: string
+          precio_especial_cents: number | null
         }
         Insert: {
           code: string
           product_id: string
+          precio_especial_cents?: number | null
         }
         Update: Partial<Database['public']['Tables']['flash_code_products']['Insert']>
       }

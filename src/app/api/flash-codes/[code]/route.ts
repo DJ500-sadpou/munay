@@ -39,10 +39,9 @@ export async function PUT(req: NextRequest, ctx: RouteContext) {
   const { code } = await ctx.params
   const codeId = decodeURIComponent(code).toUpperCase()
 
+  // F0/BLOQUE B: solo 'unlock', sin columnas discount.
   let body: {
-    type: 'discount' | 'unlock'
-    discount_percent?: number | null
-    discount_cents?: number | null
+    type?: 'unlock'
     starts_at: string
     ends_at: string
     max_uses?: number | null
@@ -54,9 +53,6 @@ export async function PUT(req: NextRequest, ctx: RouteContext) {
     return NextResponse.json({ error: 'JSON inválido' }, { status: 400 })
   }
 
-  if (!body.type || !['discount', 'unlock'].includes(body.type)) {
-    return NextResponse.json({ error: 'Tipo inválido' }, { status: 400 })
-  }
   const startsAt = new Date(body.starts_at)
   const endsAt = new Date(body.ends_at)
   if (isNaN(startsAt.getTime()) || isNaN(endsAt.getTime())) {
@@ -69,23 +65,18 @@ export async function PUT(req: NextRequest, ctx: RouteContext) {
   try {
     await query(`
       UPDATE flash_codes SET
-        type = $1,
-        discount_percent = $2,
-        discount_cents = $3,
-        starts_at = $4,
-        ends_at = $5,
-        max_uses = $6,
-        active = $7
-      WHERE code = $8
+        type = 'unlock',
+        starts_at = $2,
+        ends_at = $3,
+        max_uses = $4,
+        active = $5
+      WHERE code = $1
     `, [
-      body.type,
-      body.type === 'discount' ? (body.discount_percent ?? null) : null,
-      body.type === 'discount' ? (body.discount_cents ?? null) : null,
+      codeId,
       startsAt.toISOString(),
       endsAt.toISOString(),
       body.max_uses ?? null,
       body.active,
-      codeId,
     ])
 
     return NextResponse.json({ ok: true, code: codeId })

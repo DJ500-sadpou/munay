@@ -1,5 +1,5 @@
 /**
- * Test e2e: flujo completo de compra (modo demo, sin Supabase real).
+ * Test e2e: flujo completo de compra (modo demo, sin DB real).
  *
  * Verifica:
  *   1. Home carga
@@ -8,8 +8,8 @@
  *   4. Carrito funciona (add/remove/update)
  *   5. Checkout completa el flujo en modo demo
  *
- * Nota: estos tests asumen modo demo (sin credenciales Supabase).
- * Para tests con DB real, mockear o usar un proyecto Supabase de prueba.
+ * Nota: estos tests asumen modo demo (sin credenciales Neon).
+ * Para tests con DB real, mockear o usar un proyecto Neon de prueba.
  */
 
 import { test, expect } from '@playwright/test'
@@ -24,7 +24,6 @@ test.describe('Flujo de compra completo (modo demo)', () => {
 
   test('catálogo carga con productos', async ({ page }) => {
     await page.goto('/catalogo')
-    // Banner de "Supabase no configurado" o productos
     await expect(page.getByRole('heading', { name: 'Catálogo' })).toBeVisible()
   })
 
@@ -85,11 +84,10 @@ test.describe('SEO y metadata', () => {
 })
 
 test.describe('Health checks', () => {
-  test('webhook endpoint responde', async ({ request }) => {
-    const res = await request.get('/api/payments/webhook')
+  test('api raíz responde', async ({ request }) => {
+    const res = await request.get('/api')
     expect(res.status()).toBe(200)
     const body = await res.json()
-    expect(body.ok).toBe(true)
-    expect(body.endpoint).toBe('/api/payments/webhook')
+    expect(body.message).toBe('Hello, world!')
   })
 })

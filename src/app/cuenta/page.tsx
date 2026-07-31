@@ -68,7 +68,7 @@ export default async function CuentaHomePage() {
       <div className="mx-auto max-w-7xl px-4 py-10 lg:px-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <span className="mb-3 inline-block rounded-full bg-munay-red-500/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-munay-terracota">
+            <span className="mb-3 inline-block rounded-full bg-munay-terracota/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-munay-terracota">
               Mi cuenta
             </span>
             <h1 className="font-display text-3xl font-bold tracking-tight text-munay-ink">Mi cuenta</h1>
@@ -142,7 +142,7 @@ export default async function CuentaHomePage() {
             </Link>
           </Button>
           {activeCoupons.length > 0 && (
-            <Button asChild variant="outline" className="border-munay-red-500/30 text-munay-terracota hover:bg-munay-red-500/5">
+            <Button asChild variant="outline" className="border-munay-terracota/30 text-munay-terracota hover:bg-munay-terracota/5">
               <Link href="/catalogo">
                 <Tag className="mr-2 h-4 w-4" aria-hidden />
                 Usar cupón ({activeCoupons.length})

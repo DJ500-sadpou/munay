@@ -44,6 +44,9 @@ supabase/.branches
 *.tsbuildinfo
 next-env.d.ts
 
+# graphify (herramienta de grafos — ruido generado, no commitear)
+graphify-out/
+
 # Playwright
 /test-results/
 /playwright-report/

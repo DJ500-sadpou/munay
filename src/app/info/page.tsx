@@ -12,7 +12,7 @@ import {
   Package,
   ShoppingCart,
   Zap,
-  CreditCard,
+  MessageCircle,
   Database,
   ShieldCheck,
   CheckCircle2,
@@ -37,10 +37,10 @@ const ROUTES_OVERVIEW = [
   { href: ROUTES.home, label: 'Inicio', desc: 'Landing + mantenimiento', icon: Sparkles, status: 'listo' },
   { href: ROUTES.catalogo, label: '/catalogo', desc: 'Catálogo en vivo con filtros y búsqueda inteligente', icon: Package, status: 'en vivo' },
   { href: ROUTES.carrito, label: '/carrito', desc: 'Carrito persistente + aplicar promociones', icon: ShoppingCart, status: 'en vivo' },
-  { href: ROUTES.checkout, label: '/checkout', desc: 'Crear orden + pago + redimir puntos + Turnstile', icon: CreditCard, status: 'en vivo' },
+  { href: ROUTES.checkout, label: '/checkout', desc: 'Crear pedido por WhatsApp + redimir puntos + Turnstile', icon: MessageCircle, status: 'en vivo' },
   { href: '/cuenta', label: '/cuenta', desc: 'Mi cuenta: historial, puntos, perfil', icon: Lock, status: 'en vivo' },
   { href: '/cuenta/puntos', label: '/cuenta/puntos', desc: 'Ledger de puntos con saldo y movimientos', icon: Gift, status: 'en vivo' },
-  { href: '/flash/MUNAY10', label: '/flash/[code]', desc: 'Validación real + producto concreto', icon: Zap, status: 'en vivo' },
+  { href: ROUTES.catalogo, label: 'Códigos flash', desc: 'Escribe el código en la barra de búsqueda del catálogo para ver piezas exclusivas', icon: Zap, status: 'en vivo' },
   { href: '/admin', label: '/admin', desc: 'Panel admin completo (productos + órdenes + flash + métricas)', icon: Lock, status: 'en vivo' },
   { href: '/admin/metrics', label: '/admin/metrics', desc: 'Ventas por día + productos top + KPIs', icon: BarChart3, status: 'en vivo' },
   { href: '/sitemap.xml', label: '/sitemap.xml', desc: 'Sitemap dinámico con productos', icon: Database, status: 'en vivo' },
@@ -100,7 +100,7 @@ const STACK = [
   { name: 'Clerk', role: 'Autenticación de usuarios', icon: Lock },
   { name: 'Vercel', role: 'Hosting + deploy automático', icon: ShieldCheck },
   { name: 'Brevo', role: 'Emails transaccionales', icon: Mail },
-  { name: 'Kushki', role: 'Pasarela de pago (Ecuador)', icon: CreditCard },
+  { name: 'WhatsApp', role: 'Checkout por WhatsApp (sin tarjeta)', icon: MessageCircle },
 ]
 
 export default function InfoPage() {
@@ -110,7 +110,7 @@ export default function InfoPage() {
       <section className="relative overflow-hidden border-b border-black/5 bg-gradient-to-b from-white via-munay-cream/10 to-white">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:py-28 md:py-32 lg:px-6">
           <div className="mx-auto max-w-3xl text-center">
-            <span className="mb-4 inline-block rounded-full bg-munay-red-500/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-munay-terracota">
+            <span className="mb-4 inline-block rounded-full bg-munay-terracota/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-munay-terracota">
               Fase 5/5 · COMPLETO
             </span>
             <h1 className="font-display text-4xl font-bold tracking-tight text-munay-ink sm:text-5xl md:text-6xl">
@@ -128,7 +128,7 @@ export default function InfoPage() {
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline">
-                <Link href="/flash">
+                <Link href={ROUTES.catalogo}>
                   <Zap className="mr-2 h-4 w-4" aria-hidden />Códigos flash
                 </Link>
               </Button>

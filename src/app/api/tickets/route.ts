@@ -86,8 +86,8 @@ export async function POST(req: NextRequest) {
   if (isDbConfigured()) {
     try {
       const result = await query<any>(
-        `INSERT INTO tickets (name, email, phone, message)
-         VALUES ($1, $2, $3, $4)
+        `INSERT INTO tickets (name, email, phone, message, status)
+         VALUES ($1, $2, $3, $4, 'new')
          RETURNING id`,
         [name, email, phone || null, message]
       )

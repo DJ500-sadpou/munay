@@ -5,6 +5,17 @@
  *   { id, slug, title, unit_price_cents, qty, image_url? }
  *
  * La cantidad máxima por línea y por carrito está limitada por LIMITS.
+ *
+ * [F3] Separación Cupones vs Código Flash:
+ *   - Se ELIMINÓ flashCode / discountCents del store. Los códigos flash ya
+ *     NO aplican descuento en el checkout (son mecanismo de descubrimiento:
+ *     búsqueda → /flash/[code]). Los descuentos (cupón general o cupón de
+ *     fidelidad) se validan contra el servidor en /checkout y se consumen en
+ *     createOrder.
+ *   - version: 2 → invalida el estado persistido en localStorage que aún
+ *     contenía flashCode (FIX #8).
+ *   - version: 3 → [BLOQUE B] invalida carritos con precio descontado sin
+ *     flash_code (líneas pre-fix que cobraban precio completo).
  */
 
 'use client'
@@ -21,28 +32,22 @@ export interface CartLine {
   qty: number
   image_url?: string | null
   condition: 'new' | 'used'
-}
-
-export interface CartFlashCode {
-  code: string
-  type: 'discount' | 'unlock'
-  discount_percent: number | null
-  discount_cents: number | null
+  /** Código flash que desbloqueó el precio especial de esta línea (F0/BLOQUE B).
+   *  Se envía al server para que createOrder aplique precio_especial_cents
+   *  de forma autoritativa (sin confiar en el precio del cliente). */
+  flash_code?: string | null
 }
 
 interface CartState {
   lines: CartLine[]
-  flashCode: CartFlashCode | null
   // Acciones
   addItem: (item: Omit<CartLine, 'qty'> & { qty?: number }) => void
   removeItem: (id: string) => void
   updateQty: (id: string, qty: number) => void
   clear: () => void
-  setFlashCode: (code: CartFlashCode | null) => void
   // Selectores
   totalItems: () => number
   subtotalCents: () => number
-  discountCents: () => number
   totalCents: () => number
   pointsToEarn: () => number
 }
@@ -51,7 +56,6 @@ export const useCart = create<CartState>()(
   persist(
     (set, get) => ({
       lines: [],
-      flashCode: null,
 
       addItem: (item) =>
         set((state) => {
@@ -88,35 +92,16 @@ export const useCart = create<CartState>()(
           }
         }),
 
-      clear: () => set({ lines: [], flashCode: null }),
-
-      setFlashCode: (code) => set({ flashCode: code }),
+      clear: () => set({ lines: [] }),
 
       totalItems: () => get().lines.reduce((s, l) => s + l.qty, 0),
 
       subtotalCents: () =>
         get().lines.reduce((s, l) => s + l.unit_price_cents * l.qty, 0),
 
-      discountCents: () => {
-        const fc = get().flashCode
-        if (!fc) return 0
-        const subtotal = get().subtotalCents()
-        if (fc.type === 'discount') {
-          if (fc.discount_percent != null) {
-            return Math.round(subtotal * (fc.discount_percent / 100))
-          }
-          if (fc.discount_cents != null) {
-            return Math.min(subtotal, fc.discount_cents)
-          }
-        }
-        return 0
-      },
-
-      totalCents: () => {
-        const sub = get().subtotalCents()
-        const disc = get().discountCents()
-        return Math.max(0, sub - disc)
-      },
+      // [F3] Sin descuentos en el store: el total es el subtotal.
+      // Los descuentos se calculan en el checkout contra el servidor.
+      totalCents: () => get().subtotalCents(),
 
       pointsToEarn: () => {
         const total = get().totalCents()
@@ -126,11 +111,13 @@ export const useCart = create<CartState>()(
     {
       name: 'munay-cart',
       storage: createJSONStorage(() => localStorage),
-      version: 1,
-      // Solo persistir lines y flashCode (no las funciones)
+      // version 3: [BLOQUE B] invalida carritos persistidos con precio
+      // descontado pero SIN flash_code (líneas pre-fix que seguían
+      // cobrando precio completo en createOrder).
+      // Solo persistir lines (ahora con flash_code por línea para
+      // aplicar precio_especial_cents server-side en createOrder).
       partialize: (state) => ({
         lines: state.lines,
-        flashCode: state.flashCode,
       }),
     }
   )

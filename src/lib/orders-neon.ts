@@ -19,10 +19,20 @@ import { POINTS_RULES, LIMITS } from '@/lib/constants'
 import { randomUUID } from 'crypto'
 import { sendOrderConfirmationEmail, sendRefundEmail } from '@/lib/email/brevo'
 import { generateLoyaltyCoupon, invalidateCouponByOrder } from '@/lib/queries/loyalty-coupons'
+import { normalizeCouponCode } from '@/lib/queries/coupons'
+// [BLOQUE B] Precio especial por producto de un código flash (unlock-only).
+// Se aplica de forma AUTORITATIVA (desde flash_code_products), no se confía
+// en el precio que envía el cliente.
+import { getValidFlashCode, getFlashSpecialPrice } from '@/lib/queries/products-neon'
 
 export interface CreateOrderItemInput {
   product_id: string
   qty: number
+  /** Código flash que desbloqueó el precio especial de este ítem (BLOQUE B).
+   *  Si es válido y el producto tiene precio_especial_cents, se usa ese
+   *  precio; si no, se usa price_cents del producto. Nunca se confía en
+   *  unit_price_cents del cliente. */
+  flash_code?: string | null
 }
 
 export interface CreateOrderInput {
@@ -35,7 +45,8 @@ export interface CreateOrderInput {
   shipping_province?: string
   shipping_phone?: string
   shipping_cents?: number  // Fix FLOW3-009: costo de envío en centavos
-  flash_code?: string | null
+  flash_code?: string | null  // Legacy — F1: se ignora silenciosamente (código flash ya no aplica en checkout)
+  coupon_code?: string | null  // F1: cupón de descuento (tabla coupons)
   loyalty_code?: string | null
   points_to_redeem?: number
   user_id?: string | null
@@ -59,6 +70,7 @@ export interface CreateOrderResult {
     | 'flash_invalid'
     | 'points_invalid'
     | 'loyalty_invalid'
+    | 'coupon_invalid'
     | 'internal_error'
 }
 
@@ -68,14 +80,16 @@ export interface CreateOrderResult {
  * Pasos:
  *   1. Validar items (qty entero > 0) y stock.
  *   2. Snapshot de precios desde DB.
- *   3. Si hay flash_code: llamar RPC consume_flash_code (atómico).
+ *   3. [F1] Código flash legacy se IGNORA (ya no aplica descuento en checkout).
  *   4. Si hay points_to_redeem: validar saldo (requiere user_id + customer).
  *      Insertar tx redeem inmediatamente (atómico con SELECT FOR UPDATE).
- *   5. INSERT orders + order_items.
- *   6. reserve_inventory por item (falla la orden si falla).
+ *   5. [F1] Consumir cupón (tabla coupons) y/o cupón de fidelidad (FID-).
+ *      NO acumulación: solo el mayor de (loyalty, coupon) + puntos.
+ *   6. INSERT orders + order_items.
+ *   7. reserve_inventory por item (falla la orden si falla).
  *
- * Si cualquier paso falla, se hace ROLLBACK completo y se libera
- * el flash code consumido (si aplica).
+ * Si cualquier paso falla, se hace ROLLBACK completo (los usos de cupón
+ * consumidos en la transacción se revierten automáticamente).
  */
 export async function createOrder(input: CreateOrderInput): Promise<CreateOrderResult> {
   if (!isDbConfigured()) {
@@ -139,10 +153,25 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
 
   const productsMap = new Map(productsRows.map((p) => [p.id, p]))
 
-  // 4. Validar disponibilidad + calcular subtotal
+  // 4. Validar disponibilidad + calcular subtotal.
+  // [BLOQUE B] El precio unitario se resuelve de forma AUTORITATIVA:
+  //  - Si el ítem trae un flash_code válido y el producto tiene
+  //    precio_especial_cents (flash_code_products), se usa ESE precio.
+  //  - Si no, se usa products.price_cents.
+  //  - NUNCA se confía en un precio enviado por el cliente.
   const orderItems: Array<{ product_id: string; qty: number; unit_price_cents: number }> = []
   let subtotalCents = 0
   const currency = 'USD'
+  // Caché por código para no repetir validaciones (max 1 query por código).
+  const flashCodeCache = new Map<string, string | null>() // code -> código válido o null
+
+  const resolveFlashCode = async (code: string): Promise<string | null> => {
+    const upper = code.trim().toUpperCase()
+    if (flashCodeCache.has(upper)) return flashCodeCache.get(upper)!
+    const fc = await getValidFlashCode(upper)
+    flashCodeCache.set(upper, fc ? fc.code : null)
+    return fc ? fc.code : null
+  }
 
   for (const item of input.items) {
     const product = productsMap.get(item.product_id)
@@ -161,45 +190,38 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
         error_code: 'insufficient_stock',
       }
     }
+
+    // Resolver precio especial por flash code (autoritativo, desde la BD).
+    let unitPriceCents = Number(product.price_cents)
+    if (item.flash_code) {
+      const validCode = await resolveFlashCode(item.flash_code)
+      if (validCode) {
+        const special = await getFlashSpecialPrice(validCode, item.product_id)
+        if (special != null && special > 0 && special < unitPriceCents) {
+          unitPriceCents = special
+        }
+      }
+    }
+
     orderItems.push({
       product_id: item.product_id,
       qty: item.qty,
-      unit_price_cents: Number(product.price_cents),
+      unit_price_cents: unitPriceCents,
     })
-    subtotalCents += Number(product.price_cents) * item.qty
+    subtotalCents += unitPriceCents * item.qty
   }
 
   // 5. Ejecutar transacción atómica
   try {
     const result = await transaction(async (tx) => {
       let discountCents = 0
-      let flashCodeApplied: string | null = null
+      let pointsDiscountCents = 0
       let pointsRedeemed = 0
 
-      // 5a. Consumir flash code (RPC atómica con FOR UPDATE)
-      if (input.flash_code) {
-        const flashRows = await tx`SELECT * FROM consume_flash_code(${input.flash_code})`
-        const fr = flashRows[0] as any
-        if (!fr?.ok) {
-          const reason = fr?.reason ?? 'unknown'
-          const messages: Record<string, string> = {
-            not_found: 'Código flash no encontrado',
-            inactive: 'Código flash inactivo',
-            not_started: 'Código flash aún no vigente',
-            expired: 'Código flash expirado',
-            exhausted: 'Código flash agotado',
-          }
-          throw { type: 'flash_invalid', message: messages[reason] ?? 'Código inválido' }
-        }
-        flashCodeApplied = fr.code
-        if (fr.type === 'discount') {
-          if (fr.discount_percent != null) {
-            discountCents = Math.round(subtotalCents * (fr.discount_percent / 100))
-          } else if (fr.discount_cents != null) {
-            discountCents = Math.min(subtotalCents, Number(fr.discount_cents))
-          }
-        }
-      }
+      // 5a. [F1] Código flash legacy — se IGNORA silenciosamente.
+      // Los códigos flash ya NO aplican descuento en checkout (son
+      // mecanismo de descubrimiento: búsqueda → /flash/[code]).
+      // Si llega `flash_code` de una pestaña vieja, no falla (FIX #11).
 
       // 5b. Generar order_id antes (necesario para redeem_points)
       const orderId = randomUUID()
@@ -221,27 +243,156 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
           throw { type: 'points_invalid', message: messages[reason] ?? 'Redención inválida' }
         }
         pointsRedeemed = input.points_to_redeem
-        discountCents += Math.floor(pointsRedeemed / POINTS_RULES.POINTS_PER_DISCOUNT_DOLLAR) * 100
+        pointsDiscountCents = Math.floor(pointsRedeemed / POINTS_RULES.POINTS_PER_DISCOUNT_DOLLAR) * 100
       }
 
-      // 5c-bis. Consumir cupón de fidelidad (ATÓMICO — dentro de la tx, usando tx`...`)
-      // Fix revisor: NO usar consumeCoupon() porque usa query() fuera de la tx.
-      // Si la tx rollbackea, el cupón quedaría consumido permanentemente.
+      // 5c-bis/5c-ter. [F1 + FIX Ronda 2] Cupones de descuento — evaluar
+      // AMBOS sin consumir, y consumir SOLO el ganador.
+      //
+      // Desambiguación (FIX #17): 'FID-' → loyalty_coupons; cualquier otro →
+      // tabla coupons. Nunca se busca en ambas para consumir.
+      //
+      // No-acumulación (FIX #17 + Ronda 2): si el usuario aplicó cupón general
+      // Y fidelidad, solo se consume Y aplica el de MAYOR descuento. Consumir
+      // ambos desperdiciaría el menor (un cupón general con usos_maximos se
+      // gastaría sin otorgar descuento). El ganador se decide ANTES de cualquier
+      // UPDATE; el consumo del ganador usa UPDATE atómico con guardas (si una
+      // orden concurrente se lleva el último uso, devuelve 0 filas y se rechaza).
       let loyaltyDiscountCents = 0
-      if (input.loyalty_code && input.user_id) {
-        const couponRows = await tx`
-          UPDATE loyalty_coupons SET used_at = now()
+      let couponDiscountCents = 0
+      let loyaltyWinnerCode: string | null = null
+      let couponWinnerId: string | null = null
+
+      // 5c-bis. Evaluar cupón de fidelidad (FID-) — solo lectura.
+      // [FIX Ronda 3] Si llega un loyalty_code FID- sin sesión (expiró entre la
+      // carga del checkout y el submit), NO descartarlo silenciosamente: el
+      // cliente mostró el descuento y el usuario pagaría de más. Error claro.
+      if (input.loyalty_code && input.loyalty_code.trim().toUpperCase().startsWith('FID-') && !input.user_id) {
+        throw { type: 'loyalty_invalid', message: 'Inicia sesión para usar tu cupón de fidelidad' }
+      }
+      if (input.loyalty_code && input.user_id && input.loyalty_code.trim().toUpperCase().startsWith('FID-')) {
+        const lcRows = await tx`
+          SELECT code, discount_percent FROM loyalty_coupons
           WHERE code = ${input.loyalty_code} AND user_id = ${input.user_id}
             AND used_at IS NULL AND expires_at > now()
-          RETURNING id, discount_percent
+          LIMIT 1
         `
-        if (couponRows.length === 0) {
+        if (lcRows.length === 0) {
           throw { type: 'loyalty_invalid', message: 'Cupón inválido, ya usado o expirado' }
         }
-        loyaltyDiscountCents = Math.round(subtotalCents * (Number(couponRows[0].discount_percent) / 100))
+        loyaltyDiscountCents = Math.round(subtotalCents * (Number(lcRows[0].discount_percent) / 100))
+        loyaltyWinnerCode = input.loyalty_code
       }
 
-      discountCents = Math.min(discountCents + loyaltyDiscountCents, subtotalCents)
+      // 5c-ter. Evaluar cupón general (tabla coupons) — solo lectura.
+      if (input.coupon_code) {
+        const normalized = normalizeCouponCode(input.coupon_code)
+        let cRows: any[] = []
+        try {
+          // [FIX Ronda 1] lower(codigo) para alinearse con el índice único
+          // case-insensitive (accepta códigos almacenados en minúscula).
+          cRows = await tx`
+            SELECT id, tipo, porcentaje_descuento FROM coupons
+            WHERE lower(codigo) = ${normalized.toLowerCase()} AND activo = true
+              AND fecha_inicio <= now() AND fecha_fin > now()
+              AND (usos_maximos IS NULL OR usos_actuales < usos_maximos)
+              AND monto_minimo_compra <= ${subtotalCents}
+            LIMIT 1
+          `
+        } catch (couponErr: any) {
+          // [FIX Ronda 1] Tolerancia a deploy antes de migración 00020:
+          // si la tabla coupons no existe aún, tratar como cupón inválido
+          // (mensaje limpio) en lugar de fallar toda la orden con internal_error.
+          if (String(couponErr?.message ?? '').includes('does not exist')) {
+            throw { type: 'coupon_invalid', message: 'Los cupones no están disponibles todavía' }
+          }
+          throw couponErr
+        }
+        if (cRows.length === 0) {
+          throw { type: 'coupon_invalid', message: 'Cupón inválido, agotado, vencido o no alcanza el monto mínimo' }
+        }
+        const cp = cRows[0]
+        // [FIX #11] tipo primera_compra: solo aplica si no hay órdenes pagadas
+        // previas para ese usuario O ese email (un guest con email ya usado
+        // en una compra previa no debe poder usar el cupón — Ronda 1).
+        if (cp.tipo === 'primera_compra') {
+          // [FIX Ronda 2] El enum order_status es ('pending','paid','cancelled',
+          // 'refunded') — no existe 'completed'. Solo 'paid' cuenta como compra
+          // previa para el cupón de primera compra.
+          const prior = await tx`
+            SELECT 1 FROM orders
+            WHERE status = 'paid'
+              AND ((user_id IS NOT NULL AND user_id = ${input.user_id ?? null})
+                OR (lower(customer_email) = ${(input.customer_email ?? '').toLowerCase()}))
+            LIMIT 1
+          `
+          if (prior.length > 0) {
+            throw { type: 'coupon_invalid', message: 'Este cupón aplica solo a tu primera compra' }
+          }
+        }
+        couponDiscountCents = Math.round(subtotalCents * (Number(cp.porcentaje_descuento) / 100))
+        couponWinnerId = cp.id
+      }
+
+      // 5c-quater. [FIX Ronda 2] Consumir SOLO el ganador (UPDATE atómico
+      // con guardas; dentro de la tx → si la orden falla, el ROLLBACK
+      // revierte el consumo).
+      const couponWins = couponDiscountCents >= loyaltyDiscountCents
+      if (couponWins && couponWinnerId && input.coupon_code) {
+        const normalized = normalizeCouponCode(input.coupon_code)
+        let updated: any[] = []
+        try {
+          updated = await tx`
+            UPDATE coupons
+            SET usos_actuales = usos_actuales + 1, order_id = ${orderId}
+            WHERE lower(codigo) = ${normalized.toLowerCase()} AND activo = true
+              AND fecha_inicio <= now() AND fecha_fin > now()
+              AND (usos_maximos IS NULL OR usos_actuales < usos_maximos)
+              AND monto_minimo_compra <= ${subtotalCents}
+            RETURNING id
+          `
+          if (updated.length > 0) {
+            // [FIX Ronda 2] Registrar el consumo en coupon_usages para que la
+            // reversión (markOrderCancelled / CRON 00021) pueda revertir usos
+            // correctamente incluso en cupones con usos_maximos > 1.
+            // [FIX Ronda 3] Dentro del MISMO try/catch: si la tabla aún no
+            // existiera (deploy antes de la migración), se tolera igual que el
+            // UPDATE (mensaje limpio, no internal_error). Tras aplicar la 00022
+            // la tabla ya existe, pero la tolerancia no hace daño.
+            await tx`
+              INSERT INTO coupon_usages (coupon_id, order_id)
+              VALUES (${couponWinnerId}, ${orderId})
+              ON CONFLICT (coupon_id, order_id) DO NOTHING
+            `
+          }
+        } catch (couponErr: any) {
+          if (String(couponErr?.message ?? '').includes('does not exist')) {
+            throw { type: 'coupon_invalid', message: 'Los cupones no están disponibles todavía' }
+          }
+          throw couponErr
+        }
+        if (updated.length === 0) {
+          throw { type: 'coupon_invalid', message: 'Cupón agotado o no disponible' }
+        }
+      } else if (loyaltyWinnerCode && loyaltyDiscountCents > 0) {
+        const updated = await tx`
+          UPDATE loyalty_coupons SET used_at = now()
+          WHERE code = ${loyaltyWinnerCode} AND user_id = ${input.user_id}
+            AND used_at IS NULL AND expires_at > now()
+          RETURNING id
+        `
+        if (updated.length === 0) {
+          throw { type: 'loyalty_invalid', message: 'Cupón inválido, ya usado o expirado' }
+        }
+      }
+
+      // [FIX #17] NO-acumulación con 3 fuentes: solo el MAYOR de
+      // (descuento loyalty, descuento cupón) se aplica. Nunca se suman.
+      // El ahorro por precio flash ya no llega aquí (F1): los códigos flash
+      // no aplican descuento en checkout. Los puntos (canje del usuario)
+      // se suman aparte, topeado al subtotal.
+      const promoDiscountCents = Math.max(loyaltyDiscountCents, couponDiscountCents)
+      discountCents = Math.min(promoDiscountCents + pointsDiscountCents, subtotalCents)
       // Fix FLOW3-009: incluir shipping_cents en el total.
       // En la DB shipping_cents default 0, pero respetamos el valor enviado.
       const shippingCents = input.shipping_cents ?? 0
@@ -289,7 +440,6 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
         shippingCents,
         pointsRedeemed,
         totalCents,
-        flashCodeApplied,
       }
     })
 
@@ -308,6 +458,9 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     // automáticamente (la transacción se aborta antes del commit).
     if (err?.type === 'flash_invalid') {
       return { ok: false, error: err.message, error_code: 'flash_invalid' }
+    }
+    if (err?.type === 'coupon_invalid') {
+      return { ok: false, error: err.message, error_code: 'coupon_invalid' }
     }
     if (err?.type === 'points_invalid') {
       return { ok: false, error: err.message, error_code: 'points_invalid' }
@@ -497,6 +650,28 @@ export async function markOrderCancelled(orderId: string, reason?: string): Prom
       }
 
       const cancelledOrder = rows[0] as any
+
+      // [FIX #7] Revertir el uso del cupón de descuento consumido por esta
+      // orden (tabla coupons + coupon_usages). El cupón incrementó
+      // usos_actuales y registró su consumo al crearse la orden; si la orden
+      // expira/cancela, se revierte.
+      // [FIX Ronda 2] Reversión vía coupon_usages (correcta para multi-uso)
+      // y TOLERANTE a la tabla ausente (deploy de código antes de migración
+      // 00020: si la tabla no existe, simplemente se salta la reversión).
+      try {
+        await tx`
+          UPDATE coupons
+          SET usos_actuales = GREATEST(usos_actuales - 1, 0), order_id = NULL
+          WHERE id IN (
+            SELECT coupon_id FROM coupon_usages WHERE order_id = ${orderId}
+          )
+        `
+        await tx`DELETE FROM coupon_usages WHERE order_id = ${orderId}`
+      } catch (couponRevErr: any) {
+        if (!String(couponRevErr?.message ?? '').includes('does not exist')) {
+          throw couponRevErr
+        }
+      }
 
       // Liberar inventario
       const items = await tx`SELECT product_id, qty FROM order_items WHERE order_id = ${orderId}`

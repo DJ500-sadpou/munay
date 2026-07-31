@@ -15,7 +15,7 @@ function pad(n: number) {
 }
 
 /**
- * CampaignBanner — Banner de oferta flash / week sale con countdown a fecha real.
+ * CampaignBanner — Banner de oferta flash / Quincena MUNAY con countdown a fecha real.
  *
  * El countdown se calcula desde `campaign.seconds_remaining` (servidor)
  * y se actualiza cada segundo en el cliente.
@@ -41,7 +41,7 @@ export function CampaignBanner({ campaign }: CampaignBannerProps) {
         <div className="relative z-10 flex flex-col gap-3 p-6 sm:p-7">
           <h2 className="flex items-center gap-2 text-lg font-extrabold uppercase tracking-wide text-munay-ink/40">
             <Clock className="h-5 w-5" aria-hidden />
-            {campaign.type === 'week_sale' ? 'Week Sale' : 'Ofertas Flash'}
+            {campaign.type === 'quincena' ? 'Quincena MUNAY' : 'Ofertas Flash'}
           </h2>
           <p className="text-sm text-munay-ink/40">Próxima oferta pronto — estate atento</p>
           <Button
@@ -60,28 +60,35 @@ export function CampaignBanner({ campaign }: CampaignBannerProps) {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
   const s = seconds % 60
-  const isWeekSale = campaign.type === 'week_sale'
+  const isQuincena = campaign.type === 'quincena'
 
   return (
     <div className={`relative flex h-full overflow-hidden rounded-2xl border border-black/5 shadow-sm ${
-      isWeekSale
+      isQuincena
         ? 'bg-gradient-to-br from-munay-cacao to-munay-terracota-quemado'
         : 'bg-gradient-to-br from-munay-terracota to-munay-terracota-quemado'
     }`}>
       <div className="relative z-10 flex flex-col gap-4 p-6 sm:p-7">
         <h2 className="flex items-center gap-2 text-lg font-extrabold uppercase tracking-wide text-white">
-          {isWeekSale ? (
+          {isQuincena ? (
             <Sparkles className="h-5 w-5 fill-white" aria-hidden />
           ) : (
             <Zap className="h-5 w-5 fill-white" aria-hidden />
           )}
-          {isWeekSale ? 'Week Sale' : 'Ofertas Flash'}
+          {isQuincena ? 'Quincena MUNAY' : 'Ofertas Flash'}
         </h2>
         <p className="text-sm text-white/85">
-          {campaign.description ?? (isWeekSale
-            ? 'Descuentos especiales por tiempo limitado'
+          {campaign.description ?? (isQuincena
+            ? 'Descuentos especiales por tiempo limitado — nueva edición cada 15 días'
             : 'Descuentos que no duran nada')}
         </p>
+
+        {/* Categoría temática (solo Quincena MUNAY) */}
+        {isQuincena && campaign.categoria_tematica && (
+          <span className="inline-block w-fit rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-white/80">
+            {campaign.categoria_tematica}
+          </span>
+        )}
 
         {/* Countdown numérico */}
         <div>
@@ -100,8 +107,8 @@ export function CampaignBanner({ campaign }: CampaignBannerProps) {
           asChild
           className="mt-2 w-fit rounded-xl bg-white px-5 font-semibold text-munay-terracota hover:bg-white/90"
         >
-          <Link href={isWeekSale ? `/catalogo?campaign=${campaign.id}` : '/flash'}>
-            {isWeekSale ? 'Ver ofertas' : 'Ver todas las ofertas'}
+          <Link href={isQuincena ? `/catalogo?campaign=${campaign.id}` : '/flash'}>
+            {isQuincena ? 'Ver ofertas' : 'Ver todas las ofertas'}
           </Link>
         </Button>
       </div>

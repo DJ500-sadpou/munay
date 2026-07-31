@@ -29,10 +29,15 @@ insert into public.loyalty_levels (name, min_points, early_access_hours, color_t
   ('andino',  5000,  24, 'cacao-turquesa')
 on conflict (name) do nothing;
 
--- Añadir level_id a users
+-- Añadir level_id a users (NULLable — la vista user_levels calcula el nivel dinámicamente)
 alter table public.users add column if not exists level_id integer
-  references public.loyalty_levels(id)
-  default (select id from public.loyalty_levels where name = 'bronce');
+  references public.loyalty_levels(id);
+
+-- Asignar nivel bronce (id=1) a usuarios existentes que tengan level_id NULL
+update public.users u
+  set level_id = (select id from public.loyalty_levels where name = 'bronce')
+  where level_id is null
+    and exists (select 1 from public.loyalty_levels where name = 'bronce');
 
 -- Vista: nivel actual del usuario según saldo de puntos
 -- Útil para determinar el nivel sin tener que actualizar level_id en cada tx
@@ -42,12 +47,12 @@ select
   u.email,
   coalesce(
     (select ll.id from public.loyalty_levels ll
-     where coalesce(cp.balance, 0) >= ll.min_points
+     where coalesce(cp.points_balance, 0) >= ll.min_points
      order by ll.min_points desc
      limit 1),
     (select id from public.loyalty_levels where name = 'bronce')
   ) as level_id,
-  coalesce(cp.balance, 0) as points_balance
+  coalesce(cp.points_balance, 0) as points_balance
 from public.users u
 left join public.customers c on c.user_id = u.id
 left join public.customer_point_balances cp on cp.customer_id = c.id;

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Plus, Package, LogOut, Sparkles, ShoppingCart, DollarSign, TrendingUp, Zap, BarChart3, Gift, Percent, MessageCircle } from 'lucide-react'
+import { Plus, Package, LogOut, Sparkles, ShoppingCart, DollarSign, TrendingUp, Zap, BarChart3, Gift, Percent, MessageCircle, ShieldCheck, Ticket } from 'lucide-react'
 import { requireAdmin } from '@/lib/auth/require-admin'
 import { query, queryOne, isDbConfigured } from '@/lib/db/neon'
 import { Button } from '@/components/ui/button'
@@ -8,6 +8,10 @@ import { Badge } from '@/components/ui/badge'
 import { formatCents } from '@/lib/format'
 import { getLoyaltyConfig, getLoyaltyStats } from '@/lib/queries/loyalty-coupons'
 import { LoyaltyToggle } from '@/components/admin/loyalty-toggle'
+import { CampaignsList } from '@/components/admin/campaigns-list'
+import { getAllCampaigns } from '@/lib/queries/flash-campaigns'
+import { WeekBuyCampaignsList } from '@/components/admin/week-buy-list'
+import { getAllWeekBuyCampaigns } from '@/lib/queries/week-buy'
 
 export const metadata = {
   title: 'Admin · Munay',
@@ -32,8 +36,11 @@ export default async function AdminHomePage() {
   let paidOrdersCount = 0
   let totalRevenueCents = 0
   let flashCodesActive = 0
+  let couponsCount = 0
   let loyaltyConfig = await getLoyaltyConfig()
   let loyaltyStats = await getLoyaltyStats()
+  const campaigns = isDbConfigured() ? await getAllCampaigns() : []
+  const weekBuyCampaigns = isDbConfigured() ? await getAllWeekBuyCampaigns() : []
 
   if (isDbConfigured()) {
     // Fix CRIT-4: queries Neon directas.
@@ -67,6 +74,16 @@ export default async function AdminHomePage() {
     paidOrdersCount = Number(statsRow?.paid ?? 0)
     totalRevenueCents = Number(statsRow?.revenue ?? 0)
     flashCodesActive = Number(statsRow?.flash_active ?? 0)
+
+    // [F2] Conteo de cupones (tabla coupons). Tolerante a tabla ausente
+    // (migración 00020 aún no aplicada).
+    try {
+      const cRow = await queryOne<any>(`SELECT count(*) AS n FROM coupons`)
+      couponsCount = Number(cRow?.n ?? 0)
+    } catch (err: any) {
+      console.warn('[admin] coupons count (tabla ausente?):', err?.message)
+      couponsCount = 0
+    }
   }
 
   return (
@@ -97,6 +114,12 @@ export default async function AdminHomePage() {
             </Link>
           </Button>
           <Button asChild variant="outline">
+            <Link href="/admin/coupons">
+              <Ticket className="mr-2 h-4 w-4" aria-hidden />
+              Cupones ({couponsCount})
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
             <Link href="/admin/flash-codes">
               <Zap className="mr-2 h-4 w-4" aria-hidden />
               Flash codes ({flashCodesActive})
@@ -106,6 +129,12 @@ export default async function AdminHomePage() {
             <Link href="/admin/metrics">
               <BarChart3 className="mr-2 h-4 w-4" aria-hidden />
               Métricas
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/admin/listings">
+              <ShieldCheck className="mr-2 h-4 w-4" aria-hidden />
+              Listings P2P
             </Link>
           </Button>
           <Button asChild>
@@ -238,6 +267,24 @@ export default async function AdminHomePage() {
             </table>
           </div>
         )}
+      </div>
+
+      {/* Quincena Munay */}
+      <div className="mt-10">
+        <h2 className="font-display text-xl font-semibold mb-4 flex items-center gap-2">
+          <Percent className="h-5 w-5" aria-hidden />
+          Quincena Munay
+        </h2>
+        <WeekBuyCampaignsList initialCampaigns={weekBuyCampaigns} />
+      </div>
+
+      {/* Campañas Flash / Quincena MUNAY */}
+      <div className="mt-10">
+        <h2 className="font-display text-xl font-semibold mb-4 flex items-center gap-2">
+          <Zap className="h-5 w-5" aria-hidden />
+          Campañas Flash / Quincena MUNAY
+        </h2>
+        <CampaignsList initialCampaigns={campaigns} />
       </div>
 
       {/* Cupones de fidelidad */}

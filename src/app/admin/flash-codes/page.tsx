@@ -1,11 +1,11 @@
 import Link from 'next/link'
-import { ArrowLeft, Plus, Zap, Unlock, Calendar, Package } from 'lucide-react'
+import { ArrowLeft, Plus, Unlock, Package, Zap } from 'lucide-react'
 import { requireAdmin } from '@/lib/auth/require-admin'
 import { query, isDbConfigured } from '@/lib/db/neon'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { formatCents, formatDate } from '@/lib/format'
+import { formatDate } from '@/lib/format'
 
 export const metadata = { title: 'Flash codes · Admin' }
 export const dynamic = 'force-dynamic'
@@ -13,11 +13,11 @@ export const dynamic = 'force-dynamic'
 export default async function AdminFlashCodesPage() {
   await requireAdmin()
 
+  // F0/BLOQUE B: los códigos flash son SOLO 'unlock'. Las columnas
+  // discount_percent/discount_cents ya no existen en flash_codes.
   let flashCodes: Array<{
     code: string
     type: string
-    discount_percent: number | null
-    discount_cents: number | null
     starts_at: string
     ends_at: string
     max_uses: number | null
@@ -28,15 +28,13 @@ export default async function AdminFlashCodesPage() {
   if (isDbConfigured()) {
     // Fix CRIT-4: query directa Neon.
     const rows = await query<any>(`
-      SELECT code, type, discount_percent, discount_cents, starts_at, ends_at, max_uses, uses_count, active
+      SELECT code, type, starts_at, ends_at, max_uses, uses_count, active
       FROM flash_codes
       ORDER BY created_at DESC
     `)
     flashCodes = rows.map((r) => ({
       code: r.code,
       type: r.type,
-      discount_percent: r.discount_percent !== null ? Number(r.discount_percent) : null,
-      discount_cents: r.discount_cents !== null ? Number(r.discount_cents) : null,
       starts_at: r.starts_at,
       ends_at: r.ends_at,
       max_uses: r.max_uses !== null ? Number(r.max_uses) : null,
@@ -99,7 +97,6 @@ export default async function AdminFlashCodesPage() {
               <tr>
                 <th className="px-4 py-3 text-left font-medium">Código</th>
                 <th className="px-4 py-3 text-center font-medium">Tipo</th>
-                <th className="px-4 py-3 text-right font-medium">Descuento</th>
                 <th className="px-4 py-3 text-center font-medium">Usos</th>
                 <th className="px-4 py-3 text-left font-medium">Vigencia</th>
                 <th className="px-4 py-3 text-center font-medium">Estado</th>
@@ -113,24 +110,10 @@ export default async function AdminFlashCodesPage() {
                   <tr key={fc.code} className="hover:bg-munay-crema/20 transition-colors">
                     <td className="px-4 py-3 font-mono font-bold">{fc.code}</td>
                     <td className="px-4 py-3 text-center">
-                      {fc.type === 'discount' ? (
-                        <Badge variant="secondary">
-                          <Zap className="mr-1 h-3 w-3" aria-hidden />
-                          Descuento
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary">
-                          <Unlock className="mr-1 h-3 w-3" aria-hidden />
-                          Desbloqueo
-                        </Badge>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {fc.discount_percent != null
-                        ? `${fc.discount_percent}%`
-                        : fc.discount_cents != null
-                        ? formatCents(fc.discount_cents)
-                        : '—'}
+                      <Badge variant="secondary">
+                        <Unlock className="mr-1 h-3 w-3" aria-hidden />
+                        Desbloqueo
+                      </Badge>
                     </td>
                     <td className="px-4 py-3 text-center">
                       {fc.uses_count}{fc.max_uses != null ? ` / ${fc.max_uses}` : ''}
@@ -172,8 +155,9 @@ export default async function AdminFlashCodesPage() {
         <p className="flex items-center gap-2">
           <Package className="h-4 w-4" aria-hidden />
           <span>
-            Para asociar productos a un código de desbloqueo, contacta al admin de base de datos
-            o usa el SQL Editor para insertar en <code className="rounded bg-munay-crema/30 px-1">flash_code_products</code>.
+            Los códigos flash son de <strong>desbloqueo</strong>: asociar productos en la pestaña
+            "Productos asociados" al editar un código. Los{' '}
+            <Link href="/admin/coupons" className="underline">descuentos generales se gestionan en Cupones</Link>.
           </span>
         </p>
       </div>

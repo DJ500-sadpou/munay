@@ -20,7 +20,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, Loader2, Zap } from 'lucide-react'
+import { Search, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 
@@ -51,7 +51,7 @@ export function CatalogSearch({ initialValue = '' }: { initialValue?: string }) 
           name="q"
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder="Buscar prendas o ingresar código flash (ej. MUNAY10)…"
+          placeholder="Buscar prendas o ingresar código flash…"
           className="pl-10 pr-24"
           autoComplete="off"
           aria-label="Buscar en el catálogo"
@@ -66,14 +66,14 @@ export function CatalogSearch({ initialValue = '' }: { initialValue?: string }) 
             <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
           ) : (
             <>
-              <Zap className="mr-1 h-3.5 w-3.5" aria-hidden />
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
               Buscar
             </>
           )}
         </Button>
       </div>
       <p className="mt-1.5 px-1 text-xs text-muted-foreground">
-        Si ingresas un código flash válido, te llevamos directo a la oferta.
+        Si ingresas un código flash válido, te llevamos directo a la pieza exclusiva.
       </p>
     </form>
   )

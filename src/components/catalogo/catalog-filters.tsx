@@ -9,7 +9,7 @@
  */
 
 import Link from 'next/link'
-import { RotateCcw } from 'lucide-react'
+import { RotateCcw, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -40,6 +40,7 @@ export function CatalogFilters({ filters, totalCount, flashCodeActive }: Props) 
     if (merged.maxPriceCents !== undefined) params.set('maxPrice', String(merged.maxPriceCents / 100))
     if (merged.sort && merged.sort !== 'recent') params.set('sort', merged.sort)
     if (merged.flashCode) params.set('flash', merged.flashCode)
+    if (merged.flashCampaign) params.set('flashCampaign', 'true')
     const qs = params.toString()
     return qs ? `/catalogo?${qs}` : '/catalogo'
   }
@@ -169,6 +170,24 @@ export function CatalogFilters({ filters, totalCount, flashCodeActive }: Props) 
           </Button>
         </div>
       )}
+
+      {/* En oferta flash */}
+      <div className="space-y-2">
+        <Label className="text-xs font-medium">Ofertas</Label>
+        <Link
+          href={buildHref({ flashCampaign: filters.flashCampaign ? undefined : true })}
+          className={`flex items-center justify-between rounded-md px-3 py-1.5 text-sm transition-colors ${
+            filters.flashCampaign
+              ? 'bg-munay-terracota/10 text-munay-terracota font-medium'
+              : 'text-foreground/80 hover:bg-muted'
+          }`}
+        >
+          <span className="flex items-center gap-2">
+            <Zap className="h-3.5 w-3.5" aria-hidden />
+            En oferta flash
+          </span>
+        </Link>
+      </div>
 
       {/* Limpiar filtros */}
       <Button asChild variant="ghost" size="sm" className="w-full">

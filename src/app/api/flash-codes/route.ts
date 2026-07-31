@@ -35,11 +35,11 @@ export async function POST(req: NextRequest) {
   const guard = await checkAdmin()
   if (!guard.ok) return guard.response!
 
+  // F0/BLOQUE B: los códigos flash son SOLO 'unlock'. No se aceptan
+  // discount_percent/discount_cents (los descuentos viven en coupons).
   let body: {
     code: string
-    type: 'discount' | 'unlock'
-    discount_percent?: number | null
-    discount_cents?: number | null
+    type?: 'unlock'
     starts_at: string
     ends_at: string
     max_uses?: number | null
@@ -58,17 +58,6 @@ export async function POST(req: NextRequest) {
   if (!/^[A-Z0-9]+$/.test(cleanCode)) {
     return NextResponse.json({ error: 'Solo letras mayúsculas y números' }, { status: 400 })
   }
-  if (!body.type || !['discount', 'unlock'].includes(body.type)) {
-    return NextResponse.json({ error: 'Tipo inválido' }, { status: 400 })
-  }
-  if (body.type === 'discount') {
-    if (body.discount_percent == null && body.discount_cents == null) {
-      return NextResponse.json({ error: 'Descuento requiere percent o cents' }, { status: 400 })
-    }
-    if (body.discount_percent != null && (body.discount_percent < 0 || body.discount_percent > 100)) {
-      return NextResponse.json({ error: 'Porcentaje fuera de rango' }, { status: 400 })
-    }
-  }
   const startsAt = new Date(body.starts_at)
   const endsAt = new Date(body.ends_at)
   if (isNaN(startsAt.getTime()) || isNaN(endsAt.getTime())) {
@@ -82,14 +71,10 @@ export async function POST(req: NextRequest) {
     // Fix FLOW3-002: query directa Neon (no stub).
     await query(`
       INSERT INTO flash_codes (
-        code, type, discount_percent, discount_cents,
-        starts_at, ends_at, max_uses, uses_count, active
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 0, $8)
+        code, type, starts_at, ends_at, max_uses, uses_count, active
+      ) VALUES ($1, 'unlock', $2, $3, $4, 0, $5)
     `, [
       cleanCode,
-      body.type,
-      body.type === 'discount' ? (body.discount_percent ?? null) : null,
-      body.type === 'discount' ? (body.discount_cents ?? null) : null,
       startsAt.toISOString(),
       endsAt.toISOString(),
       body.max_uses ?? null,
@@ -110,7 +95,7 @@ export async function GET() {
   if (!guard.ok) return guard.response!
 
   const flashCodes = await query<any>(`
-    SELECT code, type, discount_percent, discount_cents, starts_at, ends_at, max_uses, uses_count, active
+    SELECT code, type, starts_at, ends_at, max_uses, uses_count, active
     FROM flash_codes
     ORDER BY created_at DESC
   `)

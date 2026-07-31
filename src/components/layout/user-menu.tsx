@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { User, LogOut, Sparkles } from 'lucide-react'
+import { User, LogOut, Sparkles, Package } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -87,6 +87,12 @@ export function UserMenu() {
           <Link href="/cuenta/puntos">
             <Sparkles className="mr-2 h-4 w-4" aria-hidden />
             Mis puntos
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/cuenta/mis-publicaciones">
+            <Package className="mr-2 h-4 w-4" aria-hidden />
+            Mis publicaciones
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />

@@ -21,7 +21,7 @@ export default function SoportePage() {
       <div className="mx-auto max-w-5xl px-4 py-10 lg:px-6">
         {/* Header */}
         <div className="mb-8 text-center">
-          <span className="mb-3 inline-block rounded-full bg-munay-red-500/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-munay-red-600">
+          <span className="mb-3 inline-block rounded-full bg-munay-terracota/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-munay-terracota">
             Soporte
           </span>
           <h1 className="font-display text-3xl font-bold tracking-tight text-munay-ink sm:text-4xl">

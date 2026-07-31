@@ -28,21 +28,6 @@ export const POINTS_RULES = {
   MIN_POINTS_TO_REDEEM: 10, // múltiplo mínimo de redención
 } as const
 
-/** Configuración de la pasarela de pago activa. */
-export const PAYMENT = {
-  // Cambiar a 'payphone' | 'paypal' según la decisión de Fase 1.
-  provider: (process.env.PAYMENT_PROVIDER ?? 'kushki') as
-    | 'kushki'
-    | 'payphone'
-    | 'paypal',
-  sandbox: process.env.PAYMENT_SANDBOX === 'true',
-} as const
-
-/** Storage bucket para imágenes de productos. */
-export const STORAGE_BUCKETS = {
-  productImages: 'product-images',
-} as const
-
 /** Longitudes y límites de validación. */
 export const LIMITS = {
   productSlugMin: 3,

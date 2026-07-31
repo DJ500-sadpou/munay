@@ -1,8 +1,8 @@
 /**
- * Tipos para el sistema de Campañas Flash / Week Sale (Módulo 2).
+ * Tipos para el sistema de Campañas Flash / Quincena MUNAY (Módulo 2).
  */
 
-export type CampaignType = 'flash' | 'week_sale'
+export type CampaignType = 'flash' | 'quincena'
 export type CampaignStatus = 'pending' | 'active' | 'ended' | 'inactive'
 
 export interface Campaign {
@@ -10,6 +10,7 @@ export interface Campaign {
   name: string
   type: CampaignType
   description: string | null
+  categoria_tematica: string | null
   starts_at: string
   ends_at: string
   discount_percent: number | null

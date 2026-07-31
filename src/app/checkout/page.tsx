@@ -13,7 +13,7 @@ import { formatCents } from '@/lib/format'
 import { ROUTES, POINTS_RULES } from '@/lib/constants'
 import { useCart } from '@/store/cart'
 import { useMounted } from '@/hooks/use-mounted'
-import { CartFlashCodeInput } from '@/components/cart/cart-flash-code-input'
+import { CouponCheckoutInput, type AppliedCoupon } from '@/components/cart/coupon-checkout-input'
 import { PointsRedeemer } from '@/components/cart/points-redeemer'
 import { LoyaltyCouponCheckout } from '@/components/cart/loyalty-coupon-checkout'
 import { TurnstileWidget } from '@/components/auth/turnstile-widget'
@@ -26,9 +26,6 @@ export default function CheckoutPage() {
 
   const lines = useCart((s) => s.lines)
   const subtotalCents = useCart((s) => s.subtotalCents())
-  const discountCents = useCart((s) => s.discountCents())
-  const totalCents = useCart((s) => s.totalCents())
-  const flashCode = useCart((s) => s.flashCode)
   const clear = useCart((s) => s.clear)
 
   const [step, setStep] = useState<Step>('form')
@@ -38,8 +35,12 @@ export default function CheckoutPage() {
   const [userPoints, setUserPoints] = useState<number>(0)
   const [pointsToRedeem, setPointsToRedeem] = useState<number>(0)
 
+  // Cupón de descuento aplicado (tabla coupons)
+  const [coupon, setCoupon] = useState<AppliedCoupon | null>(null)
+
   // Cupón de fidelidad seleccionado
   const [loyaltyCode, setLoyaltyCode] = useState<string | undefined>()
+  const [loyaltyPercent, setLoyaltyPercent] = useState<number | undefined>()
 
   // Turnstile token
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
@@ -75,7 +76,19 @@ export default function CheckoutPage() {
   }
 
   const pointsDiscountCents = Math.floor(pointsToRedeem / POINTS_RULES.POINTS_PER_DISCOUNT_DOLLAR) * 100
-  const adjustedTotalCents = Math.max(0, totalCents - pointsDiscountCents)
+  // Descuento del cupón (validado contra /api/coupons/apply; el consumo real
+  // ocurre en createOrder).
+  const couponDiscountCents = coupon
+    ? Math.min(subtotalCents, Math.round(subtotalCents * (coupon.discount_percent / 100)))
+    : 0
+  // Descuento del cupón de fidelidad (FID-) si hay uno seleccionado.
+  const loyaltyDiscountCents = loyaltyPercent
+    ? Math.min(subtotalCents, Math.round(subtotalCents * (loyaltyPercent / 100)))
+    : 0
+  // [FIX Ronda 1] No acumulación: el servidor aplica max(loyalty, coupon).
+  // El resumen muestra el mismo descuento que aplicará createOrder.
+  const promoDiscountCents = Math.max(couponDiscountCents, loyaltyDiscountCents)
+  const adjustedTotalCents = Math.max(0, subtotalCents - promoDiscountCents - pointsDiscountCents)
 
   const shipping = adjustedTotalCents > 0 ? 200 : 0
   const grandTotal = adjustedTotalCents + shipping
@@ -106,7 +119,14 @@ export default function CheckoutPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          items: lines.map((l) => ({ product_id: l.id, qty: l.qty, title: l.title })),
+          items: lines.map((l) => ({
+            product_id: l.id,
+            qty: l.qty,
+            title: l.title,
+            // [BLOQUE B] flash_code por línea para aplicar precio_especial_cents
+            // de forma autoritativa en createOrder.
+            flash_code: l.flash_code ?? null,
+          })),
           customer_email: email,
           customer_name: name,
           phone,
@@ -114,7 +134,7 @@ export default function CheckoutPage() {
           city,
           province,
           shipping_cents: shipping,
-          flash_code: flashCode?.code ?? null,
+          coupon_code: coupon?.codigo ?? null,
           loyalty_code: loyaltyCode ?? null,
           points_to_redeem: pointsToRedeem > 0 ? pointsToRedeem : undefined,
           turnstile_token: turnstileToken ?? undefined,
@@ -306,12 +326,17 @@ export default function CheckoutPage() {
                   <span className="text-muted-foreground">Subtotal</span>
                   <span>{formatCents(subtotalCents)}</span>
                 </div>
-                {discountCents > 0 && (
+                {promoDiscountCents > 0 && (
                   <div className="flex justify-between text-primary">
                     <span>
-                      Descuento flash {flashCode && <code className="ml-1 text-xs">{flashCode.code}</code>}
+                      Descuento{' '}
+                      {couponDiscountCents >= loyaltyDiscountCents && coupon ? (
+                        <code className="ml-1 text-xs">{coupon.codigo}</code>
+                      ) : (
+                        <span className="ml-1 text-xs">fidelidad</span>
+                      )}
                     </span>
-                    <span>−{formatCents(discountCents)}</span>
+                    <span>−{formatCents(promoDiscountCents)}</span>
                   </div>
                 )}
                 {pointsDiscountCents > 0 && (
@@ -341,13 +366,21 @@ export default function CheckoutPage() {
                 <span>{formatCents(grandTotal)}</span>
               </div>
 
-              <CartFlashCodeInput />
+              <CouponCheckoutInput
+                subtotalCents={subtotalCents}
+                customerEmail={email}
+                value={coupon}
+                onChange={setCoupon}
+              />
 
               {/* Cupón de fidelidad (solo si hay sesión y cupones activos) */}
               <LoyaltyCouponCheckout
                 subtotalCents={subtotalCents}
                 loyaltyCode={loyaltyCode}
-                onChange={setLoyaltyCode}
+                onChange={(code, percent) => {
+                  setLoyaltyCode(code)
+                  setLoyaltyPercent(code ? percent : undefined)
+                }}
               />
 
               {/* Redención de puntos (solo si hay sesión y saldo) */}

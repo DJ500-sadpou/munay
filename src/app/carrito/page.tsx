@@ -5,11 +5,9 @@ import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { Badge } from '@/components/ui/badge'
 import { formatCents } from '@/lib/format'
 import { ROUTES } from '@/lib/constants'
 import { useCart } from '@/store/cart'
-import { CartFlashCodeInput } from '@/components/cart/cart-flash-code-input'
 import { useMounted } from '@/hooks/use-mounted'
 
 export default function CarritoPage() {
@@ -21,8 +19,6 @@ export default function CarritoPage() {
   const updateQty = useCart((s) => s.updateQty)
   const clear = useCart((s) => s.clear)
   const subtotalCents = useCart((s) => s.subtotalCents())
-  const discountCents = useCart((s) => s.discountCents())
-  const totalCents = useCart((s) => s.totalCents())
   const pointsToEarn = useCart((s) => s.pointsToEarn())
 
   // Evitar hidration mismatch
@@ -51,7 +47,7 @@ export default function CarritoPage() {
   }
 
   const shipping = subtotalCents > 0 ? 200 : 0
-  const grandTotal = totalCents + shipping
+  const grandTotal = subtotalCents + shipping
 
   return (
     <div className="bg-gradient-to-b from-white via-munay-crema/10 to-white">
@@ -145,12 +141,6 @@ export default function CarritoPage() {
                     <span className="text-munay-ink/60">Subtotal</span>
                     <span>{formatCents(subtotalCents)}</span>
                   </div>
-                  {discountCents > 0 && (
-                    <div className="flex justify-between text-munay-terracota">
-                      <span>Descuento flash</span>
-                      <span>−{formatCents(discountCents)}</span>
-                    </div>
-                  )}
                   <div className="flex justify-between">
                     <span className="text-munay-ink/60">Envío (estimado)</span>
                     <span>{formatCents(shipping)}</span>
@@ -167,8 +157,6 @@ export default function CarritoPage() {
                   <span>Total</span>
                   <span>{formatCents(grandTotal)}</span>
                 </div>
-
-                <CartFlashCodeInput />
 
                 <Button asChild size="lg" className="w-full bg-munay-terracota text-white hover:bg-munay-terracota-quemado">
                   <Link href={ROUTES.checkout}>

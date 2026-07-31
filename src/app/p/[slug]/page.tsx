@@ -6,15 +6,16 @@ import { Separator } from '@/components/ui/separator'
 import {
   getProductBySlug,
   getValidFlashCode,
-  applyFlashDiscount,
+  getFlashSpecialPrice,
 } from '@/lib/queries/products'
 import { ProductAddToCart } from '@/components/product/product-add-to-cart'
 import { ProductGallery } from '@/components/product/product-gallery'
 import { parseFiltersFromSearchParams } from '@/lib/queries/products'
 import { ROUTES } from '@/lib/constants'
 import { formatCents } from '@/lib/format'
-import { isSupabaseConfigured } from '@/lib/supabase/configured'
-import { SupabaseNotConfiguredBanner } from '@/components/catalogo/supabase-not-configured-banner'
+import { isDbConfigured } from '@/lib/db/neon'
+import { DbNotConfiguredBanner } from '@/components/catalogo/db-not-configured-banner'
+import { StockRealBadge, TrustBadge } from '@/components/shared'
 import type { ProductGrading } from '@/types/database'
 
 const GRADING_LABEL: Record<ProductGrading, string> = {
@@ -77,7 +78,7 @@ export default async function ProductDetailPage({ params, searchParams }: PagePr
   const product = await getProductBySlug(slug)
 
   // Si Supabase no está configurado, mostrar banner en lugar de 404.
-  if (!product && !isSupabaseConfigured()) {
+  if (!product && !isDbConfigured()) {
     return (
       <div className="container mx-auto px-4 py-8">
         <Button asChild variant="ghost" size="sm" className="mb-4 -ml-2">
@@ -90,7 +91,7 @@ export default async function ProductDetailPage({ params, searchParams }: PagePr
           <h1 className="font-display text-2xl font-semibold mb-4">
             Producto: <span className="text-primary">{slug}</span>
           </h1>
-          <SupabaseNotConfiguredBanner />
+          <DbNotConfiguredBanner />
         </div>
       </div>
     )
@@ -99,18 +100,18 @@ export default async function ProductDetailPage({ params, searchParams }: PagePr
   if (!product) notFound()
 
   // Verificar flash code activo (vía ?flash=CODE en la URL)
+  // F0/BLOQUE B: los códigos flash son SOLO 'unlock'. El descuento del
+  // producto proviene de flash_code_products.precio_especial_cents.
   let flashDiscountPercent: number | null = null
   let flashCode: string | null = null
   if (filters.flashCode) {
     const fc = await getValidFlashCode(filters.flashCode)
-    if (fc && fc.type === 'discount') {
-      const result = applyFlashDiscount(product.price_cents, fc)
-      if (result) {
-        flashDiscountPercent = result.discountPercent
-        flashCode = fc.code
-      }
-    } else if (fc && fc.type === 'unlock') {
+    if (fc) {
       flashCode = fc.code
+      const special = await getFlashSpecialPrice(fc.code, product.id)
+      if (special != null && special > 0 && special < product.price_cents) {
+        flashDiscountPercent = Math.round((1 - special / Math.max(1, product.price_cents)) * 100)
+      }
     }
   }
 
@@ -166,7 +167,16 @@ export default async function ProductDetailPage({ params, searchParams }: PagePr
             }}
           />
 
-          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <StockRealBadge
+              quantity={product.stock}
+              esUnica={product.condition === 'used'}
+              size="sm"
+            />
+            <TrustBadge type="higiene" size="sm" />
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="flex items-center gap-2 text-sm text-munay-ink/60">
               <Truck className="h-4 w-4 text-munay-turquesa" aria-hidden />
               <span>Envíos en Ibarra y todo Ecuador</span>

@@ -1,5 +1,5 @@
 /**
- * Campañas Flash / Week Sale (Módulo 2)
+ * Campañas Flash / Quincena MUNAY (Módulo 2)
  *
  * Tablas:
  *   - flash_campaigns (campañas con fechas reales)
@@ -22,7 +22,7 @@ export async function getActiveCampaign(): Promise<Campaign | null> {
   if (!isDbConfigured()) return null
 
   const row = await queryOne<any>(
-    `SELECT * FROM active_campaigns LIMIT 1`
+    `SELECT * FROM active_campaigns ORDER BY ends_at ASC LIMIT 1`
   )
 
   if (!row) return null
@@ -86,12 +86,32 @@ export async function getActiveFlashProductIds(): Promise<string[]> {
 }
 
 /**
+ * Retorna una campaña por ID (para validaciones internas).
+ */
+export async function getCampaignById(id: string): Promise<Campaign | null> {
+  if (!isDbConfigured()) return null
+
+  const row = await queryOne<any>(
+    `SELECT * FROM all_campaigns_with_status WHERE id = $1`,
+    [id]
+  )
+  if (!row) return null
+  return mapRowToCampaign(row)
+}
+
+/**
  * Crea una nueva campaña.
+ *
+ * VALIDACIONES:
+ *   - ends_at debe ser en el futuro (no crear campañas ya vencidas)
+ *   - Si el tipo es 'quincena', ends_at debe ser como máximo 16 días desde ahora
+ *     (cadencia quincenal)
  */
 export async function createCampaign(data: {
   name: string
-  type: 'flash' | 'week_sale'
+  type: 'flash' | 'quincena'
   description?: string
+  categoria_tematica?: string
   starts_at: string
   ends_at: string
   discount_percent?: number
@@ -101,14 +121,31 @@ export async function createCampaign(data: {
 }): Promise<Campaign | null> {
   if (!isDbConfigured()) return null
 
+  // Validar ends_at futuro
+  if (new Date(data.ends_at) <= new Date()) {
+    console.warn('[flash-campaigns] Rechazado: ends_at debe ser en el futuro')
+    return null
+  }
+
+  // Validar cadencia quincenal
+  if (data.type === 'quincena') {
+    const maxEnd = new Date()
+    maxEnd.setDate(maxEnd.getDate() + 16)
+    if (new Date(data.ends_at) > maxEnd) {
+      console.warn('[flash-campaigns] Rechazado: Quincena MUNAY no puede durar más de 16 días')
+      return null
+    }
+  }
+
   const row = await queryOne<any>(
-    `INSERT INTO flash_campaigns (name, type, description, starts_at, ends_at, discount_percent, points_multiplier, max_uses)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `INSERT INTO flash_campaigns (name, type, description, categoria_tematica, starts_at, ends_at, discount_percent, points_multiplier, max_uses)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      RETURNING *`,
     [
       data.name,
       data.type,
       data.description ?? null,
+      data.categoria_tematica ?? null,
       data.starts_at,
       data.ends_at,
       data.discount_percent ?? null,
@@ -119,14 +156,14 @@ export async function createCampaign(data: {
 
   if (!row) return null
 
-  // Asociar productos si se proveen
+  // Asociar productos si se proveen — batch INSERT
   if (data.product_ids && data.product_ids.length > 0) {
-    for (const productId of data.product_ids) {
-      await query(
-        `INSERT INTO flash_campaign_products (campaign_id, product_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
-        [row.id, productId]
-      )
-    }
+    const values = data.product_ids.map((_, i) => `($1, $${i + 2})`).join(', ')
+    const params = [row.id, ...data.product_ids]
+    await query(
+      `INSERT INTO flash_campaign_products (campaign_id, product_id) VALUES ${values} ON CONFLICT DO NOTHING`,
+      params
+    )
   }
 
   return mapRowToCampaign(row)
@@ -134,11 +171,25 @@ export async function createCampaign(data: {
 
 /**
  * Actualiza el estado activo de una campaña (toggle on/off).
+ *
+ * REGLA DE INMUTABILIDAD:
+ *   - No se puede reactivar una campaña cuyo estado es 'ended'
+ *     (ends_at < now()). Para lanzar una nueva edición, crear un
+ *     nuevo registro con nuevo UUID.
  */
 export async function toggleCampaign(campaignId: string, active: boolean): Promise<boolean> {
   if (!isDbConfigured()) return false
 
   try {
+    // Verificar que la campaña no esté finalizada
+    const campaign = await getCampaignById(campaignId)
+    if (!campaign) return false
+
+    if (campaign.status === 'ended') {
+      console.warn('[flash-campaigns] No se puede reactivar campaña finalizada. Crear nueva.')
+      return false
+    }
+
     await query(
       `UPDATE flash_campaigns SET active = $1 WHERE id = $2`,
       [active, campaignId]
@@ -159,6 +210,7 @@ function mapRowToCampaign(row: any): Campaign {
     name: row.name,
     type: row.type,
     description: row.description ?? null,
+    categoria_tematica: row.categoria_tematica ?? null,
     starts_at: row.starts_at,
     ends_at: row.ends_at,
     discount_percent: row.discount_percent !== null ? Number(row.discount_percent) : null,

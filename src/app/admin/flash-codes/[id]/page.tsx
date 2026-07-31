@@ -21,7 +21,7 @@ export default async function EditFlashCodePage({ params }: PageProps) {
   const code = decodeURIComponent(id).toUpperCase()
 
   const fc = await queryOne<any>(`
-    SELECT code, type, discount_percent, discount_cents, starts_at, ends_at, max_uses, uses_count, active
+    SELECT code, type, starts_at, ends_at, max_uses, uses_count, active
     FROM flash_codes WHERE code = $1
   `, [code])
 
@@ -33,8 +33,6 @@ export default async function EditFlashCodePage({ params }: PageProps) {
         flashCode={{
           code: fc.code,
           type: fc.type,
-          discount_percent: fc.discount_percent !== null ? Number(fc.discount_percent) : null,
-          discount_cents: fc.discount_cents !== null ? Number(fc.discount_cents) : null,
           starts_at: fc.starts_at,
           ends_at: fc.ends_at,
           max_uses: fc.max_uses !== null ? Number(fc.max_uses) : null,
@@ -49,7 +47,6 @@ export default async function EditFlashCodePage({ params }: PageProps) {
           flashCode={{
             code: fc.code,
             type: fc.type,
-            discount_percent: fc.discount_percent !== null ? Number(fc.discount_percent) : null,
           }}
         />
       </div>

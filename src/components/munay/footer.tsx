@@ -6,14 +6,14 @@ const COLUMNS = [
     title: 'Comprar',
     links: [
       { label: 'Catálogo', href: ROUTES.catalogo },
-      { label: 'Ofertas flash', href: '/flash' },
+      { label: 'Cupones y ofertas', href: '/#cupones-y-ofertas' },
       { label: 'Carrito', href: ROUTES.carrito },
     ],
   },
   {
     title: 'Vender',
     links: [
-      { label: 'Publicar prenda', href: ROUTES.miCuenta },
+      { label: 'Publicar prenda', href: '/publicar' },
       { label: 'Mi cuenta', href: ROUTES.miCuenta },
       { label: 'Cómo funciona', href: '/#como-funciona' },
     ],

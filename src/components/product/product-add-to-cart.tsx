@@ -42,6 +42,9 @@ export function ProductAddToCart({ product }: Props) {
       title: product.title,
       unit_price_cents: finalPrice,
       condition: product.condition,
+      // [BLOQUE B] Llevar el código flash para que createOrder aplique
+      // precio_especial_cents de forma autoritativa (server-side).
+      flash_code: product.flash_code ?? null,
     })
     setAdded(true)
     setTimeout(() => setAdded(false), 2000)
@@ -118,10 +121,10 @@ export function ProductAddToCart({ product }: Props) {
             <Sparkles className="h-4 w-4" aria-hidden />
             <span>
               ¿Tienes un código flash?{' '}
-              <Link href="/flash" className="text-primary underline hover:no-underline">
-                Ingrésalo aquí
+              <Link href={ROUTES.catalogo} className="text-primary underline hover:no-underline">
+                Búscalo en el catálogo
               </Link>{' '}
-              para aplicar descuentos.
+              para descubrir piezas exclusivas.
             </span>
           </p>
         </div>

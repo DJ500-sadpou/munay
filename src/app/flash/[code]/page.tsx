@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { formatCents } from '@/lib/format'
 import { ROUTES } from '@/lib/constants'
-import { getValidFlashCode, getUnlockedProductIds } from '@/lib/queries/products'
+import { getValidFlashCode, getUnlockedProducts } from '@/lib/queries/products'
 import { query, isDbConfigured } from '@/lib/db/neon'
 
 export const metadata = { title: 'Oferta flash' }
@@ -38,7 +38,7 @@ export default async function FlashPage({ params }: PageProps) {
             <Link href={ROUTES.catalogo}>Ver catálogo público</Link>
           </Button>
           <Button asChild variant="outline">
-            <Link href="/flash">Probar otro código</Link>
+            <Link href={ROUTES.catalogo}>Probar otro código</Link>
           </Button>
         </div>
       </div>
@@ -46,7 +46,11 @@ export default async function FlashPage({ params }: PageProps) {
   }
 
   // ---- Buscar productos asociados en flash_code_products ----
-  const associatedIds = await getUnlockedProductIds(flash.code)
+  // F0/BLOQUE B: el precio especial viene por producto (precio_especial_cents,
+  // NULL → precio normal). Los códigos flash son SOLO 'unlock'.
+  const unlocked = await getUnlockedProducts(flash.code)
+  const associatedIds = unlocked.map((u) => u.product_id)
+  const specialByProduct = new Map(unlocked.map((u) => [u.product_id, u.precio_especial_cents]))
   let products: Array<{
     id: string
     slug: string
@@ -86,34 +90,25 @@ export default async function FlashPage({ params }: PageProps) {
     }))
   }
 
-  // Calcular precio con descuento
-  const discountPct = flash.discount_percent ?? 0
-  const getDiscountedPrice = (priceCents: number) =>
-    discountPct > 0 ? Math.round(priceCents * (1 - discountPct / 100)) : priceCents
-
-  const isDiscountType = flash.type === 'discount'
-  const isUnlockType = flash.type === 'unlock'
+  // Precio final por producto: precio_especial_cents si existe, si no el normal
+  const getFinalPrice = (productId: string, priceCents: number) => {
+    // Solo NULL = sin precio especial. Un 0 explícito sí es un precio especial.
+    const special = specialByProduct.get(productId)
+    return special != null ? special : priceCents
+  }
 
   return (
     <div className="bg-gradient-to-b from-white via-munay-crema/10 to-white">
       <div className="mx-auto max-w-3xl px-4 py-10 lg:px-6">
-        <Badge className={`mb-3 ${isUnlockType ? 'bg-munay-cream text-munay-ink' : 'bg-munay-terracota text-white'}`}>
-          {isUnlockType ? (
-            <><Sparkles className="mr-1 h-3 w-3" /> Pieza{products.length !== 1 ? 's' : ''} desbloqueada{products.length !== 1 ? 's' : ''}</>
-          ) : (
-            <><Zap className="mr-1 h-3 w-3" /> Oferta flash activa</>
-          )}
+        <Badge className="mb-3 bg-munay-cream text-munay-ink">
+          <Sparkles className="mr-1 h-3 w-3" /> Pieza{products.length !== 1 ? 's' : ''} desbloqueada{products.length !== 1 ? 's' : ''}
         </Badge>
 
         <h1 className="font-display text-3xl font-bold tracking-tight text-munay-ink sm:text-4xl">
           Código: <span className="text-munay-terracota">{flash.code}</span>
         </h1>
         <p className="mt-2 text-munay-ink/60">
-          {isUnlockType
-            ? 'Este código revela piezas exclusivas que no están visibles en el catálogo público.'
-            : discountPct > 0
-            ? `Descuento del ${discountPct}% en las piezas asociadas a este código.`
-            : 'Descuento especial activo en las piezas asociadas.'}
+          Este código revela piezas exclusivas que no están visibles en el catálogo público.
         </p>
 
         <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -153,13 +148,16 @@ export default async function FlashPage({ params }: PageProps) {
                 {products.length} {products.length === 1 ? 'pieza disponible' : 'piezas disponibles'}
               </h2>
               <Badge variant="secondary">
-                {discountPct > 0 ? `−${discountPct}% descuento` : 'Sin descuento'}
+                Piezas exclusivas
               </Badge>
             </div>
 
             {products.map((p) => {
-              const finalPrice = getDiscountedPrice(p.price_cents)
+              const finalPrice = getFinalPrice(p.id, p.price_cents)
               const hasDiscount = finalPrice !== p.price_cents
+              const discountPct = hasDiscount
+                ? Math.round((1 - finalPrice / Math.max(1, p.price_cents)) * 100)
+                : 0
               return (
                 <Card key={p.id} className="overflow-hidden border-black/5 shadow-sm">
                   <div className="grid gap-0 sm:grid-cols-[200px_1fr]">
@@ -196,9 +194,7 @@ export default async function FlashPage({ params }: PageProps) {
                       <div>
                         <h3 className="font-display text-lg font-semibold text-munay-ink">{p.title}</h3>
                         <p className="mt-2 text-sm text-munay-ink/60 line-clamp-3">
-                          {p.description ?? (isUnlockType
-                            ? 'Pieza exclusiva desbloqueada con tu código.'
-                            : 'Pieza con descuento flash.')}
+                          {p.description ?? 'Pieza exclusiva desbloqueada con tu código.'}
                         </p>
                         <div className="mt-3 flex items-baseline gap-2">
                           {hasDiscount && (
@@ -221,7 +217,7 @@ export default async function FlashPage({ params }: PageProps) {
                         <Button asChild size="sm" variant="outline">
                           <Link href={`${ROUTES.catalogo}?flash=${flash.code}`}>
                             <Zap className="mr-1 h-3 w-3" aria-hidden />
-                            Ver catálogo con descuento
+                            Ver catálogo desbloqueado
                           </Link>
                         </Button>
                       </div>
@@ -238,11 +234,9 @@ export default async function FlashPage({ params }: PageProps) {
               <p className="text-munay-ink/60">
                 Este código es válido pero no tiene productos asociados por ahora.
               </p>
-              {isDiscountType && (
-                <p className="text-xs text-munay-ink/50">
-                  El administrador debe asociar productos a este código desde el panel admin.
-                </p>
-              )}
+              <p className="text-xs text-munay-ink/50">
+                El administrador debe asociar productos a este código desde el panel admin.
+              </p>
               <Button asChild variant="outline">
                 <Link href={ROUTES.catalogo}>Ver catálogo público</Link>
               </Button>

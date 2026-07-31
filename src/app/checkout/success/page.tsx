@@ -1,12 +1,13 @@
 import Link from 'next/link'
-import { CheckCircle2, ArrowRight, Sparkles, MessageCircle, Package } from 'lucide-react'
+import { ArrowRight, MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { auth, currentUser } from '@clerk/nextjs/server'
-import { queryOne, query, isDbConfigured } from '@/lib/db/neon'
+import { queryOne, isDbConfigured } from '@/lib/db/neon'
 import { formatCents } from '@/lib/format'
 import { ROUTES, SITE } from '@/lib/constants'
+import { AutoWhatsappRedirect } from './auto-whatsapp'
 
 export const metadata = { title: 'Pedido enviado · Munay' }
 export const dynamic = 'force-dynamic'
@@ -96,6 +97,9 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
                 {orderId ? `Orden ${orderId.slice(0, 8)}…` : 'Pedido registrado'}
               </Badge>
             )}
+
+            {/* Auto-redirect a WhatsApp */}
+            {whatsappUrl && <AutoWhatsappRedirect whatsappUrl={whatsappUrl} orderId={orderId} />}
 
             <div className="flex flex-col gap-2 w-full">
               {whatsappUrl && (

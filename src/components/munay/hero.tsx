@@ -58,7 +58,7 @@ export function MunayHero() {
               variant="outline"
               className="rounded-xl border-munay-terracota/50 bg-white px-7 text-base font-semibold text-munay-terracota hover:bg-munay-terracota/5 hover:text-munay-terracota-quemado"
             >
-              <Link href="/flash">Ver ofertas flash</Link>
+              <Link href="/#cupones-y-ofertas">Ver cupones y ofertas</Link>
             </Button>
           </div>
 
