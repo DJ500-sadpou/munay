@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { SITE, ROUTES } from '@/lib/constants'
 
 const COLUMNS = [
@@ -36,7 +37,6 @@ const COLUMNS = [
   },
 ]
 
-// SVGs inline de redes sociales (reconocibles, sin dependencias externas)
 // SVGs inline que aceptan y propagan props (className, aria-hidden, etc.)
 const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -75,15 +75,29 @@ export function MunayFooter() {
       <div className="mx-auto max-w-7xl px-4 py-12 lg:px-6">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-6">
           <div className="lg:col-span-2">
-            <span className="font-display text-2xl font-extrabold tracking-tight text-munay-terracota">
-              MUNAY
-            </span>
-            <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.22em] text-munay-cacao/70">
-              Para estar pinta
-            </p>
-            <p className="mt-4 max-w-xs text-xs leading-relaxed text-munay-ink/60">
-              Moda circular, nueva y usada. Confianza que se siente.
-            </p>
+            <div className="flex items-start gap-4">
+              <div>
+                <span className="font-display text-2xl font-extrabold tracking-tight text-munay-terracota">
+                  MUNAY
+                </span>
+                <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.22em] text-munay-cacao/70">
+                  Para estar pinta
+                </p>
+                <p className="mt-4 max-w-xs text-xs leading-relaxed text-munay-ink/60">
+                  Moda circular, nueva y usada. Confianza que se siente.
+                </p>
+              </div>
+              {/* Código QR — escaneá y entrá a la moda circular */}
+              <div className="relative mt-1 h-20 w-20 shrink-0">
+                <Image
+                  src="/munay/ref-qr.webp"
+                  alt="Escaneá para ir a Munay"
+                  fill
+                  sizes="80px"
+                  className="object-contain"
+                />
+              </div>
+            </div>
           </div>
 
           {COLUMNS.map((col) => (
@@ -120,7 +134,7 @@ export function MunayFooter() {
                     aria-label={s.label}
                     className="flex h-9 w-9 items-center justify-center rounded-full border border-black/5 bg-munay-crema/20 text-munay-ink/60 transition-colors hover:text-munay-terracota"
                   >
-                    <s.icon className="h-4 w-4" aria-hidden />
+                    <s.icon aria-hidden />
                   </Link>
                 </li>
               ))}

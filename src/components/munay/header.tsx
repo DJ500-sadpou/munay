@@ -162,6 +162,12 @@ export function MunayHeader() {
                 >
                   Mi cuenta
                 </Link>
+                <Link
+                  href="/admin"
+                  className="rounded-lg px-2 py-3 text-sm font-medium text-munay-ink hover:bg-munay-cream/30"
+                >
+                  Admin
+                </Link>
                 <Button
                   asChild
                   className="mt-3 rounded-full bg-gradient-to-b from-munay-terracota to-munay-terracota-quemado text-white"

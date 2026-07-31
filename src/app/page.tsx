@@ -4,6 +4,8 @@
  * siguen operativas.
  */
 
+import Link from 'next/link'
+import { Construction } from 'lucide-react'
 import { PendingCouponBanner } from '@/components/cart/pending-coupon-banner'
 import { MunayHero } from '@/components/munay/hero'
 import { MunayCategoryBar } from '@/components/munay/category-bar'
@@ -82,6 +84,18 @@ export default function Home() {
     <div className="bg-gradient-to-b from-white via-munay-crema/10 to-white">
       <div className="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-6 lg:px-6 lg:py-8">
         <PendingCouponBanner />
+
+        {/* MAINTENANCE BANNER */}
+        <div className="rounded-2xl border border-munay-terracota/20 bg-munay-terracota/5 px-5 py-3 text-center text-sm">
+          <Construction className="mr-1.5 inline h-4 w-4 text-munay-terracota" aria-hidden />
+          <span className="text-munay-ink/80">
+            <strong className="text-munay-terracota-quemado">Munay está en construcción.</strong>{' '}
+            El catálogo, carrito y checkout ya están operativos —{' '}
+            <Link href="/catalogo" className="font-semibold text-munay-terracota underline hover:no-underline">
+              visítalos aquí
+            </Link>.
+          </span>
+        </div>
 
         <MunayHero />
 

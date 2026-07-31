@@ -16,7 +16,7 @@ export const SITE = {
   whatsapp: '+593959756845',
   whatsappLink: 'https://wa.me/+593959756845',
   instagram: 'https://www.instagram.com/munay._ec/',
-  tiktok: 'https://www.tiktok.com/@munay._ec',
+  tiktok: 'https://www.tiktok.com/@munay._ec?_r=1&_t=ZS-98SJYASLVZw',
   city: 'Ibarra, Imbabura, Ecuador',
 } as const
 
