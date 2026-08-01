@@ -5,7 +5,7 @@ import { query, isDbConfigured } from '@/lib/db/neon'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { formatDate } from '@/lib/format'
+import { formatDate, formatCents } from '@/lib/format'
 
 export const metadata = { title: 'Flash codes · Admin' }
 export const dynamic = 'force-dynamic'
@@ -15,6 +15,8 @@ export default async function AdminFlashCodesPage() {
 
   // F0/BLOQUE B: los códigos flash son SOLO 'unlock'. Las columnas
   // discount_percent/discount_cents ya no existen en flash_codes.
+  // [F2.1] Resumen de productos asociados por fila vía array_agg (evita
+  // N+1 de getUnlockedProducts por código).
   let flashCodes: Array<{
     code: string
     type: string
@@ -23,24 +25,43 @@ export default async function AdminFlashCodesPage() {
     max_uses: number | null
     uses_count: number
     active: boolean
+    products: Array<{ title: string; precio_especial_cents: number | null; price_cents: number }>
   }> = []
 
   if (isDbConfigured()) {
     // Fix CRIT-4: query directa Neon.
     const rows = await query<any>(`
-      SELECT code, type, starts_at, ends_at, max_uses, uses_count, active
-      FROM flash_codes
-      ORDER BY created_at DESC
+      SELECT
+        fc.code, fc.type, fc.starts_at, fc.ends_at, fc.max_uses, fc.uses_count, fc.active,
+        COALESCE((
+          SELECT json_agg(json_build_object(
+            'title', p.title,
+            'precio_especial_cents', fcp.precio_especial_cents,
+            'price_cents', p.price_cents
+          ) ORDER BY p.title ASC)
+          FROM flash_code_products fcp
+          JOIN products p ON p.id = fcp.product_id
+          WHERE fcp.code = fc.code
+        ), '[]'::json) AS products
+      FROM flash_codes fc
+      ORDER BY fc.created_at DESC
     `)
-    flashCodes = rows.map((r) => ({
-      code: r.code,
-      type: r.type,
-      starts_at: r.starts_at,
-      ends_at: r.ends_at,
-      max_uses: r.max_uses !== null ? Number(r.max_uses) : null,
-      uses_count: Number(r.uses_count),
-      active: r.active,
-    }))
+    flashCodes = rows.map((r) => {
+      // [FIX Ronda 1] El driver de Neon ya parsea json a arreglo JS; sin
+      // try/catch innecesario (el fallback silencioso ocultaba errores reales).
+      const products: Array<{ title: string; precio_especial_cents: number | null; price_cents: number }> =
+        Array.isArray(r.products) ? r.products : []
+      return {
+        code: r.code,
+        type: r.type,
+        starts_at: r.starts_at,
+        ends_at: r.ends_at,
+        max_uses: r.max_uses !== null ? Number(r.max_uses) : null,
+        uses_count: Number(r.uses_count),
+        active: r.active,
+        products,
+      }
+    })
   }
 
   const now = new Date()
@@ -98,6 +119,7 @@ export default async function AdminFlashCodesPage() {
                 <th className="px-4 py-3 text-left font-medium">Código</th>
                 <th className="px-4 py-3 text-center font-medium">Tipo</th>
                 <th className="px-4 py-3 text-center font-medium">Usos</th>
+                <th className="px-4 py-3 text-left font-medium">Productos</th>
                 <th className="px-4 py-3 text-left font-medium">Vigencia</th>
                 <th className="px-4 py-3 text-center font-medium">Estado</th>
                 <th className="px-4 py-3 text-right font-medium">Acciones</th>
@@ -117,6 +139,37 @@ export default async function AdminFlashCodesPage() {
                     </td>
                     <td className="px-4 py-3 text-center">
                       {fc.uses_count}{fc.max_uses != null ? ` / ${fc.max_uses}` : ''}
+                    </td>
+                    {/* [F2.1] Resumen de productos asociados + precio especial */}
+                    <td className="px-4 py-3">
+                      {fc.products.length === 0 ? (
+                        <span className="text-xs text-munay-ink/40">Sin productos</span>
+                      ) : (
+                        <div className="max-w-[260px] space-y-1">
+                          <p className="text-xs font-medium text-munay-ink/70">
+                            {fc.products.length} {fc.products.length === 1 ? 'producto' : 'productos'}
+                          </p>
+                          {fc.products.slice(0, 2).map((pr, i) => {
+                            const hasSpecial =
+                              pr.precio_especial_cents != null &&
+                              pr.precio_especial_cents > 0 &&
+                              pr.precio_especial_cents < pr.price_cents
+                            return (
+                              <p key={i} className="truncate text-xs text-munay-ink/60">
+                                {pr.title}
+                                {hasSpecial && (
+                                  <span className="ml-1 text-[10px] text-munay-terracota">
+                                    ({formatCents(pr.precio_especial_cents!)})
+                                  </span>
+                                )}
+                              </p>
+                            )
+                          })}
+                          {fc.products.length > 2 && (
+                            <p className="text-[10px] text-munay-ink/40">+{fc.products.length - 2} más</p>
+                          )}
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-xs text-munay-ink/60">
                       {formatDate(fc.starts_at, { dateStyle: 'short' })}

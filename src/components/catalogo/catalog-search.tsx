@@ -73,7 +73,7 @@ export function CatalogSearch({ initialValue = '' }: { initialValue?: string }) 
         </Button>
       </div>
       <p className="mt-1.5 px-1 text-xs text-muted-foreground">
-        Si ingresas un código flash válido, te llevamos directo a la pieza exclusiva.
+        Si ingresas un código flash válido, filtramos el catálogo para mostrarte tus piezas exclusivas.
       </p>
     </form>
   )

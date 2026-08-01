@@ -62,6 +62,11 @@ export function ProductCard({ product }: { product: ProductCardData }) {
       slug: product.slug,
       title: product.title,
       unit_price_cents: finalPrice,
+      // [AUDIT] Precio regular del producto: el preview del checkout evalúa
+      // cupón/FID- sobre el subtotal REGULAR (no-acumulación con flash, igual
+      // que createOrder). Sin esto, flashSavingsCents daba 0 y el preview
+      // mostraba un total distinto al que cobra el server.
+      regular_unit_price_cents: product.price_cents,
       image_url: product.image_url,
       condition: product.condition,
       // [BLOQUE B] Llevar el código flash para aplicar precio_especial_cents

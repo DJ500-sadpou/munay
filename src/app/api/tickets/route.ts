@@ -12,7 +12,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { query, isDbConfigured } from '@/lib/db/neon'
-import { SITE } from '@/lib/constants'
+import { SITE, normalizeWhatsAppNumber } from '@/lib/constants'
 
 export const runtime = 'nodejs'
 
@@ -107,7 +107,8 @@ export async function POST(req: NextRequest) {
     `📝 *Mensaje:*\n${message}`
   )
 
-  const whatsappUrl = `https://wa.me/${SITE.whatsapp}?text=${whatsappMessage}`
+  // [F3.3 #3] Número normalizado a dígitos (wa.me NO acepta '+').
+  const whatsappUrl = `https://wa.me/${normalizeWhatsAppNumber(SITE.whatsapp)}?text=${whatsappMessage}`
 
   return NextResponse.json({
     ok: true,

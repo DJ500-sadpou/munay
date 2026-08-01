@@ -1,5 +1,7 @@
 import { requireAdmin } from '@/lib/auth/require-admin'
 import { getCouponById } from '@/lib/queries/coupons'
+import { getSettingNumber } from '@/lib/queries/settings'
+import { SETTINGS_DEFAULTS } from '@/lib/constants'
 import { CouponForm } from '@/components/admin/coupons/coupon-form'
 import { notFound } from 'next/navigation'
 
@@ -18,8 +20,15 @@ export default async function EditCouponPage({ params }: PageProps) {
 
   if (!coupon) notFound()
 
+  // [F1.1] Umbral configurable de advertencia para primera_compra (settings/00023).
+  const warningThreshold = await getSettingNumber(
+    'coupon_first_purchase_warning_threshold',
+    SETTINGS_DEFAULTS.coupon_first_purchase_warning_threshold
+  )
+
   return (
     <CouponForm
+      warningThreshold={warningThreshold}
       coupon={{
         id: coupon.id,
         codigo: coupon.codigo,

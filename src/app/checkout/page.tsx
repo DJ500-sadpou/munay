@@ -76,19 +76,36 @@ export default function CheckoutPage() {
   }
 
   const pointsDiscountCents = Math.floor(pointsToRedeem / POINTS_RULES.POINTS_PER_DISCOUNT_DOLLAR) * 100
+
+  // [AUDIT] Replicar la no-acumulación del server (createOrder 5c-quater):
+  // el cupón/FID- se evalúa sobre el subtotal REGULAR y, si gana, los ítems
+  // flash vuelven a precio regular (base = regularSubtotalCents). Antes el
+  // preview calculaba el cupón sobre el subtotal flash → mostraba un total
+  // DISTINTO al que cobra createOrder (mismatch real reportado en auditoría).
+  const regularSubtotalCents = lines.reduce(
+    (s, l) => s + (l.regular_unit_price_cents ?? l.unit_price_cents) * l.qty,
+    0
+  )
+  const flashSavingsCents = Math.max(0, regularSubtotalCents - subtotalCents)
   // Descuento del cupón (validado contra /api/coupons/apply; el consumo real
-  // ocurre en createOrder).
+  // ocurre en createOrder). Sobre el subtotal REGULAR, como el server.
   const couponDiscountCents = coupon
-    ? Math.min(subtotalCents, Math.round(subtotalCents * (coupon.discount_percent / 100)))
+    ? Math.min(regularSubtotalCents, Math.round(regularSubtotalCents * (coupon.discount_percent / 100)))
     : 0
   // Descuento del cupón de fidelidad (FID-) si hay uno seleccionado.
   const loyaltyDiscountCents = loyaltyPercent
-    ? Math.min(subtotalCents, Math.round(subtotalCents * (loyaltyPercent / 100)))
+    ? Math.min(regularSubtotalCents, Math.round(regularSubtotalCents * (loyaltyPercent / 100)))
     : 0
-  // [FIX Ronda 1] No acumulación: el servidor aplica max(loyalty, coupon).
-  // El resumen muestra el mismo descuento que aplicará createOrder.
-  const promoDiscountCents = Math.max(couponDiscountCents, loyaltyDiscountCents)
-  const adjustedTotalCents = Math.max(0, subtotalCents - promoDiscountCents - pointsDiscountCents)
+  // [AUDIT] Ganador con 3 competidores (igual que createOrder): flash, cupón, FID-.
+  const flashWins =
+    flashSavingsCents > 0 &&
+    flashSavingsCents >= loyaltyDiscountCents &&
+    flashSavingsCents >= couponDiscountCents
+  const couponWins = !flashWins && couponDiscountCents > 0 && couponDiscountCents >= loyaltyDiscountCents
+  const loyaltyWins = !flashWins && !couponWins && loyaltyDiscountCents > 0
+  const promoDiscountCents = couponWins ? couponDiscountCents : loyaltyWins ? loyaltyDiscountCents : 0
+  const baseSubtotalCents = couponWins || loyaltyWins ? regularSubtotalCents : subtotalCents
+  const adjustedTotalCents = Math.max(0, baseSubtotalCents - promoDiscountCents - pointsDiscountCents)
 
   const shipping = adjustedTotalCents > 0 ? 200 : 0
   const grandTotal = adjustedTotalCents + shipping
@@ -150,12 +167,37 @@ export default function CheckoutPage() {
       setStep('redirecting')
       clear()
 
+      // [F2.4] Transportar el ganador de no-acumulación a la success page por
+      // query params (createOrder corre server-side en POST; el checkout es
+      // cliente y no conoce el resultado): &promo=flash&flashPct=25&couponPct=10
+      const promoParams = new URLSearchParams()
+      if (data.promo_applied && data.promo_applied !== 'none') {
+        promoParams.set('promo', data.promo_applied)
+      }
+      if (typeof data.flash_discount_percent === 'number' && data.flash_discount_percent > 0) {
+        promoParams.set('flashPct', String(data.flash_discount_percent))
+      }
+      if (typeof data.coupon_discount_percent === 'number' && data.coupon_discount_percent > 0) {
+        promoParams.set('couponPct', String(data.coupon_discount_percent))
+      }
+      if (typeof data.loyalty_discount_percent === 'number' && data.loyalty_discount_percent > 0) {
+        promoParams.set('loyaltyPct', String(data.loyalty_discount_percent))
+      }
+      const promoQS = promoParams.toString()
+
       // Redirigir a WhatsApp (usar location.href en vez de window.open para evitar popup blockers)
       if (data.whatsapp_url) {
         // Primero redirigir a success page, que tendrá el botón para abrir WhatsApp
-        router.push(`/checkout/success?order=${data.order_id}&wa=${encodeURIComponent(data.whatsapp_url)}`)
+        // [AUDIT] Pasar también el ticket_numero para que la success page lo
+        // muestre al cliente (#XXXX — refuerza el flujo de ticket).
+        const ticketQS = data.ticket_numero != null
+          ? `&ticket=${String(data.ticket_numero).padStart(4, '0')}`
+          : ''
+        const base = `/checkout/success?order=${data.order_id}&wa=${encodeURIComponent(data.whatsapp_url)}${ticketQS}`
+        router.push(promoQS ? `${base}&${promoQS}` : base)
       } else {
-        router.push(`/checkout/success?order=${data.order_id}`)
+        const base = `/checkout/success?order=${data.order_id}`
+        router.push(promoQS ? `${base}&${promoQS}` : base)
       }
     } catch (err: any) {
       setError(err?.message ?? 'Error inesperado')

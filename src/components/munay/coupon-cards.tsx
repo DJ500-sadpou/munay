@@ -56,6 +56,13 @@ function CouponCard({ coupon }: { coupon: Coupon }) {
 
   return (
     <li className="flex flex-col rounded-xl border border-black/5 bg-munay-crema/15 p-4 text-center">
+      {/* [F1.3] Badge "Primera compra" para cupones de ese tipo (solo visibles
+          para usuarios sin compras pagadas — getActiveCouponsForUser). */}
+      {coupon.tipo === 'primera_compra' && (
+        <Badge className="mx-auto mb-1.5 justify-center bg-munay-terracota/10 text-[10px] font-bold text-munay-terracota-quemado">
+          Primera compra
+        </Badge>
+      )}
       <p className="font-mono text-sm font-bold tracking-tight text-munay-terracota">
         {coupon.codigo}
       </p>

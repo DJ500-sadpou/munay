@@ -45,6 +45,11 @@ export function ProductAddToCart({ product }: Props) {
       // [BLOQUE B] Llevar el código flash para que createOrder aplique
       // precio_especial_cents de forma autoritativa (server-side).
       flash_code: product.flash_code ?? null,
+      // [AUDIT] Precio regular de la línea: el checkout lo usa para replicar
+      // la no-acumulación del server (si gana cupón/FID-, los ítems flash
+      // vuelven a precio regular). Sin esto el preview muestra un total
+      // distinto al que cobra createOrder.
+      regular_unit_price_cents: product.price_cents,
     })
     setAdded(true)
     setTimeout(() => setAdded(false), 2000)

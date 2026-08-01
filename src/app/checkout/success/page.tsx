@@ -1,12 +1,12 @@
 import Link from 'next/link'
-import { ArrowRight, MessageCircle } from 'lucide-react'
+import { ArrowRight, MessageCircle, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { queryOne, isDbConfigured } from '@/lib/db/neon'
 import { formatCents } from '@/lib/format'
-import { ROUTES, SITE } from '@/lib/constants'
+import { ROUTES, SITE, normalizeWhatsAppNumber } from '@/lib/constants'
 import { AutoWhatsappRedirect } from './auto-whatsapp'
 
 export const metadata = { title: 'Pedido enviado · Munay' }
@@ -19,7 +19,30 @@ interface PageProps {
 export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
   const sp = await searchParams
   const orderId = typeof sp.order === 'string' ? sp.order : undefined
-  const waUrl = typeof sp.wa === 'string' ? decodeURIComponent(sp.wa) : null
+  // [F3.0 #3] Eliminado el decodeURIComponent: Next ya decodifica searchParams
+  // una vez. Decodificar de nuevo rompía el query string del wa (newlines,
+  // emojis, espacios crudos) — la URL de wa.me llega correctamente.
+  const waUrl = typeof sp.wa === 'string' ? sp.wa : null
+  // [AUDIT] Ticket #XXXX del pedido (transporte desde checkout vía ?ticket=).
+  const ticketNumero = typeof sp.ticket === 'string' && /^\d{1,4}$/.test(sp.ticket)
+    ? sp.ticket.padStart(4, '0')
+    : null
+
+  // [F2.4] Ganador de no-acumulación transportado desde el checkout
+  // (&promo=flash&flashPct=25&couponPct=10). createOrder corre server-side
+  // en POST; el checkout lo recibe y lo pasa por query params.
+  // [FIX Ronda 1] Guardas typeof === 'string' (sp puede ser string[] si el
+  // param se repite; Number(string[]) = NaN).
+  const promoApplied = typeof sp.promo === 'string' ? sp.promo : undefined
+  const flashPct = typeof sp.flashPct === 'string' ? Number(sp.flashPct) : undefined
+  const couponPct = typeof sp.couponPct === 'string' ? Number(sp.couponPct) : undefined
+  const loyaltyPct = typeof sp.loyaltyPct === 'string' ? Number(sp.loyaltyPct) : undefined
+
+  // Mensaje explícito cuando el flash ganó a un cupón/FID- (no-acumulación).
+  const noAccumulationMessage =
+    promoApplied === 'flash' && (couponPct || loyaltyPct)
+      ? `Este producto ya tenía un descuento especial de Código Flash (${flashPct ?? ''}% OFF), mayor a tu ${couponPct ? `cupón (${couponPct}% OFF)` : `cupón de fidelidad (${loyaltyPct}% OFF)`}. Se aplicó el descuento de Código Flash. Los descuentos no son acumulables en Munay.`
+      : null
 
   let order: {
     id: string
@@ -51,11 +74,12 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
     }
 
     // Si no se recibió wa URL del checkout, construir una con el ID de la orden
+    // [F3.3 #3] Número normalizado a dígitos (wa.me NO acepta '+').
     if (!whatsappUrl && order) {
       const msg = encodeURIComponent(
         `¡Hola! Quiero consultar sobre mi pedido ${orderId.slice(0, 8)}… en Munay. 🙌`
       )
-      whatsappUrl = `https://wa.me/${SITE.whatsapp}?text=${msg}`
+      whatsappUrl = `https://wa.me/${normalizeWhatsAppNumber(SITE.whatsapp)}?text=${msg}`
     }
   }
 
@@ -74,6 +98,26 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
               Hemos recibido tu pedido. Un asesor se pondrá en contacto contigo por
               WhatsApp para coordinar el pago y el envío.
             </p>
+
+            {/* [AUDIT] Confirmar el ticket al cliente (#XXXX) */}
+            {ticketNumero && (
+              <div className="w-full rounded-md border border-munay-terracota/20 bg-munay-terracota/5 px-3 py-2 text-sm text-munay-ink/80">
+                <p className="flex items-center justify-center gap-2">
+                  <Zap className="h-4 w-4 text-munay-terracota" aria-hidden />
+                  Tu ticket: <strong className="font-mono text-munay-terracota">#{ticketNumero}</strong>
+                </p>
+              </div>
+            )}
+
+            {/* [F2.4] Mensaje de no-acumulación flash vs cupón (si aplica) */}
+            {noAccumulationMessage && (
+              <div className="w-full rounded-md border border-munay-terracota/20 bg-munay-terracota/5 p-3 text-left text-xs text-munay-ink/80">
+                <p className="flex items-start gap-1.5">
+                  <Zap className="mt-0.5 h-3.5 w-3.5 shrink-0 text-munay-terracota" aria-hidden />
+                  <span>{noAccumulationMessage}</span>
+                </p>
+              </div>
+            )}
 
             {order ? (
               <div className="w-full rounded-md border border-black/5 bg-white p-4 text-left text-sm">

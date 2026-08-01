@@ -127,7 +127,18 @@ export async function validateCoupon(
     // [FIX Ronda 2] El enum order_status es ('pending','paid','cancelled','refunded') —
     // no existe 'completed'. Solo 'paid' cuenta como compra previa (una orden
     // reembolsada — status 'refunded' — tampoco cuenta, por diseño).
+    // [F1 Ronda 2 — CRÍTICO] Un guest (sin userId) NO puede aplicar un cupón de
+    // primera_compra, aunque su email sea nuevo: el prompt exige "no autenticados
+    // no ven NI pueden aplicar". El userId SIEMPRE viene de auth() en servidor,
+    // nunca del body del cliente (spoofing).
     if (row.tipo === 'primera_compra') {
+      if (!userId) {
+        return {
+          ok: false,
+          error: 'Inicia sesión para usar este cupón',
+          error_code: 'first_purchase',
+        }
+      }
       const prior = await queryOne<any>(
         `SELECT 1 FROM orders
          WHERE status = 'paid'
@@ -160,22 +171,58 @@ export async function validateCoupon(
 // ──────────────────────────────────────────────
 
 /**
- * Retorna cupones activos y vigentes (no agotados).
+ * [F1.3] Cupones activos FILTRADOS por historial del usuario (vista pública).
+ *
+ * Requisito del prompt (Ronda 1+2): "no autenticados no ven ni pueden aplicar"
+ * cupones de primera_compra.
+ *   - Guests (`userId` y `email` null) → SOLO cupones `general`.
+ *   - Usuario con órdenes pagadas previas → SOLO `general`.
+ *   - Usuario sin compras pagadas → `general` + `primera_compra`.
+ *
+ * Se usa en la landing (server component) pasando `userId`/`email` desde
+ * `currentUser()` — nunca desde el cliente.
+ *
+ * [FIX Ronda 1] Se eliminó `getActiveCoupons()` (sin llamadores tras migrar
+ * la landing) y esta función quedó como UNA sola query con filtro condicional
+ * en vez de tres SELECTs duplicados.
  */
-export async function getActiveCoupons(): Promise<Coupon[]> {
+export async function getActiveCouponsForUser(
+  userId?: string | null,
+  email?: string | null
+): Promise<Coupon[]> {
   if (!isDbConfigured()) return []
 
   try {
+    // Guests (sin identidad) → nunca ven primera_compra.
+    const hasIdentity = Boolean(userId || email)
+
+    // Identificado: ¿tiene compras pagadas previas?
+    const prior = hasIdentity
+      ? await queryOne<any>(
+          `SELECT 1 FROM orders
+           WHERE status = 'paid'
+             AND ((user_id IS NOT NULL AND user_id = $1) OR (lower(customer_email) = $2))
+           LIMIT 1`,
+          [userId ?? null, (email ?? '').toLowerCase()]
+        )
+      : null
+
+    // Visibilidad: SOLO `general` si es guest o ya compró; si no,
+    // `general` + `primera_compra` ($1::boolean true → sin filtro de tipo).
+    const showFirstPurchase = hasIdentity && !prior
+
     const rows = await query<any>(
       `SELECT * FROM coupons
        WHERE activo = true
+         AND ($1::boolean OR tipo = 'general')
          AND fecha_inicio <= now() AND fecha_fin > now()
          AND (usos_maximos IS NULL OR usos_actuales < usos_maximos)
-       ORDER BY created_at DESC`
+       ORDER BY created_at DESC`,
+      [showFirstPurchase]
     )
     return rows.map(mapCoupon)
   } catch (err: any) {
-    console.warn('[coupons] getActiveCoupons error:', err?.message)
+    console.warn('[coupons] getActiveCouponsForUser error:', err?.message)
     return []
   }
 }

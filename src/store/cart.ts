@@ -36,6 +36,12 @@ export interface CartLine {
    *  Se envía al server para que createOrder aplique precio_especial_cents
    *  de forma autoritativa (sin confiar en el precio del cliente). */
   flash_code?: string | null
+  /** [AUDIT] Precio REGULAR de la línea (sin flash) cuando tiene flash_code.
+   *  Permite al checkout replicar la no-acumulación del server: si gana un
+   *  cupón/FID-, los ítems flash vuelven a precio regular (base real).
+   *  Sin esto, el preview cobra el cupón sobre el subtotal flash y muestra
+   *  un total DISTINTO al que cobrará createOrder (mismatch real). */
+  regular_unit_price_cents?: number
 }
 
 interface CartState {
@@ -111,11 +117,12 @@ export const useCart = create<CartState>()(
     {
       name: 'munay-cart',
       storage: createJSONStorage(() => localStorage),
-      // version 3: [BLOQUE B] invalida carritos persistidos con precio
-      // descontado pero SIN flash_code (líneas pre-fix que seguían
-      // cobrando precio completo en createOrder).
+      // version 4: [AUDIT] invalida carritos persistidos SIN
+      // regular_unit_price_cents (líneas pre-fix del mismatch de preview
+      // cuando se combina flash + cupón/FID-).
       // Solo persistir lines (ahora con flash_code por línea para
       // aplicar precio_especial_cents server-side en createOrder).
+      version: 4,
       partialize: (state) => ({
         lines: state.lines,
       }),

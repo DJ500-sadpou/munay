@@ -182,6 +182,12 @@ export function FlashCodeProductsManager({ flashCode }: Props) {
                     <Badge variant={p.active ? 'default' : 'outline'} className="text-[10px]">
                       {p.active ? 'Activo' : 'Oculto'}
                     </Badge>
+                    {/* [F2.1] Precio y % de descuento derivado del precio especial */}
+                    {p.precio_especial_cents != null && p.precio_especial_cents > 0 && p.precio_especial_cents < p.price_cents && (
+                      <Badge className="bg-munay-terracota text-white text-[10px]">
+                        −{Math.min(99, Math.max(0, Math.round((1 - p.precio_especial_cents / Math.max(1, p.price_cents)) * 100)))}%
+                      </Badge>
+                    )}
                     <span className="text-xs text-muted-foreground">
                       {p.precio_especial_cents != null ? `${formatCents(p.precio_especial_cents)} (especial)` : formatCents(p.price_cents)} · stock: {p.stock}
                     </span>

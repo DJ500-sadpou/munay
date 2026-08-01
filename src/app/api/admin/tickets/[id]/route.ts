@@ -2,16 +2,22 @@
  * PATCH /api/admin/tickets/[id]
  *
  * Permite al admin cambiar el estado de un ticket:
- *   new → in_progress → completed | cancelled
+ *   Soporte: new → in_progress → completed | cancelled
+ *   Pedido:  pendiente → confirmado | cancelled
+ *
+ * [F3.5] 'confirmado' SIEMPRE marca la orden asociada como paid
+ * (fuente única de "primera compra" — el plan Ronda 1 exige que la
+ * acción Confirmar marque la orden paid incondicionalmente).
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth/require-admin'
 import { queryOne, isDbConfigured } from '@/lib/db/neon'
+import { markOrderPaid } from '@/lib/orders-neon'
 
 export const runtime = 'nodejs'
 
-const VALID_STATUSES = ['new', 'in_progress', 'completed', 'cancelled'] as const
+const VALID_STATUSES = ['new', 'in_progress', 'completed', 'cancelled', 'pendiente', 'expirado', 'confirmado'] as const
 
 export async function PATCH(
   req: NextRequest,
@@ -53,6 +59,10 @@ export async function PATCH(
     in_progress: ['completed', 'cancelled'],
     completed: [],
     cancelled: [],
+    // [F3.5] Pedido: solo pendiente → confirmado (o cancelado).
+    pendiente: ['confirmado', 'cancelled'],
+    expirado: [],
+    confirmado: [],
   }
 
   if (!ALLOWED_TRANSITIONS[current.status]?.includes(body.status)) {
@@ -60,6 +70,36 @@ export async function PATCH(
       { ok: false, error: `No se puede cambiar de ${current.status} a ${body.status}` },
       { status: 422 }
     )
+  }
+
+  // [F3.5] Si confirmamos, el ticket DEBE tener order_id (es un ticket de
+  // pedido). Los tickets de soporte no usan confirmado.
+  if (body.status === 'confirmado') {
+    const ticketRow = await queryOne<any>(
+      `SELECT order_id, ticket_numero FROM tickets WHERE id = $1`,
+      [id]
+    )
+    if (!ticketRow?.order_id) {
+      return NextResponse.json(
+        { ok: false, error: 'Este ticket no tiene orden asociada (solo los tickets de pedido se confirman)' },
+        { status: 422 }
+      )
+    }
+    const orderId = ticketRow.order_id
+    const ticketNumero = ticketRow.ticket_numero
+
+    // Reutilizar markOrderPaid: marca la orden paid, libera inventario,
+    // otorga puntos y genera cupón de fidelidad. provider_ref sintético
+    // `whatsapp-manual-<ticket>` — payments.provider_ref es text (sin límite
+    // de largo explícito en 00002/neon_schema), seguro. Órdenes guest: sin
+    // user_id → generateLoyaltyCoupon se omite internamente.
+    const paid = await markOrderPaid(orderId, `whatsapp-manual-<ticket>${ticketNumero ?? ''}`)
+    if (!paid.ok) {
+      return NextResponse.json(
+        { ok: false, error: `No se pudo marcar la orden como pagada: ${paid.error ?? 'error desconocido'}` },
+        { status: 422 }
+      )
+    }
   }
 
   const result = await queryOne<any>(
@@ -77,6 +117,7 @@ export async function PATCH(
     ok: true,
     ticket_id: result.id,
     status: result.status,
+    order_marked_paid: body.status === 'confirmado',
     updated_at: result.updated_at,
   })
 }

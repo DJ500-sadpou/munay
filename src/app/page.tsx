@@ -18,7 +18,7 @@ import { MunayCtaWeb } from '@/components/munay/cta-web'
 import { MunayNewsletter } from '@/components/munay/newsletter'
 import { CampaignBanner, CampaignBannerSkeleton } from '@/components/loyalty/campaign-banner'
 import { getActiveCampaign } from '@/lib/queries/flash-campaigns'
-import { getActiveCoupons } from '@/lib/queries/coupons'
+import { getActiveCouponsForUser } from '@/lib/queries/coupons'
 import { WeekBuyBanner } from '@/components/loyalty/week-buy-banner'
 import { getActiveWeekBuy, hasUserCommitted } from '@/lib/queries/week-buy'
 import { currentUser } from '@clerk/nextjs/server'
@@ -32,8 +32,11 @@ async function safeFetchActiveCampaign() {
   try { return await getActiveCampaign() } catch { return null }
 }
 
-async function safeFetchActiveCoupons() {
-  try { return await getActiveCoupons() } catch { return [] }
+// [F1.3] Pasa userId/email (de currentUser, server-side) a
+// getActiveCouponsForUser: guests NO ven cupones de primera_compra y
+// usuarios con compras pagadas previas tampoco.
+async function safeFetchActiveCoupons(userId?: string | null, email?: string | null) {
+  try { return await getActiveCouponsForUser(userId, email) } catch { return [] }
 }
 
 async function safeHasUserCommitted(campaignId: string, userId: string) {
@@ -61,9 +64,14 @@ async function WeekBuySection() {
 }
 
 async function FlashCampaignsGrid() {
+  // [F1.3] Contexto de usuario real (server-side) para filtrar primera_compra.
+  const user = await currentUser()
   const [campaign, coupons] = await Promise.all([
     safeFetchActiveCampaign(),
-    safeFetchActiveCoupons(),
+    safeFetchActiveCoupons(
+      user?.id ?? null,
+      user?.emailAddresses?.[0]?.emailAddress ?? null
+    ),
   ])
   const hasCampaign = !!campaign
 

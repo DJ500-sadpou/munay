@@ -78,10 +78,10 @@ export function MunayHero() {
           </div>
         </div>
 
-        {/* Imagen editorial — recortada de la referencia */}
+        {/* Imagen editorial */}
         <div className="relative min-h-[320px] self-stretch lg:min-h-[440px]">
           <Image
-            src="/munay/ref-hero-models.webp"
+            src="/munay/hero-editorial.png"
             alt="Dos personas con looks urbanos de moda circular Munay"
             fill
             priority

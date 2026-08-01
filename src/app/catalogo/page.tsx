@@ -4,6 +4,7 @@ import { Zap, Package, Search } from 'lucide-react'
 import { ProductCard } from '@/components/product/product-card'
 import { CatalogSearch } from '@/components/catalogo/catalog-search'
 import { CatalogFilters } from '@/components/catalogo/catalog-filters'
+import { FlashHelpDialog } from '@/components/catalogo/flash-help-dialog'
 import { DbNotConfiguredBanner } from '@/components/catalogo/db-not-configured-banner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -30,12 +31,15 @@ export default async function CatalogoPage({ searchParams }: PageProps) {
   const filters = parseFiltersFromSearchParams(sp)
 
   // ---- Detección inteligente de código flash en la búsqueda ----
-  // Si `q` parece un código flash Y existe en DB, redirigir a /flash/[code]
-  // en lugar de mostrar resultados de búsqueda.
+  // [F2.2] Si `q` parece un código flash Y existe en DB, redirigir a
+  // /catalogo?flash=CODE para FILTRAR en la misma página (en vez de
+  // redirigir a /flash/[code]): el catálogo muestra únicamente los
+  // productos desbloqueados por ese código.
   if (filters.q && looksLikeFlashCode(filters.q)) {
     const flash = await getValidFlashCode(filters.q)
     if (flash) {
-      redirect(ROUTES.flash(flash.code))
+      // [FIX Ronda 1] Usar ROUTES.catalogo (mantiene el import usado y el estilo del repo).
+      redirect(`${ROUTES.catalogo}?flash=${encodeURIComponent(flash.code)}`)
     }
     // Si parece código pero no es válido, mostramos un aviso + búsqueda normal.
   }
@@ -74,13 +78,12 @@ export default async function CatalogoPage({ searchParams }: PageProps) {
         </div>
 
         <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-start">
-          <CatalogSearch initialValue={filters.q ?? ''} />
-          <Button asChild variant="outline" className="sm:w-auto">
-            <Link href="/flash">
-              <Zap className="mr-2 h-4 w-4" aria-hidden />
-              Tengo un código flash
-            </Link>
-          </Button>
+          {/* [F2.2] La barra lee su valor inicial del param `flash` (si hay un
+              código activo, se muestra) o de `q` (búsqueda normal). */}
+          <CatalogSearch initialValue={filters.flashCode ?? filters.q ?? ''} />
+          {/* [F2.3] El botón "Tengo un código flash" ahora abre el modal
+              explicativo en lugar de redirigir a /flash. */}
+          <FlashHelpDialog />
         </div>
 
         {filters.q && looksLikeFlashCode(filters.q) && !activeFlashInfo && dbReady && (
@@ -102,6 +105,25 @@ export default async function CatalogoPage({ searchParams }: PageProps) {
             Código <strong className="font-mono">{activeFlashInfo.code}</strong> activo:
             {' '}
             Piezas exclusivas desbloqueadas.
+          </div>
+        )}
+
+        {/* [F2.2] Badge "Código Flash aplicado ⚡" — se muestra con el filtro
+            activo para que el usuario vea que está viendo SOLO esas piezas. */}
+        {activeFlashInfo && (
+          <div className="mb-4 flex items-center gap-2">
+            <Badge className="bg-munay-terracota text-white border-transparent">
+              <Zap className="mr-1 h-3 w-3" aria-hidden />
+              Código Flash aplicado ⚡
+            </Badge>
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs text-munay-ink/60"
+            >
+              <Link href="/catalogo">Quitar filtro</Link>
+            </Button>
           </div>
         )}
 

@@ -31,7 +31,14 @@ function getPool(): Pool {
 }
 
 /**
- * Cliente SQL tag-tagged para queries seguras (anti-inyección).
+ * [AUDIT FIX] Cliente SQL tag-tagged para queries seguras (anti-inyección).
+ *
+ * SINGLETON: antes cada `getSql()` creaba un cliente `neon()` NUEVO por query,
+ * lo que bajo carga concurrente (stress audit: 30 POST /api/checkout/whatsapp
+ * simultáneos) saturaba el driver HTTP de @neondatabase/serverless y reventaba
+ * con `invalid type: unit value, expected usize` (error serde/WASM) → 500s.
+ * Ahora se crea UNA sola vez y se reutiliza (patrón documentado de Neon:
+ * crear un solo cliente y compartir su connection cache).
  *
  * Uso:
  *   const sql = getSql()
@@ -39,12 +46,16 @@ function getPool(): Pool {
  *
  * Los valores interpolados se parametrizan automáticamente.
  */
+let sqlClient: ReturnType<typeof neon> | null = null
+
 export function getSql() {
+  if (sqlClient) return sqlClient
   const connectionString = process.env.DATABASE_URL
   if (!connectionString) {
     throw new Error('Falta DATABASE_URL en variables de entorno.')
   }
-  return neon(connectionString)
+  sqlClient = neon(connectionString)
+  return sqlClient
 }
 
 /**
@@ -73,7 +84,14 @@ export async function queryOne<T = any>(text: string, params?: any[]): Promise<T
 }
 
 /**
- * Ejecuta múltiples statements en una transacción.
+ * [AUDIT FIX] Transacción con tx tipada de forma explícita.
+ *
+ * Antes `fn` recibía `ReturnType<typeof getSql>` (el tipo del driver HTTP de
+ * Neon, que expone `FullQueryResults<boolean> | any[][] | Record<string,any>[]`
+ * y NO tiene `.length`/iteración → errores TS2339/TS2488 en los callers tipo
+ * `orders-neon.ts`). Ahora `tx` tiene firma propia `(strings, ...values) =>
+ * Promise<any[]>`: los callers ven filas tipadas `any[]` (con `.length`,
+ * iteración e indexación), sin perder la seguridad anti-inyección.
  *
  * Uso:
  *   await transaction(async (tx) => {
@@ -81,18 +99,24 @@ export async function queryOne<T = any>(text: string, params?: any[]): Promise<T
  *     await tx`INSERT INTO order_items ...`
  *   })
  */
+export type TransactionClient = (
+  strings: TemplateStringsArray,
+  ...values: any[]
+) => Promise<any[]>
+
 export async function transaction<T = any>(
-  fn: (tx: ReturnType<typeof getSql>) => Promise<T>
+  fn: (tx: TransactionClient) => Promise<T>
 ): Promise<T> {
   const pool = getPool()
   const client = await pool.connect()
   try {
     await client.query('BEGIN')
-    const result = await fn((async (strings: TemplateStringsArray, ...values: any[]) => {
+    const tx: TransactionClient = async (strings, ...values) => {
       const sql = strings.reduce((acc, str, i) => acc + str + (i < values.length ? `$${i + 1}` : ''), '')
       const res = await client.query(sql, values)
       return res.rows
-    }) as any)
+    }
+    const result = await fn(tx)
     await client.query('COMMIT')
     return result
   } catch (err) {

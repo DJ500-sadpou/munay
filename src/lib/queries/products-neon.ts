@@ -97,19 +97,30 @@ export async function listProducts(filters: ProductFilters = {}): Promise<Produc
 
   const f = { ...DEFAULT_FILTERS, ...filters }
 
-  // Siempre buscar productos del admin (con filtro de condición en WHERE)
-  // P2P listings solo cuando el filtro NO es exclusivamente 'new'
-  const includeP2P = f.condition !== 'new'
+  // [F2.2] Resolver el flash code ANTES de construir las queries: si hay uno
+  // válido, FILTRAMOS por sus productos (WHERE p.id IN ...), excluimos P2P y
+  // revelamos las piezas ocultas (active=false) asociadas al código.
+  let flashInfo: FlashCodeInfo | null = null
+  if (f.flashCode) {
+    flashInfo = await getValidFlashCode(f.flashCode)
+  }
+
+  // P2P listings solo cuando NO hay flash activo y el filtro no es 'new'
+  const includeP2P = f.condition !== 'new' && !flashInfo
 
   let items: ProductListItem[] = []
   const paramIdxRef = { current: 1 }
 
   // ── 1. Productos del admin (tabla products) — siempre ──
   {
-    const where: string[] = ['p.active = true']
+    // Con flash activo se revelan también las piezas ocultas (active=false)
+    // asociadas al código; sin flash, solo las activas.
+    const where: string[] = flashInfo ? [] : ['p.active = true']
     const params: any[] = []
 
-    if (f.q) {
+    // [F2.2] Cuando hay flash activo, se ignora `q` (el código ya define el
+    // conjunto de productos; evita filtrar por "title ILIKE %CODIGO%").
+    if (f.q && !flashInfo) {
       where.push(`(p.title ILIKE $${paramIdxRef.current} OR p.description ILIKE $${paramIdxRef.current})`)
       params.push(`%${f.q}%`)
       paramIdxRef.current++
@@ -140,6 +151,12 @@ export async function listProducts(filters: ProductFilters = {}): Promise<Produc
         JOIN flash_campaigns fc ON fc.id = fcp.campaign_id
         WHERE fc.active = true AND fc.ends_at > now() AND fc.starts_at <= now()
       )`)
+    }
+    // [F2.2] Filtrado REAL: solo los productos desbloqueados por el código.
+    if (flashInfo) {
+      where.push(`p.id IN (SELECT product_id FROM flash_code_products WHERE code = $${paramIdxRef.current})`)
+      params.push(flashInfo.code)
+      paramIdxRef.current++
     }
 
     let orderBy = 'p.created_at DESC'
@@ -231,25 +248,24 @@ export async function listProducts(filters: ProductFilters = {}): Promise<Produc
   // Aplicar flash code si está presente (solo unlock — F0/BLOQUE B)
   // El descuento de un código flash proviene de precio_especial_cents
   // por producto (NULL → sin descuento, solo badge 'Desbloqueado').
-  if (f.flashCode) {
-    const flash = await getValidFlashCode(f.flashCode)
-    if (flash) {
-      const unlocked = await getUnlockedProducts(flash.code)
-      const specialByProduct = new Map(unlocked.map((u) => [u.product_id, u.precio_especial_cents]))
+  // [F2.2] Con flash activo los items YA son solo los desbloqueados
+  // (filtrado en la query); aquí solo se marca código y % por pieza.
+  if (flashInfo) {
+    const unlocked = await getUnlockedProducts(flashInfo.code)
+    const specialByProduct = new Map(unlocked.map((u) => [u.product_id, u.precio_especial_cents]))
 
-      items.forEach((it) => {
-        const special = specialByProduct.get(it.id)
-        if (specialByProduct.has(it.id)) {
-          it.flash_code = flash.code
-          if (special != null && special > 0 && special < it.price_cents) {
-            const approx = Math.round((1 - special / Math.max(1, it.price_cents)) * 100)
-            it.flash_discount_percent = Math.min(99, Math.max(0, approx))
-          } else {
-            it.flash_discount_percent = null
-          }
+    items.forEach((it) => {
+      const special = specialByProduct.get(it.id)
+      if (specialByProduct.has(it.id)) {
+        it.flash_code = flashInfo!.code
+        if (special != null && special > 0 && special < it.price_cents) {
+          const approx = Math.round((1 - special / Math.max(1, it.price_cents)) * 100)
+          it.flash_discount_percent = Math.min(99, Math.max(0, approx))
+        } else {
+          it.flash_discount_percent = null
         }
-      })
-    }
+      }
+    })
   }
 
   return items

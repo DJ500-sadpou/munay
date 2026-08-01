@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Save, AlertCircle, ArrowLeft, Unlock } from 'lucide-react'
+import { Loader2, Save, AlertCircle, ArrowLeft, Unlock, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -20,6 +20,20 @@ interface Props {
     uses_count: number
     active: boolean
   }
+}
+
+/**
+ * [F2.1] Autogenera un código sugerido SOLO alfanumérico (las regex de
+ * looksLikeFlashCode / /^[A-Z0-9]+$/ NO aceptan guiones): MUNAY + 4 A-Z0-9.
+ * Mismo patrón que F1.1 en coupon-form.tsx.
+ */
+function generateCodeSuggestion(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  let suffix = ''
+  for (let i = 0; i < 4; i++) {
+    suffix += chars[Math.floor(Math.random() * chars.length)]
+  }
+  return `MUNAY${suffix}`
 }
 
 export function FlashCodeForm({ flashCode }: Props) {
@@ -134,17 +148,31 @@ export function FlashCodeForm({ flashCode }: Props) {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="code">Código *</Label>
-              <Input
-                id="code"
-                value={code}
-                onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
-                required
-                maxLength={32}
-                minLength={4}
-                className="font-mono uppercase tracking-widest"
-                placeholder="FLASH-EC"
-                disabled={isEdit}
-              />
+              {/* [F2.1] Input + botón "Generar" en línea (autogenerar editable) */}
+              <div className="flex gap-2">
+                <Input
+                  id="code"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+                  required
+                  maxLength={32}
+                  minLength={4}
+                  className="flex-1 font-mono uppercase tracking-widest"
+                  placeholder="MUNAY25"
+                  disabled={isEdit}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isEdit}
+                  onClick={() => setCode(generateCodeSuggestion())}
+                  className="shrink-0"
+                >
+                  <Sparkles className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                  Generar
+                </Button>
+              </div>
               <p className="text-xs text-muted-foreground">
                 Solo letras mayúsculas y números. 4-32 caracteres. Se escribe en la barra de búsqueda del catálogo.
               </p>

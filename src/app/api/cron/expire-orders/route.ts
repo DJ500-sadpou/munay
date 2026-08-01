@@ -11,6 +11,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { queryOne, isDbConfigured } from '@/lib/db/neon'
 import { timingSafeEqual } from 'crypto'
+import { getSetting } from '@/lib/queries/settings'
+import { SETTINGS_DEFAULTS } from '@/lib/constants'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -44,17 +46,32 @@ export async function GET(req: NextRequest) {
     )
   }
 
-  // Usar la nueva RPC v2 que excluye órdenes con ticket (WhatsApp) hasta 72h
+  // [F3.4] Toggle real: leer settings['auto_expire_tickets_enabled'] y pasar
+  // p_process_whatsapp a la RPC. Si está desactivado, la rama whatsapp se
+  // salta (no expira tickets ni libera inventario de órdenes con ticket) —
+  // el toggle NO es cosmético porque la RPC lo recibe como parámetro.
+  const autoExpireTickets = (await getSetting(
+    'auto_expire_tickets_enabled',
+    String(SETTINGS_DEFAULTS.auto_expire_tickets_enabled)
+  )) !== 'false'
+
+  // Usar la nueva RPC v2 (firma 3 params) con el toggle explícito.
   const result = await queryOne<any>(`
-    SELECT * FROM expire_stale_orders_v2(60, 72)
-  `, [])
+    SELECT * FROM expire_stale_orders_v2(60, 72, $1)
+  `, [autoExpireTickets])
 
   const expiredCount = result?.expired_count ?? 0
-  console.log(`[cron] expired ${expiredCount} orders (standard < 60min, whatsapp < 72h)`)
+  const ticketsExpired = result?.tickets_expired ?? 0
+  console.log(
+    `[cron] expired ${expiredCount} orders, ${ticketsExpired} tickets ` +
+    `(standard < 60min, whatsapp < 72h, auto_expire_tickets=${autoExpireTickets})`
+  )
 
   return NextResponse.json({
     ok: true,
     expired_count: expiredCount,
+    tickets_expired: ticketsExpired,
+    auto_expire_tickets_enabled: autoExpireTickets,
     cutoff_standard: result?.cutoff_standard,
     cutoff_whatsapp: result?.cutoff_whatsapp,
     timestamp: new Date().toISOString(),

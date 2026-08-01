@@ -43,6 +43,11 @@ Configurados vía `gh secret set`:
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | ⚠️ Testing | Usa keys de testing por ahora |
 | `TURNSTILE_SECRET_KEY` | ⚠️ Testing | Usa keys de testing por ahora |
 | `NEXT_PUBLIC_SITE_URL` | ✅ Sí | `https://munay-audited-v01.vercel.app` |
+| `NEXT_PUBLIC_WHATSAPP_NUMBER` | ✅ Sí | WhatsApp wa.me (F3.3 #4 — se inlinea en build) |
+
+> **Nota**: `CRON_SECRET` NO va en GitHub Secrets — es runtime-only del cron en
+> Vercel (la route `/api/cron/expire-orders` lo lee en producción; el build de
+> CI nunca lo ejecuta). Configúralo solo en Vercel env vars.
 
 ### Para agregar/modificar un secret
 
@@ -74,6 +79,7 @@ Configuradas vía `vercel env add`:
 | `PAYMENT_SANDBOX` | Production | ✅ |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Production | ⚠️ Testing |
 | `TURNSTILE_SECRET_KEY` | Production | ⚠️ Testing |
+| `NEXT_PUBLIC_WHATSAPP_NUMBER` | Production | ✅ (F3.3 #4 — fallback en constants) |
 
 ### Preview Deployments (PRs)
 
@@ -139,4 +145,3 @@ Si los preview deployments muestran "Clerk no configurado":
 - [ ] Agregar `test:e2e` al pipeline (Playwright)
 - [ ] Configurar Vercel Deployment Protection (Pro plan) para que CI gatee el deploy
 - [ ] Migrar de `middleware.ts` a `proxy` (Next.js 16 deprecation)
-- [ ] Agregar `CRON_SECRET` a GitHub Secrets

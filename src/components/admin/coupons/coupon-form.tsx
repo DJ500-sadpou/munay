@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Save, AlertCircle, ArrowLeft, Ticket } from 'lucide-react'
+import { Loader2, Save, AlertCircle, ArrowLeft, Ticket, Sparkles, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import { SETTINGS_DEFAULTS } from '@/lib/constants'
 
 interface CouponFormData {
   codigo: string
@@ -27,9 +28,29 @@ interface CouponFormData {
 
 interface Props {
   coupon?: CouponFormData & { id: string }
+  /** [F1.1] Umbral configurable de advertencia para primera_compra (default 30). */
+  warningThreshold?: number
 }
 
-export function CouponForm({ coupon }: Props) {
+/**
+ * [F1.1] Autogenera un código sugerido SOLO alfanumérico (las regex de
+ * looksLikeFlashCode NO aceptan guiones): MUNAY + 4 caracteres A-Z0-9.
+ */
+function generateCodeSuggestion(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  let suffix = ''
+  for (let i = 0; i < 4; i++) {
+    suffix += chars[Math.floor(Math.random() * chars.length)]
+  }
+  return `MUNAY${suffix}`
+}
+
+// [FIX Ronda 1] Default desde SETTINGS_DEFAULTS (constants.ts), no literal
+// hardcodeado — una sola fuente de verdad para el fallback.
+export function CouponForm({
+  coupon,
+  warningThreshold = SETTINGS_DEFAULTS.coupon_first_purchase_warning_threshold,
+}: Props) {
   const router = useRouter()
   const isEdit = !!coupon
 
@@ -152,17 +173,31 @@ export function CouponForm({ coupon }: Props) {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="codigo">Código *</Label>
-              <Input
-                id="codigo"
-                value={codigo}
-                onChange={(e) => setCodigo(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
-                required
-                maxLength={32}
-                minLength={4}
-                className="font-mono uppercase tracking-widest"
-                placeholder="MUNAY25"
-                disabled={isEdit}
-              />
+              {/* [FIX Ronda 1] Input + botón "Generar" en línea (junto al campo) */}
+              <div className="flex gap-2">
+                <Input
+                  id="codigo"
+                  value={codigo}
+                  onChange={(e) => setCodigo(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+                  required
+                  maxLength={32}
+                  minLength={4}
+                  className="flex-1 font-mono uppercase tracking-widest"
+                  placeholder="MUNAY25"
+                  disabled={isEdit}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isEdit}
+                  onClick={() => setCodigo(generateCodeSuggestion())}
+                  className="shrink-0"
+                >
+                  <Sparkles className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                  Generar
+                </Button>
+              </div>
               <p className="text-xs text-muted-foreground">
                 Solo letras mayúsculas y números. 4-32 caracteres.
               </p>
@@ -184,6 +219,22 @@ export function CouponForm({ coupon }: Props) {
                   ? 'Solo aplica si el usuario no tiene órdenes pagadas previas.'
                   : 'Aplica a cualquier compra que cumpla el monto mínimo.'}
               </p>
+
+              {/* [F1.1] Advertencia NO bloqueante para primera_compra con % alto
+                  [FIX Ronda 1] role="status" + aria-live para screen readers. */}
+              {tipo === 'primera_compra' && Number(porcentaje) > warningThreshold && (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="flex items-start gap-2 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+                >
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" aria-hidden />
+                  <span>
+                    Un descuento alto en cupones de primera compra puede generar pérdida si no
+                    está calibrado contra tu margen. Verifica antes de activar.
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">

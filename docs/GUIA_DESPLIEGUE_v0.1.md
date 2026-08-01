@@ -275,7 +275,14 @@ KUSHKI_PUBLIC_KEY=...  (opcional para demo)
 KUSHKI_PRIVATE_KEY=...  (opcional para demo)
 KUSHKI_WEBHOOK_SECRET=...  (obligatorio en prod)
 CRON_SECRET=  (genera con: openssl rand -hex 32)
+NEXT_PUBLIC_WHATSAPP_NUMBER=593959756845  (F3.3 #4 — dígitos sin '+'; fallback en constants.ts)
 ```
+
+> **⚠️ F4 (módulo cupones/flash/tickets)**: además de las vars de arriba,
+> la migración `supabase/migrations/00023_f0_tickets_settings.sql` debe estar
+> aplicada en Neon ANTES del deploy (tabla `settings`, columnas de ticket y
+> RPC `expire_stale_orders_v2` con `p_process_whatsapp`). Ver sección
+> "F4 — Cupones, Flash y Ticket WhatsApp" más abajo.
 
 ### F.4. Actualizar Clerk con URL de producción
 
@@ -366,6 +373,60 @@ El checkout actual usa `card_token = 'demo-token-...'`. Para producción real co
 
 ---
 
+## F4 — Cupones, Flash y Ticket WhatsApp (deploy + QA)
+
+> Requiere: migración 00023 aplicada en Neon (✅ verificado en este proyecto),
+> `NEXT_PUBLIC_WHATSAPP_NUMBER` en Vercel env vars y `CRON_SECRET` (ya
+> requerido por el cron). Corresponde a las fases F1–F3 de
+> `PLAN_MODULOS_CUPONES_FLASH_TICKETS.md`.
+
+### F4.1 — Verificar la migración en Neon (SQL Editor)
+
+```sql
+-- settings creada con los 2 valores por defecto
+select key, value from public.settings order by key;
+-- Esperado: auto_expire_tickets_enabled=true, coupon_first_purchase_warning_threshold=30
+
+-- Columnas de ticket nuevas (00023)
+select column_name from information_schema.columns
+where table_schema='public' and table_name='tickets'
+  and column_name in ('ticket_numero','clerk_user_id','precio_total_cents','descuento_aplicado','fecha_expiracion');
+-- Esperado: 5 filas
+
+-- Firma de la RPC (debe existir SOLO la de 3 parámetros)
+select p.proname, pg_get_function_identity_arguments(p.oid) as signature
+from pg_proc p join pg_namespace n on p.pronamespace = n.oid
+where n.nspname = 'public' and p.proname = 'expire_stale_orders_v2';
+-- Esperado: expire_stale_orders_v2(integer, integer, boolean)
+
+-- Índice único parcial de tickets activos
+select indexname from pg_indexes where schemaname='public' and indexname='tickets_numero_active_idx';
+```
+
+### F4.2 — QA del flujo completo (post-deploy)
+
+1. **Checkout con ticket**: llenar checkout → "Enviar pedido por WhatsApp" →
+   debe crear la orden + ticket `pendiente` + redirigir a
+   `wa.me/593...` con `*Ticket #1234*` en el mensaje.
+2. **Panel admin `/admin/tickets`**: el ticket aparece con Número (#1234),
+   Total, Expiración (+72h) y estado `Pendiente`.
+3. **Confirmar**: botón "Confirmar" marca el ticket `Confirmado` Y la orden
+   `paid` (revisar en `/admin/orders`).
+4. **Cron**: con `auto_expire_tickets_enabled=true`, un ticket abandonado >72h
+   pasa a `Expirado` y la orden a `cancelled` liberando stock.
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" https://tu-dominio.vercel.app/api/cron/expire-orders
+# Esperado: {"ok":true,"expired_count":N,"tickets_expired":M,...}
+```
+5. **Toggle**: apagar "Expiración automática de tickets" en el panel → el cron
+   devuelve `auto_expire_tickets_enabled:false` y los tickets NO expiran.
+6. **Turnstile**: en producción con site+secret configurados el challenge
+   aparece en checkout y se valida de verdad (sin keys → modo dev permisivo).
+7. **No-acumulación flash**: con un ítem flash + cupón, la success page muestra
+   el mensaje "mayor a tu cupón… los descuentos no son acumulables".
+
+---
+
 ## TROUBLESHOOTING
 
 ### "La app crashea con error de ClerkProvider"
@@ -432,14 +493,22 @@ Reemplaza `user_xxx` con tu Clerk user ID real.
 
 ### Infraestructura
 - [ ] Proyecto Neon creado, esquema + parche de roles aplicados.
+- [ ] **Migración 00023 aplicada** (settings + tickets + RPC con toggle).
 - [ ] `DATABASE_URL` en `.env.local` y Vercel.
 - [ ] Proyecto Clerk creado, keys en env.
 - [ ] `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` + `CLERK_SECRET_KEY` (obligatorias).
 - [ ] `<ClerkProvider>` en layout, `middleware.ts` creado.
 - [ ] Brevo API key + FROM_EMAIL verificado.
 - [ ] Cloudflare Turnstile site/secret keys.
+- [ ] `NEXT_PUBLIC_WHATSAPP_NUMBER` en Vercel (fallback en constants).
 - [ ] Vercel project importado, TODAS las env vars configuradas.
 - [ ] `CRON_SECRET` generado y configurado.
+
+### Módulo F4 (cupones/flash/ticket WhatsApp)
+- [ ] F4.1: verificación SQL en Neon (settings, columnas, RPC, índice).
+- [ ] F4.2: QA checkout → ticket # → WhatsApp → admin confirmar → cron.
+- [ ] Toggle `auto_expire_tickets_enabled` funcional en `/admin/tickets`.
+- [ ] Turnstile validando en producción (no testing keys).
 
 ### Pasarela
 - [ ] Modo demo funciona (sin credenciales Kushki).

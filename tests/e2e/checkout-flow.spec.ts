@@ -18,8 +18,12 @@ test.describe('Flujo de compra completo (modo demo)', () => {
   test('home carga correctamente', async ({ page }) => {
     await page.goto('/')
     await expect(page).toHaveTitle(/Munay/i)
-    await expect(page.getByRole('heading', { name: /Munay/i })).toBeVisible()
-    await expect(page.getByText(/Ibarra, Ecuador/i)).toBeVisible()
+    // La home actual tiene H1 "Moda circular, nueva y usada." (rediseño v0.1)
+    await expect(page.getByRole('heading', { name: /Moda circular/i })).toBeVisible()
+    // "Ibarra, Ecuador" solo está en <title>/meta (no como texto visible), así que
+    // verificamos contenido visible real: el banner de construcción y el CTA del hero.
+    await expect(page.getByText(/está en construcción/i)).toBeVisible()
+    await expect(page.getByRole('link', { name: /Comprar ahora/i })).toBeVisible()
   })
 
   test('catálogo carga con productos', async ({ page }) => {
@@ -78,7 +82,8 @@ test.describe('SEO y metadata', () => {
     const res = await page.goto('/robots.txt')
     expect(res?.status()).toBe(200)
     const content = await page.content()
-    expect(content).toContain('User-agent')
+    // Next.js genera 'User-Agent:' (con mayúscula) — comparación case-insensitive
+    expect(content.toLowerCase()).toContain('user-agent')
     expect(content).toContain('Sitemap:')
   })
 })

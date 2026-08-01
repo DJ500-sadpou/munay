@@ -72,6 +72,15 @@ export interface CreateOrderResult {
     | 'loyalty_invalid'
     | 'coupon_invalid'
     | 'internal_error'
+  // [F2.4] Contrato de no-acumulación flash vs cupón/FID-.
+  /** Ganador del descuento aplicado: 'flash' | 'coupon' | 'loyalty' | 'none'. */
+  promo_applied?: 'flash' | 'coupon' | 'loyalty' | 'none'
+  /** % de ahorro derivado de precio_especial_cents (para el mensaje). */
+  flash_discount_percent?: number | null
+  /** % del cupón evaluado (competidor), para el mensaje de no-acumulación. */
+  coupon_discount_percent?: number | null
+  /** % del FID- evaluado (competidor), para el mensaje de no-acumulación. */
+  loyalty_discount_percent?: number | null
 }
 
 /**
@@ -113,6 +122,10 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
   // 2a. Validación de shipping_cents (Fix auditoría: cota máxima)
   if (input.shipping_cents != null && input.shipping_cents < 0) {
     return { ok: false, error: 'Costo de envío inválido (negativo)', error_code: 'invalid_input' }
+  }
+  // [AUDIT] shipping_cents debe ser entero (un float generaría totales raros).
+  if (input.shipping_cents != null && !Number.isInteger(input.shipping_cents)) {
+    return { ok: false, error: 'Costo de envío inválido (debe ser entero)', error_code: 'invalid_input' }
   }
   if (input.shipping_cents != null && input.shipping_cents > LIMITS.maxShippingCents) {
     return {
@@ -159,8 +172,17 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
   //    precio_especial_cents (flash_code_products), se usa ESE precio.
   //  - Si no, se usa products.price_cents.
   //  - NUNCA se confía en un precio enviado por el cliente.
-  const orderItems: Array<{ product_id: string; qty: number; unit_price_cents: number }> = []
+  // [F2.4] Cada ítem guarda su precio FLASH (unit_price_cents, usado si gana
+  // flash) y su precio REGULAR (regular_unit_price_cents, usado si gana un
+  // cupón/FID- y los ítems flash vuelven a precio regular para no acumular).
+  const orderItems: Array<{
+    product_id: string
+    qty: number
+    unit_price_cents: number
+    regular_unit_price_cents: number
+  }> = []
   let subtotalCents = 0
+  let regularSubtotalCents = 0
   const currency = 'USD'
   // Caché por código para no repetir validaciones (max 1 query por código).
   const flashCodeCache = new Map<string, string | null>() // code -> código válido o null
@@ -192,7 +214,10 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     }
 
     // Resolver precio especial por flash code (autoritativo, desde la BD).
-    let unitPriceCents = Number(product.price_cents)
+    // [F2.4] Se conserva el precio regular para poder revertir los ítems
+    // flash a precio regular si gana un cupón/FID- (no acumular descuentos).
+    const regularPriceCents = Number(product.price_cents)
+    let unitPriceCents = regularPriceCents
     if (item.flash_code) {
       const validCode = await resolveFlashCode(item.flash_code)
       if (validCode) {
@@ -207,9 +232,21 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
       product_id: item.product_id,
       qty: item.qty,
       unit_price_cents: unitPriceCents,
+      regular_unit_price_cents: regularPriceCents,
     })
     subtotalCents += unitPriceCents * item.qty
+    regularSubtotalCents += regularPriceCents * item.qty
   }
+
+  // [F2.4] Ahorro si el flash ganara por sí solo (regular − flash) y % derivado
+  // para el mensaje de no-acumulación (promo_applied='flash').
+  // [FIX Ronda 1] Sin ahorro flash → null (no 0): el contrato dice que el % es
+  // derivado de precio_especial_cents; si no hay, es null.
+  const flashSavingsCents = Math.max(0, regularSubtotalCents - subtotalCents)
+  const flashDiscountPercent =
+    flashSavingsCents > 0 && regularSubtotalCents > 0
+      ? Math.round((flashSavingsCents / regularSubtotalCents) * 100)
+      : null
 
   // 5. Ejecutar transacción atómica
   try {
@@ -262,6 +299,9 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
       let couponDiscountCents = 0
       let loyaltyWinnerCode: string | null = null
       let couponWinnerId: string | null = null
+      // [F2.4] % de los competidores evaluados (para el mensaje en success).
+      let loyaltyDiscountPercent: number | null = null
+      let couponDiscountPercent: number | null = null
 
       // 5c-bis. Evaluar cupón de fidelidad (FID-) — solo lectura.
       // [FIX Ronda 3] Si llega un loyalty_code FID- sin sesión (expiró entre la
@@ -280,7 +320,10 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
         if (lcRows.length === 0) {
           throw { type: 'loyalty_invalid', message: 'Cupón inválido, ya usado o expirado' }
         }
-        loyaltyDiscountCents = Math.round(subtotalCents * (Number(lcRows[0].discount_percent) / 100))
+        // [F2.4] El % del FID- se evalúa sobre el subtotal REGULAR: si gana,
+        // los ítems flash vuelven a precio regular (no acumulan).
+        loyaltyDiscountPercent = Number(lcRows[0].discount_percent)
+        loyaltyDiscountCents = Math.round(regularSubtotalCents * (loyaltyDiscountPercent / 100))
         loyaltyWinnerCode = input.loyalty_code
       }
 
@@ -296,7 +339,9 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
             WHERE lower(codigo) = ${normalized.toLowerCase()} AND activo = true
               AND fecha_inicio <= now() AND fecha_fin > now()
               AND (usos_maximos IS NULL OR usos_actuales < usos_maximos)
-              AND monto_minimo_compra <= ${subtotalCents}
+              -- [F2.4] Monto mínimo sobre el subtotal REGULAR: si el cupón
+              -- gana, los ítems flash vuelven a precio regular (base real).
+              AND monto_minimo_compra <= ${regularSubtotalCents}
             LIMIT 1
           `
         } catch (couponErr: any) {
@@ -315,14 +360,21 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
         // [FIX #11] tipo primera_compra: solo aplica si no hay órdenes pagadas
         // previas para ese usuario O ese email (un guest con email ya usado
         // en una compra previa no debe poder usar el cupón — Ronda 1).
+        // [F1 Ronda 2 — CRÍTICO] Un guest (sin user_id) NO puede aplicar un
+        // cupón de primera_compra aunque su email sea nuevo: el prompt exige
+        // "no autenticados no ven NI pueden aplicar". user_id siempre viene
+        // de auth() en servidor, nunca del body del cliente.
         if (cp.tipo === 'primera_compra') {
+          if (!input.user_id) {
+            throw { type: 'coupon_invalid', message: 'Inicia sesión para usar este cupón' }
+          }
           // [FIX Ronda 2] El enum order_status es ('pending','paid','cancelled',
           // 'refunded') — no existe 'completed'. Solo 'paid' cuenta como compra
           // previa para el cupón de primera compra.
           const prior = await tx`
             SELECT 1 FROM orders
             WHERE status = 'paid'
-              AND ((user_id IS NOT NULL AND user_id = ${input.user_id ?? null})
+              AND ((user_id IS NOT NULL AND user_id = ${input.user_id})
                 OR (lower(customer_email) = ${(input.customer_email ?? '').toLowerCase()}))
             LIMIT 1
           `
@@ -330,14 +382,29 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
             throw { type: 'coupon_invalid', message: 'Este cupón aplica solo a tu primera compra' }
           }
         }
-        couponDiscountCents = Math.round(subtotalCents * (Number(cp.porcentaje_descuento) / 100))
+        // [F2.4] El % del cupón se evalúa sobre el subtotal REGULAR: si gana,
+        // los ítems flash vuelven a precio regular (no acumulan).
+        couponDiscountPercent = Number(cp.porcentaje_descuento)
+        couponDiscountCents = Math.round(regularSubtotalCents * (couponDiscountPercent / 100))
         couponWinnerId = cp.id
       }
 
-      // 5c-quater. [FIX Ronda 2] Consumir SOLO el ganador (UPDATE atómico
-      // con guardas; dentro de la tx → si la orden falla, el ROLLBACK
-      // revierte el consumo).
-      const couponWins = couponDiscountCents >= loyaltyDiscountCents
+      // 5c-quater. [F2.4] Ganador con 3 competidores: flash vs cupón vs FID-.
+      // - flash gana si su ahorro es >= a ambos cupones (empate → flash: NO se
+      //   gasta el cupón del usuario).
+      // - Si gana cupón/FID-, los ítems flash VUELVEN a precio regular y el
+      //   descuento % se calcula sobre regularSubtotalCents (no acumular).
+      // - Consumo condicional: SOLO el ganador; si gana flash NO se consume nada.
+      // [FIX Ronda 1] couponWins exige couponDiscountCents > 0: sin cupón, ni
+      // FID-, ni flash (todo 0) la condición `0 >= 0` daba promo_applied='coupon'
+      // en una orden 100% normal. El contrato exige 'none' si no se aplicó nada.
+      const flashWins =
+        flashSavingsCents > 0 &&
+        flashSavingsCents >= loyaltyDiscountCents &&
+        flashSavingsCents >= couponDiscountCents
+      const couponWins =
+        !flashWins && couponDiscountCents > 0 && couponDiscountCents >= loyaltyDiscountCents
+      const loyaltyWins = !flashWins && !couponWins && loyaltyDiscountCents > 0
       if (couponWins && couponWinnerId && input.coupon_code) {
         const normalized = normalizeCouponCode(input.coupon_code)
         let updated: any[] = []
@@ -348,7 +415,8 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
             WHERE lower(codigo) = ${normalized.toLowerCase()} AND activo = true
               AND fecha_inicio <= now() AND fecha_fin > now()
               AND (usos_maximos IS NULL OR usos_actuales < usos_maximos)
-              AND monto_minimo_compra <= ${subtotalCents}
+              -- [F2.4] Guarda consistente con la evaluación (subtotal regular).
+              AND monto_minimo_compra <= ${regularSubtotalCents}
             RETURNING id
           `
           if (updated.length > 0) {
@@ -374,7 +442,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
         if (updated.length === 0) {
           throw { type: 'coupon_invalid', message: 'Cupón agotado o no disponible' }
         }
-      } else if (loyaltyWinnerCode && loyaltyDiscountCents > 0) {
+      } else if (loyaltyWins && loyaltyWinnerCode && loyaltyDiscountCents > 0) {
         const updated = await tx`
           UPDATE loyalty_coupons SET used_at = now()
           WHERE code = ${loyaltyWinnerCode} AND user_id = ${input.user_id}
@@ -386,17 +454,30 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
         }
       }
 
-      // [FIX #17] NO-acumulación con 3 fuentes: solo el MAYOR de
-      // (descuento loyalty, descuento cupón) se aplica. Nunca se suman.
-      // El ahorro por precio flash ya no llega aquí (F1): los códigos flash
-      // no aplican descuento en checkout. Los puntos (canje del usuario)
-      // se suman aparte, topeado al subtotal.
-      const promoDiscountCents = Math.max(loyaltyDiscountCents, couponDiscountCents)
-      discountCents = Math.min(promoDiscountCents + pointsDiscountCents, subtotalCents)
+      // [F2.4] NO-acumulación flash vs cupón/FID- (3 fuentes): solo el MAYOR
+      // de (flashSavings, loyalty, coupon) se aplica. Nunca se suman.
+      // - flash gana: el precio especial ya está en el subtotal; el descuento
+      //   mostrado es solo puntos (el ahorro flash va embebido en el subtotal).
+      // - cupón/FID- gana: los ítems flash vuelven a precio regular (base =
+      //   regularSubtotalCents) y el descuento % se aplica sobre esa base.
+      const promo_applied: 'flash' | 'coupon' | 'loyalty' | 'none' =
+        flashWins ? 'flash'
+        : couponWins ? 'coupon'
+        : loyaltyWins ? 'loyalty'
+        : 'none'
+      const promoDiscountCents =
+        promo_applied === 'coupon' ? couponDiscountCents
+        : promo_applied === 'loyalty' ? loyaltyDiscountCents
+        : 0
+      const baseSubtotalCents =
+        promo_applied === 'coupon' || promo_applied === 'loyalty'
+          ? regularSubtotalCents
+          : subtotalCents
+      discountCents = Math.min(promoDiscountCents + pointsDiscountCents, baseSubtotalCents)
       // Fix FLOW3-009: incluir shipping_cents en el total.
       // En la DB shipping_cents default 0, pero respetamos el valor enviado.
       const shippingCents = input.shipping_cents ?? 0
-      const totalCents = subtotalCents - discountCents + shippingCents
+      const totalCents = baseSubtotalCents - discountCents + shippingCents
 
       // 5d. INSERT orders (con order_id generado en TS)
       await tx`
@@ -406,7 +487,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
           shipping_name, shipping_address, shipping_city, shipping_province, shipping_phone
         ) VALUES (
           ${orderId}, ${input.user_id ?? null}, ${input.customer_email}, 'pending',
-          ${subtotalCents}, ${discountCents}, ${shippingCents}, ${pointsRedeemed}, ${totalCents},
+          ${baseSubtotalCents}, ${discountCents}, ${shippingCents}, ${pointsRedeemed}, ${totalCents},
           ${input.shipping_name ?? null}, ${input.shipping_address ?? null},
           ${input.shipping_city ?? null}, ${input.shipping_province ?? null},
           ${input.shipping_phone ?? null}
@@ -414,10 +495,16 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
       `
 
       // 5e. INSERT order_items (batch)
+      // [F2.4] Si ganó cupón/FID-, los ítems flash se registran a su precio
+      // REGULAR (el cliente paga precio regular menos el descuento ganador).
+      const useRegularPrices = promo_applied === 'coupon' || promo_applied === 'loyalty'
       for (const item of orderItems) {
+        const unitPriceCents = useRegularPrices
+          ? item.regular_unit_price_cents
+          : item.unit_price_cents
         await tx`
           INSERT INTO order_items (order_id, product_id, qty, unit_price_cents)
-          VALUES (${orderId}, ${item.product_id}, ${item.qty}, ${item.unit_price_cents})
+          VALUES (${orderId}, ${item.product_id}, ${item.qty}, ${unitPriceCents})
         `
       }
 
@@ -435,11 +522,15 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
 
       return {
         orderId,
-        subtotalCents,
+        subtotalCents: baseSubtotalCents,
         discountCents,
         shippingCents,
         pointsRedeemed,
         totalCents,
+        promo_applied,
+        flashDiscountPercent,
+        couponDiscountPercent,
+        loyaltyDiscountPercent,
       }
     })
 
@@ -452,6 +543,11 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
       points_redeemed: result.pointsRedeemed,
       total_cents: result.totalCents,
       currency,
+      // [F2.4] Contrato de no-acumulación para la UI (success page).
+      promo_applied: result.promo_applied,
+      flash_discount_percent: result.flashDiscountPercent,
+      coupon_discount_percent: result.couponDiscountPercent,
+      loyalty_discount_percent: result.loyaltyDiscountPercent,
     }
   } catch (err: any) {
     // Si falla por flash_invalid o points_invalid, el rollback libera el flash code
