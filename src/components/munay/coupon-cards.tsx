@@ -120,7 +120,8 @@ export function MunayCouponCards({ coupons }: Props) {
     <div className="flex h-full flex-col rounded-2xl border border-black/5 bg-white p-6 shadow-sm sm:p-7">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 text-lg font-extrabold uppercase tracking-wide text-munay-ink">
-          Cupones y ofertas
+          {/* [P2a] "Cupones y ofertas" → "Cupones" (vista resumida de la landing) */}
+          Cupones
           {hasCoupons && (
             <Badge className="rounded-full bg-munay-terracota-quemado px-2 text-[10px] font-bold text-white">
               <span
@@ -131,11 +132,12 @@ export function MunayCouponCards({ coupons }: Props) {
             </Badge>
           )}
         </h2>
+        {/* [P2a] El CTA lleva a la página dedicada /cupones ("Mis cupones") */}
         <Link
-          href={ROUTES.checkout}
+          href={ROUTES.cupones}
           className="flex items-center gap-1 text-xs font-semibold text-munay-terracota transition-colors hover:text-munay-terracota-quemado"
         >
-          Aplicar en el checkout
+          Ver mis cupones
           <ArrowRight className="h-3.5 w-3.5" aria-hidden />
         </Link>
       </div>

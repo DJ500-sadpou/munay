@@ -12,7 +12,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
-import { validateCoupon, normalizeCouponCode } from '@/lib/queries/coupons'
+import { validateCoupon, normalizeCouponCode, toPublicCoupon } from '@/lib/queries/coupons'
 
 export const runtime = 'nodejs'
 
@@ -57,6 +57,9 @@ export async function POST(req: NextRequest) {
   const codigo = typeof body.codigo === 'string' ? body.codigo : ''
   const subtotalCents = Number(body.subtotal_cents ?? 0)
   const customerEmail = typeof body.customer_email === 'string' ? body.customer_email : ''
+  // [P2b] /cupones usa ignorar_minimo=true al AGREGAR un cupón a "Mis
+  // cupones" (el monto mínimo se revalida al aplicar en checkout).
+  const ignorarMinimo = body.ignorar_minimo === true
 
   if (!codigo || codigo.length < 4 || codigo.length > 32) {
     return NextResponse.json({ ok: false, error: 'Código inválido' }, { status: 400 })
@@ -68,7 +71,13 @@ export async function POST(req: NextRequest) {
   // user_id opcional (para validar primera_compra)
   const { userId } = await auth().catch(() => ({ userId: null }))
 
-  const result = await validateCoupon(normalizeCouponCode(codigo), subtotalCents, userId, customerEmail)
+  const result = await validateCoupon(
+    normalizeCouponCode(codigo),
+    subtotalCents,
+    userId,
+    customerEmail,
+    { ignorarMinimo }
+  )
 
   if (!result.ok) {
     const status =
@@ -86,5 +95,10 @@ export async function POST(req: NextRequest) {
     discount_percent: result.coupon!.porcentaje_descuento,
     discount_cents: result.discount_cents,
     tipo: result.coupon!.tipo,
+    // [P2b] Cupón para la página /cupones (vigencia, monto mínimo, usos).
+    // [FIX Ronda 2] toPublicCoupon: excluye order_id (puede ser la orden de
+    // otro usuario) y campos internos. Backward-compatible: el checkout solo
+    // usa los campos de arriba.
+    coupon: toPublicCoupon(result.coupon!),
   })
 }

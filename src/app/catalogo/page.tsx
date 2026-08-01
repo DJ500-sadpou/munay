@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { Zap, Package, Search } from 'lucide-react'
+import { Zap, Package, Search, AlertTriangle } from 'lucide-react'
 import { ProductCard } from '@/components/product/product-card'
 import { CatalogSearch } from '@/components/catalogo/catalog-search'
 import { CatalogFilters } from '@/components/catalogo/catalog-filters'
@@ -9,6 +9,8 @@ import { DbNotConfiguredBanner } from '@/components/catalogo/db-not-configured-b
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
+  type ProductListItem,
+  type FlashCodeInfo,
   listProducts,
   parseFiltersFromSearchParams,
   getValidFlashCode,
@@ -16,6 +18,7 @@ import {
 } from '@/lib/queries/products'
 import { ROUTES } from '@/lib/constants'
 import { isDbConfigured } from '@/lib/db/neon'
+import { formatDate } from '@/lib/format'
 
 export const metadata = {
   title: 'Catálogo',
@@ -30,7 +33,21 @@ export default async function CatalogoPage({ searchParams }: PageProps) {
   const sp = await searchParams
   const filters = parseFiltersFromSearchParams(sp)
 
-  // ---- Detección inteligente de código flash en la búsqueda ----
+  // [P0a] Estado de error de búsqueda: cualquier excepción de Neon se captura
+  // AQUÍ (nunca se expone un stack trace al usuario) y se muestra un mensaje
+  // amigable + reintentar, en vez del error genérico de Next.js.
+  let searchError = false
+  // [FIX Ronda 1] Tipo directo (ProductListItem ya se re-exporta desde
+  // products.ts) en vez de Awaited<ReturnType<typeof listProducts>>.
+  let products: ProductListItem[] = []
+  // [P1] Tipo completo FlashCodeInfo: el banner muestra vigencia (ends_at)
+  // y usos restantes (remaining_uses) además del código.
+  let activeFlashInfo: FlashCodeInfo | null = null
+
+  // [P0a] Detección de código flash FUERA del try/catch: redirect() lanza
+  // NEXT_REDIRECT (un error especial que Next.js maneja). Si se capturara
+  // aquí, la redirección de códigos flash se rompería. getValidFlashCode ya
+  // no lanza (try/catch interno → null), así que este bloque es seguro.
   // [F2.2] Si `q` parece un código flash Y existe en DB, redirigir a
   // /catalogo?flash=CODE para FILTRAR en la misma página (en vez de
   // redirigir a /flash/[code]): el catálogo muestra únicamente los
@@ -44,21 +61,20 @@ export default async function CatalogoPage({ searchParams }: PageProps) {
     // Si parece código pero no es válido, mostramos un aviso + búsqueda normal.
   }
 
-  const products = await listProducts(filters)
-  const dbReady = isDbConfigured()
+  try {
+    products = await listProducts(filters)
 
-  // Verificar si hay un flash code activo en los filtros (vía ?flash=)
-  // F0/BLOQUE B: los códigos flash son SOLO 'unlock' (desbloqueo de piezas).
-  let activeFlashInfo: { code: string; type: string } | null = null
-  if (filters.flashCode) {
-    const fc = await getValidFlashCode(filters.flashCode)
-    if (fc) {
-      activeFlashInfo = {
-        code: fc.code,
-        type: fc.type,
-      }
+    // Verificar si hay un flash code activo en los filtros (vía ?flash=)
+    // F0/BLOQUE B: los códigos flash son SOLO 'unlock' (desbloqueo de piezas).
+    if (filters.flashCode) {
+      activeFlashInfo = await getValidFlashCode(filters.flashCode)
     }
+  } catch (err) {
+    console.error('[catalogo] error de búsqueda:', err)
+    searchError = true
   }
+
+  const dbReady = isDbConfigured()
 
   // Agrupar por condición: nuevos primero, usados después
   // Mystery Box (condition='new') se agrupa como nuevo automáticamente
@@ -86,7 +102,7 @@ export default async function CatalogoPage({ searchParams }: PageProps) {
           <FlashHelpDialog />
         </div>
 
-        {filters.q && looksLikeFlashCode(filters.q) && !activeFlashInfo && dbReady && (
+        {!searchError && filters.q && looksLikeFlashCode(filters.q) && !activeFlashInfo && dbReady && (
           <div className="mb-6 rounded-lg border border-munay-terracota/20 bg-munay-terracota/5 px-4 py-3 text-sm text-munay-ink">
             <strong>{filters.q.toUpperCase()}</strong> no es un código flash válido.
             Mostrando resultados de búsqueda normales.
@@ -99,12 +115,40 @@ export default async function CatalogoPage({ searchParams }: PageProps) {
           </div>
         )}
 
+        {/* [P0a] Error state — nunca el error genérico de Next.js */}
+        {searchError && (
+          <div className="mb-6 flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-black/10 py-16 text-center">
+            <AlertTriangle className="h-10 w-10 text-munay-ink/30" aria-hidden />
+            <p className="font-medium text-munay-ink">No pudimos realizar la búsqueda.</p>
+            <p className="text-sm text-munay-ink/60">Inténtalo nuevamente.</p>
+            <Button asChild variant="outline" size="sm">
+              <Link href={`${ROUTES.catalogo}${filters.q ? `?q=${encodeURIComponent(filters.q)}` : ''}`}>
+                Reintentar
+              </Link>
+            </Button>
+          </div>
+        )}
+
         {activeFlashInfo && (
           <div className="mb-6 rounded-lg border border-munay-terracota/15 bg-munay-terracota/5 px-4 py-3 text-sm text-munay-ink">
-            <Zap className="mr-1 inline h-4 w-4 text-munay-terracota" aria-hidden />
-            Código <strong className="font-mono">{activeFlashInfo.code}</strong> activo:
-            {' '}
-            Piezas exclusivas desbloqueadas.
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <span>
+                <Zap className="mr-1 inline h-4 w-4 text-munay-terracota" aria-hidden />
+                Código <strong className="font-mono">{activeFlashInfo.code}</strong> activo:
+                {' '}
+                piezas exclusivas desbloqueadas.
+              </span>
+              {/* [P1] Vigencia del código flash (vence fecha/hora) */}
+              <span className="text-xs text-munay-ink/60">
+                Vence el {formatDate(activeFlashInfo.ends_at)}
+              </span>
+              {/* [P1] Usos restantes (null → ilimitado) */}
+              {activeFlashInfo.remaining_uses !== null && (
+                <span className="text-xs text-munay-ink/60">
+                  Usos restantes: {activeFlashInfo.remaining_uses}
+                </span>
+              )}
+            </div>
           </div>
         )}
 
@@ -135,7 +179,7 @@ export default async function CatalogoPage({ searchParams }: PageProps) {
           />
 
           <div className="space-y-8">
-            {products.length > 0 ? (<>
+            {searchError ? null : products.length > 0 ? (<>
               {newProducts.length > 0 && (
                 <section>
                   <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-munay-ink/40">
@@ -195,11 +239,14 @@ export default async function CatalogoPage({ searchParams }: PageProps) {
                 {filters.q ? (
                   <>
                     <Search className="h-10 w-10 text-munay-ink/30" aria-hidden />
-                    <p className="text-munay-ink/60">
-                      No encontramos piezas para <strong>"{filters.q}"</strong>.
+                    <p className="font-display text-lg font-semibold text-munay-ink">
+                      No encontramos resultados
+                    </p>
+                    <p className="max-w-sm text-sm text-munay-ink/60">
+                      Prueba con otra prenda, marca o categoría.
                     </p>
                     <Button asChild variant="outline" size="sm">
-                      <Link href="/catalogo">Ver todo el catálogo</Link>
+                      <Link href="/catalogo">Limpiar búsqueda</Link>
                     </Button>
                   </>
                 ) : (

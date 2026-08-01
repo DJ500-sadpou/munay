@@ -106,7 +106,15 @@ export function FlashCodeForm({ flashCode }: Props) {
         setLoading(false)
         return
       }
-      router.push('/admin/flash-codes')
+      // [P1] Tras CREAR, ir directo a la página de edición del código recién
+      // creado para asociar los productos / mini-colección que desbloquea
+      // (el gestor de productos vive en /admin/flash-codes/[code]). Antes
+      // volvía al listado y el admin no encontraba cómo asociar productos.
+      if (isEdit) {
+        router.push('/admin/flash-codes')
+      } else {
+        router.push(`/admin/flash-codes/${cleanCode}`)
+      }
       router.refresh()
     } catch (err: any) {
       setError(err?.message ?? 'Error de conexión.')
@@ -141,7 +149,8 @@ export function FlashCodeForm({ flashCode }: Props) {
             Configuración
           </CardTitle>
           <CardDescription>
-            Los campos marcados con * son obligatorios.
+            Los campos marcados con * son obligatorios. Tras crear el código
+            podrás asociar los productos (o mini-colección) que desbloquea.
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -78,7 +78,7 @@ async function FlashCampaignsGrid() {
   return (
     <section
       id="cupones-y-ofertas"
-      aria-label="Cupones y ofertas"
+      aria-label="Cupones"
       className={`grid gap-6 ${hasCampaign ? 'lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]' : 'lg:grid-cols-1'}`}
     >
       {campaign ? <CampaignBanner campaign={campaign} /> : null}

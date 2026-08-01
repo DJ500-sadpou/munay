@@ -90,8 +90,42 @@ const LISTING_CONDITION_TO_GRADING: Record<string, ProductGrading | null> = {
   'fair': 'regular',
 }
 
+/**
+ * [P0a] Parsea imágenes de listings sin lanzar: un JSON malformado en
+ * `user_listings.images` NO debe romper todo el catálogo (crash real
+ * detectado en auditoría — causaba el server error genérico de Next).
+ */
+function safeParseImages(raw: unknown): string[] {
+  try {
+    if (typeof raw === 'string') {
+      const parsed = JSON.parse(raw)
+      return Array.isArray(parsed)
+        ? parsed.filter((x): x is string => typeof x === 'string')
+        : []
+    }
+    return Array.isArray(raw)
+      ? raw.filter((x): x is string => typeof x === 'string')
+      : []
+  } catch {
+    return []
+  }
+}
+
 // ---- Query principal: lista de productos (incluye P2P listings) ----
 
+/**
+ * [P0a] `listProducts` SIN try/catch interno a propósito: la página /catalogo
+ * es el boundary de error (su try/catch setea `searchError` y muestra el error
+ * state). Si aquí tragáramos los errores devolviendo [], la página mostraría
+ * el empty state ("No encontramos resultados") ante una falla real de Neon en
+ * vez del error state ("No pudimos realizar la búsqueda") — revisores Ronda 1.
+ * Los sub-queries internos (getValidFlashCode/getUnlockedProducts/
+ * getFlashSpecialPrice) SÍ conservan null-safety porque otros callers
+ * (createOrder, redirect block) necesitan degradar sin lanzar.
+ *
+ * [Fix Ronda 2] Sin wrapper separado: una sola función (el wrapper ya no
+ * añadía nada tras quitar el try/catch).
+ */
 export async function listProducts(filters: ProductFilters = {}): Promise<ProductListItem[]> {
   if (!isDbConfigured()) return []
 
@@ -226,7 +260,8 @@ export async function listProducts(filters: ProductFilters = {}): Promise<Produc
     `, listingParams)
 
     const listingItems: ProductListItem[] = listingRows.map((r: any) => {
-      const images = typeof r.images === 'string' ? JSON.parse(r.images) : (r.images ?? [])
+      // [P0a] safeParseImages: un JSON malformado no rompe la búsqueda.
+      const images = safeParseImages(r.images)
       return {
         id: `p2p_${r.id}`,  // prefijo para evitar colisión con IDs de productos
         slug: `listing-${r.id.slice(0, 8)}`,
@@ -323,7 +358,17 @@ export interface FlashCodeInfo {
 
 export async function getValidFlashCode(code: string): Promise<FlashCodeInfo | null> {
   if (!isDbConfigured()) return null
+  // [P0a] try/catch: un error transitorio de Neon NO rompe la búsqueda
+  // (devuelve null → el texto se trata como búsqueda normal).
+  try {
+    return await getValidFlashCodeInternal(code)
+  } catch (err: any) {
+    console.warn('[products-neon] getValidFlashCode error:', err?.message)
+    return null
+  }
+}
 
+async function getValidFlashCodeInternal(code: string): Promise<FlashCodeInfo | null> {
   const upper = code.trim().toUpperCase()
   const fc = await queryOne<any>(`
     SELECT code, starts_at, ends_at, max_uses, uses_count, active
@@ -353,23 +398,33 @@ export interface UnlockedProduct {
 
 export async function getUnlockedProducts(code: string): Promise<UnlockedProduct[]> {
   if (!isDbConfigured()) return []
-  const rows = await query<any>(`
-    SELECT product_id, precio_especial_cents FROM flash_code_products WHERE code = $1
-  `, [code.trim().toUpperCase()])
-  return rows.map((r) => ({
-    product_id: r.product_id as string,
-    precio_especial_cents: r.precio_especial_cents != null ? Number(r.precio_especial_cents) : null,
-  }))
+  try {
+    const rows = await query<any>(`
+      SELECT product_id, precio_especial_cents FROM flash_code_products WHERE code = $1
+    `, [code.trim().toUpperCase()])
+    return rows.map((r) => ({
+      product_id: r.product_id as string,
+      precio_especial_cents: r.precio_especial_cents != null ? Number(r.precio_especial_cents) : null,
+    }))
+  } catch (err: any) {
+    console.warn('[products-neon] getUnlockedProducts error:', err?.message)
+    return []
+  }
 }
 
 /** Precio especial de un producto para un código flash (NULL → usar price_cents). */
 export async function getFlashSpecialPrice(code: string, productId: string): Promise<number | null> {
   if (!isDbConfigured()) return null
-  const row = await queryOne<any>(`
-    SELECT precio_especial_cents FROM flash_code_products
-    WHERE code = $1 AND product_id = $2 LIMIT 1
-  `, [code.trim().toUpperCase(), productId])
-  return row?.precio_especial_cents != null ? Number(row.precio_especial_cents) : null
+  try {
+    const row = await queryOne<any>(`
+      SELECT precio_especial_cents FROM flash_code_products
+      WHERE code = $1 AND product_id = $2 LIMIT 1
+    `, [code.trim().toUpperCase(), productId])
+    return row?.precio_especial_cents != null ? Number(row.precio_especial_cents) : null
+  } catch (err: any) {
+    console.warn('[products-neon] getFlashSpecialPrice error:', err?.message)
+    return null
+  }
 }
 
 export function looksLikeFlashCode(input: string): boolean {

@@ -18,16 +18,29 @@ import { requireTurnstile } from '@/lib/auth/turnstile'
 
 export const runtime = 'nodejs'
 
-// [F3.0 #1] Rate limiter simple en memoria (15s entre intentos).
-// 20-30s frustraría un reintento legítimo tras un Turnstile expirado.
-const ipTimestamps = new Map<string, number>()
-const RATE_LIMIT_MS = 15_000 // 15 segundos
+// [P0b] Rate limiter por IP: ventana deslizante (3 intentos/minuto).
+// El antiguo "1 intento cada 15s" bloqueaba reintentos legítimos: como
+// `recordRateLimit` corre ANTES de `createOrder` (createOrder reserva stock
+// y consume cupones/puntos, así que NO se puede mover el registro a después
+// del éxito o un atacante martillaría esa operación costosa sin límite), un
+// 422 de stock/validación registraba el intento y el reintento dentro de 15s
+// recibía 429 → nunca llegaba a crear ticket ni a abrir WhatsApp (síntoma
+// reportado por Dylan). Con 3 intentos/minuto un flujo normal (1 fallido +
+// reintento) pasa, y el spam queda acotado a 3/min por IP.
+const ipAttempts = new Map<string, number[]>()
+const RATE_LIMIT_WINDOW_MS = 60_000 // 1 minuto
+const RATE_LIMIT_MAX_ATTEMPTS = 3 // intentos por ventana
 
 function checkRateLimit(ip: string): { ok: boolean; retryAfterSec?: number } {
   const now = Date.now()
-  const last = ipTimestamps.get(ip)
-  if (last && now - last < RATE_LIMIT_MS) {
-    return { ok: false, retryAfterSec: Math.ceil((RATE_LIMIT_MS - (now - last)) / 1000) }
+  const attempts = (ipAttempts.get(ip) ?? []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS)
+  if (attempts.length >= RATE_LIMIT_MAX_ATTEMPTS) {
+    // Reintento posible cuando el intento más antiguo salga de la ventana.
+    const oldest = attempts[0]
+    return {
+      ok: false,
+      retryAfterSec: Math.ceil((RATE_LIMIT_WINDOW_MS - (now - oldest)) / 1000),
+    }
   }
   return { ok: true }
 }
@@ -36,14 +49,21 @@ function checkRateLimit(ip: string): { ok: boolean; retryAfterSec?: number } {
 // validación (es decir, cuando realmente se va a crear una orden). Antes
 // registrábamos TODAS las peticiones, incluidas las fallidas por validación:
 // un usuario que corregía un error (ej. stock, email) y reintentaba dentro de
-// 15s recibía 429 — residuo del síntoma R1 original del plan.
+// la ventana recibía 429 — residuo del síntoma R1 original del plan.
 function recordRateLimit(ip: string): void {
   const now = Date.now()
-  ipTimestamps.set(ip, now)
-  if (ipTimestamps.size > 100) {
-    const cutoff = now - RATE_LIMIT_MS
-    for (const [key, ts] of ipTimestamps) {
-      if (ts < cutoff) ipTimestamps.delete(key)
+  const attempts = (ipAttempts.get(ip) ?? []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS)
+  attempts.push(now)
+  ipAttempts.set(ip, attempts)
+  // [FIX Ronda 1] Prune efectivo: `arr.every(t < cutoff)` era siempre false
+  // (el array ya viene filtrado a la ventana) → el Map crecía sin límite con
+  // IPs distintas. Se borra por el ÚLTIMO timestamp: si el intento más
+  // reciente ya salió de la ventana, la entrada entera está muerta.
+  if (ipAttempts.size > 100) {
+    const cutoff = now - RATE_LIMIT_WINDOW_MS
+    for (const [key, arr] of ipAttempts) {
+      const last = arr[arr.length - 1]
+      if (arr.length === 0 || last < cutoff) ipAttempts.delete(key)
     }
   }
 }
@@ -130,7 +150,7 @@ export async function POST(req: NextRequest) {
     ?? 'unknown'
   const rl = checkRateLimit(ip)
   if (!rl.ok) {
-    const retryAfterSec = rl.retryAfterSec ?? Math.ceil(RATE_LIMIT_MS / 1000)
+    const retryAfterSec = rl.retryAfterSec ?? Math.ceil(RATE_LIMIT_WINDOW_MS / 1000)
     return NextResponse.json(
       { ok: false, error: `Demasiadas solicitudes. Intenta en ${retryAfterSec} segundo${retryAfterSec === 1 ? '' : 's'}.` },
       { status: 429, headers: { 'Retry-After': String(retryAfterSec) } }
@@ -272,10 +292,19 @@ export async function POST(req: NextRequest) {
     }
 
     // [F3.3 #2] Mensaje prearmado con el número de ticket (#1234)
+    // [P0b] Ítems con título, cantidad y PRECIO FINAL autoritativo (ya
+    // resuelto flash vs regular en createOrder) — nunca datos crudos del
+    // cliente. Si por algún motivo no vienen, fallback al resumen simple.
     const ticketDisplay = `#${String(ticketNumero).padStart(4, '0')}`
-    const itemsSummary = items.map((i: any, idx: number) =>
-      `${idx + 1}. ${i.title ?? 'Producto'} × ${i.qty}`
-    ).join('\n')
+    const orderItems = orderResult.order_items ?? []
+    const itemsSummary =
+      orderItems.length > 0
+        ? orderItems.map((it: any, idx: number) =>
+            `${idx + 1}. ${it.title ?? 'Producto'} | Cantidad: ${it.qty} | $${((it.unit_price_cents ?? 0) / 100).toFixed(2)}`
+          ).join('\n')
+        : items.map((i: any, idx: number) =>
+            `${idx + 1}. ${i.title ?? 'Producto'} × ${i.qty}`
+          ).join('\n')
     // [FIX #9] El mensaje muestra el descuento que efectivamente ganó.
     // [AUDIT] Cuando gana el Código Flash, discount_cents solo contiene
     // puntos (el ahorro flash va embebido en el subtotal) → mostrar el %

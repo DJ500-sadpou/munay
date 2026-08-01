@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { MessageCircle, ArrowLeft, Loader2, AlertCircle, Sparkles, CheckCircle2, ShoppingBag } from 'lucide-react'
+import { MessageCircle, ArrowLeft, Loader2, AlertCircle, Sparkles, CheckCircle2, ShoppingBag, Ticket } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { formatCents } from '@/lib/format'
 import { ROUTES, POINTS_RULES } from '@/lib/constants'
+import { readSelected, clearSelected } from '@/lib/coupon-storage'
 import { useCart } from '@/store/cart'
 import { useMounted } from '@/hooks/use-mounted'
 import { CouponCheckoutInput, type AppliedCoupon } from '@/components/cart/coupon-checkout-input'
@@ -31,12 +32,22 @@ export default function CheckoutPage() {
   const [step, setStep] = useState<Step>('form')
   const [error, setError] = useState<string | null>(null)
 
+  // [P0b] Guard anti doble-submit: además del `disabled` por estado, un ref
+  // corta el 2º submit inmediato (2 clics rápidos → 2 requests → el 2º recibía
+  // 429 aunque el 1º ya hubiera creado el ticket).
+  const submittingRef = useRef(false)
+  // [P0b] Countdown real del 429 (Retry-After) para no dejar al usuario con
+  // un mensaje estático.
+  const [retryIn, setRetryIn] = useState(0)
+
   // Datos del usuario logueado (para puntos)
   const [userPoints, setUserPoints] = useState<number>(0)
   const [pointsToRedeem, setPointsToRedeem] = useState<number>(0)
 
   // Cupón de descuento aplicado (tabla coupons)
   const [coupon, setCoupon] = useState<AppliedCoupon | null>(null)
+  // [P2c] Error al auto-aplicar un cupón venido de /cupones (?coupon=)
+  const [couponError, setCouponError] = useState<string | null>(null)
 
   // Cupón de fidelidad seleccionado
   const [loyaltyCode, setLoyaltyCode] = useState<string | undefined>()
@@ -66,6 +77,99 @@ export default function CheckoutPage() {
       .catch(() => {/* ignorar: usuario no logueado */})
   }, [])
 
+  // [FIX Ronda 2] Guard con useRef: en dev, StrictMode monta/desmonta/remonta
+  // el component y RE-EJECUTA los effects (el ref persiste en el mismo fiber).
+  // Sin este guard, el auto-apply haría 2 fetch: el 1º exitoso se descarta
+  // por `cancelled` y el 2º cae en el rate limit (429) → cupón nunca aplicado
+  // en dev. Con el ref, el doble-fetch se previene de raíz.
+  const autoAppliedRef = useRef(false)
+  // [P2c] Auto-aplicar cupón recibido vía ?coupon=CODE (handshake con la
+  // página /cupones "Usar cupón"). Se lee de window.location en vez de
+  // useSearchParams (que en Next 15 exige Suspense). Se revalida server-side
+  // con el subtotal REAL del carrito — el monto mínimo SÍ aplica aquí.
+  useEffect(() => {
+    // [FIX Ronda 2] Guard con useRef: en dev, StrictMode monta/desmonta/remonta
+    // y RE-EJECUTA los effects (el ref persiste en el mismo fiber). El guard
+    // garantiza UN SOLO fetch de auto-apply — sin él, el 2º fetch caía en el
+    // rate limit (429) y el cupón nunca se aplicaba en dev.
+    // [FIX Ronda 3] Se eliminó el flag `cancelled`: su cleanup corría ENTRE
+    // los dos mounts simulados de StrictMode (antes de que el fetch resolviera)
+    // y descartaba el resultado del único fetch. Con el ref guard basta:
+    // React 18+ trata setState tras desmontar como no-op seguro.
+    if (autoAppliedRef.current) return
+    autoAppliedRef.current = true
+    // [FIX Ronda 3] Handshake completo: si no viene ?coupon= en la URL, usar
+    // el cupón "preferido" guardado en localStorage (munay.cupones.selected).
+    // Cubre el flujo "Usar cupón" desde /cupones con carrito vacío → catálogo
+    // → checkout: el param se pierde al pasar por el catálogo, pero el selected
+    // persiste y el checkout lo aplica al llegar.
+    const params = new URLSearchParams(window.location.search)
+    let code = params.get('coupon')
+    if (!code) {
+      // [FIX Ronda 5] El preferido (JSON { code, at } con TTL de 1h, limpieza
+      // de obsoletos/corruptos/formato viejo) se lee desde el módulo
+      // compartido src/lib/coupon-storage.ts — la regla TTL vive en UN solo
+      // lugar (checkout y /cupones no pueden divergir).
+      code = readSelected()
+    }
+    if (!code) return
+    ;(async () => {
+      try {
+        const res = await fetch('/api/coupons/apply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            codigo: code,
+            subtotal_cents: useCart.getState().subtotalCents(),
+            customer_email: '',
+          }),
+        })
+        const data = await res.json()
+        // Red de seguridad: si llega un 429 (p.ej. el usuario acaba de aplicar
+        // el cupón manualmente), no mostrar un mensaje engañoso — el cupón ya
+        // está aplicado o se puede reintentar.
+        if (data.error_code === 'rate_limited') return
+        if (data.ok) {
+          setCoupon({ codigo: data.codigo, discount_percent: data.discount_percent })
+          // [FIX Ronda 1] Limpiar el param de la URL para que un refresh NO
+          // re-aplique el cupón aunque el usuario lo haya quitado después.
+          const url = new URL(window.location.href)
+          url.searchParams.delete('coupon')
+          window.history.replaceState(null, '', url.toString())
+          // [FIX Ronda 3] Limpiar el "preferido" de localStorage tras aplicarlo
+          // (ya está aplicado; no debe re-aplicarse en futuros checkouts).
+          // [FIX Ronda 5] Via módulo compartido (src/lib/coupon-storage.ts).
+          clearSelected()
+        } else {
+          setCouponError(data.error ?? 'No se pudo aplicar el cupón.')
+        }
+      } catch {
+        setCouponError('No se pudo aplicar el cupón. Intenta nuevamente.')
+      }
+    })()
+  }, [])
+
+  // [P0b] Countdown del 429: decrementa cada segundo mientras haya cooldown.
+  // IMPORTANTE: este hook vive ANTES de los early returns (rules-of-hooks).
+  // FIX Ronda 2 + lint: la limpieza del mensaje obsoleto vive en el CALLBACK
+  // del intervalo (setState en callback async = permitido por
+  // react-hooks/set-state-in-effect; un setState síncrono en el body del
+  // effect dispararía el error de cascading renders). Al llegar retryIn a 1,
+  // el siguiente tick limpia el mensaje "Demasiadas solicitudes" (sin texto
+  // contradictorio con el botón ya habilitado) y pone el countdown en 0.
+  useEffect(() => {
+    if (retryIn <= 0) return
+    const id = setInterval(() => {
+      if (retryIn === 1) {
+        setError((prev) =>
+          prev?.startsWith('Demasiadas solicitudes') ? null : prev
+        )
+      }
+      setRetryIn((s) => Math.max(0, s - 1))
+    }, 1000)
+    return () => clearInterval(id)
+  }, [retryIn])
+
   if (!mounted) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-10">
@@ -87,6 +191,11 @@ export default function CheckoutPage() {
     0
   )
   const flashSavingsCents = Math.max(0, regularSubtotalCents - subtotalCents)
+  // [P2c] % de descuento Flash para el mensaje visible de no-acumulación.
+  const flashPct =
+    regularSubtotalCents > 0
+      ? Math.round((flashSavingsCents / regularSubtotalCents) * 100)
+      : 0
   // Descuento del cupón (validado contra /api/coupons/apply; el consumo real
   // ocurre en createOrder). Sobre el subtotal REGULAR, como el server.
   const couponDiscountCents = coupon
@@ -127,6 +236,9 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    // [P0b] Doble-submit guard: ignora clics mientras hay un request en vuelo.
+    if (submittingRef.current) return
+    submittingRef.current = true
     setStep('sending')
     setError(null)
 
@@ -160,6 +272,15 @@ export default function CheckoutPage() {
       const data = await res.json()
 
       if (!data.ok) {
+        // [P0b] 429 real: mostrar countdown con Retry-After del servidor.
+        if (res.status === 429) {
+          const retryAfter = Number(res.headers.get('Retry-After') ?? 0)
+          const seconds = Number.isFinite(retryAfter) && retryAfter > 0
+            ? Math.ceil(retryAfter)
+            : 15
+          setRetryIn(seconds)
+          throw new Error(`Demasiadas solicitudes. Intenta en ${seconds} segundos.`)
+        }
         throw new Error(data.error ?? 'Error al procesar el pedido')
       }
 
@@ -202,6 +323,8 @@ export default function CheckoutPage() {
     } catch (err: any) {
       setError(err?.message ?? 'Error inesperado')
       setStep('error')
+    } finally {
+      submittingRef.current = false
     }
   }
 
@@ -381,6 +504,33 @@ export default function CheckoutPage() {
                     <span>−{formatCents(promoDiscountCents)}</span>
                   </div>
                 )}
+                {/* [P2c] No-acumulación visible: cuando coexisten descuento
+                    Flash y cupón, se explica quién gana ANTES de confirmar.
+                    [FIX Ronda 1] Hay 3 competidores (flash / cupón / fidelidad):
+                    la rama "gana el cupón" solo aplica cuando couponWins;
+                    si gana fidelidad se muestra un mensaje genérico. */}
+                {flashSavingsCents > 0 && couponDiscountCents > 0 && (
+                  <div className="rounded-md border border-primary/15 bg-primary/5 px-3 py-2 text-xs text-munay-ink/70">
+                    {flashWins ? (
+                      <>
+                        Tu producto ya tiene un descuento especial de Código Flash del {flashPct}%.
+                        Tu cupón ofrece {coupon?.discount_percent ?? 0}%. Aplicamos automáticamente
+                        el mejor descuento disponible. Los descuentos no son acumulables.
+                      </>
+                    ) : couponWins ? (
+                      <>
+                        Aplicamos tu cupón del {coupon?.discount_percent ?? 0}% porque ofrece un
+                        mejor descuento que el Código Flash activo.
+                      </>
+                    ) : (
+                      <>
+                        Tienes descuentos de Código Flash y de cupón. Aplicamos automáticamente el
+                        descuento mayor disponible. Los descuentos no son acumulables.
+                      </>
+                    )}
+                  </div>
+                )}
+
                 {pointsDiscountCents > 0 && (
                   <div className="flex justify-between text-primary">
                     <span className="flex items-center gap-1">
@@ -412,8 +562,29 @@ export default function CheckoutPage() {
                 subtotalCents={subtotalCents}
                 customerEmail={email}
                 value={coupon}
-                onChange={setCoupon}
+                onChange={(c) => {
+                  // [FIX Ronda 1] Limpiar couponError también al aplicar un
+                  // cupón manual (antes solo se limpiaba al quitar el cupón).
+                  setCoupon(c)
+                  setCouponError(null)
+                }}
               />
+
+              {/* [P2c] Botón secundario "Explorar mis cupones" → /cupones?returnTo=/checkout */}
+              <Button asChild variant="outline" size="sm" className="w-full">
+                <Link href={`${ROUTES.cupones}?returnTo=${encodeURIComponent(ROUTES.checkout)}`}>
+                  <Ticket className="mr-2 h-4 w-4" aria-hidden />
+                  Explorar mis cupones
+                </Link>
+              </Button>
+
+              {/* [P2c] Error al auto-aplicar el cupón venido de /cupones */}
+              {couponError && (
+                <p className="flex items-center gap-1.5 text-xs text-destructive" role="alert">
+                  <AlertCircle className="h-3 w-3 shrink-0" aria-hidden />
+                  {couponError}
+                </p>
+              )}
 
               {/* Cupón de fidelidad (solo si hay sesión y cupones activos) */}
               <LoyaltyCouponCheckout
@@ -442,7 +613,7 @@ export default function CheckoutPage() {
                 type="submit"
                 size="lg"
                 className="w-full bg-munay-whatsapp text-white hover:bg-munay-whatsapp/90"
-                disabled={step === 'sending' || step === 'redirecting'}
+                disabled={step === 'sending' || step === 'redirecting' || retryIn > 0}
               >
                 {step === 'sending' ? (
                   <>
@@ -453,6 +624,11 @@ export default function CheckoutPage() {
                   <>
                     <CheckCircle2 className="mr-2 h-4 w-4" aria-hidden />
                     Redirigiendo a WhatsApp…
+                  </>
+                ) : retryIn > 0 ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                    Reintenta en {retryIn}s
                   </>
                 ) : (
                   <>

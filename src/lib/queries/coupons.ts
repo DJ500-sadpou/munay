@@ -59,6 +59,35 @@ function mapCoupon(row: any): Coupon {
   }
 }
 
+/**
+ * [FIX Ronda 2] Versión PÚBLICA de un cupón para respuestas de API al
+ * cliente. Excluye `order_id` (UUID de la orden que consumió el cupón —
+ * puede ser la orden de OTRO usuario para cupones de campaña/admin) y los
+ * campos internos (`created_at`, `fecha_inicio`) que el cliente no necesita.
+ *
+ * La página /cupones solo necesita: codigo, porcentaje, tipo, monto mínimo,
+ * vigencia y usos para renderizar cards y términos.
+ */
+export function toPublicCoupon(c: Coupon): {
+  codigo: string
+  tipo: CouponType
+  porcentaje_descuento: number
+  monto_minimo_compra: number
+  fecha_fin: string
+  usos_maximos: number | null
+  usos_actuales: number
+} {
+  return {
+    codigo: c.codigo,
+    tipo: c.tipo,
+    porcentaje_descuento: c.porcentaje_descuento,
+    monto_minimo_compra: c.monto_minimo_compra,
+    fecha_fin: c.fecha_fin,
+    usos_maximos: c.usos_maximos,
+    usos_actuales: c.usos_actuales,
+  }
+}
+
 // ──────────────────────────────────────────────
 // Validación (preview — NO consume)
 // ──────────────────────────────────────────────
@@ -93,7 +122,12 @@ export async function validateCoupon(
   code: string,
   subtotalCents: number,
   userId?: string | null,
-  customerEmail?: string | null
+  customerEmail?: string | null,
+  // [P2b] ignorarMinimo: lo usa la página /cupones para AGREGAR un cupón a
+  // "Mis cupones" aunque el carrito actual no alcance el monto mínimo (se
+  // sigue validando activo/vigencia/usos/tipo). El monto mínimo se revalida
+  // al APLICAR en checkout (sin esta bandera).
+  opts?: { ignorarMinimo?: boolean }
 ): Promise<ValidateCouponResult> {
   if (!isDbConfigured()) return { ok: false, error: 'DB no configurada', error_code: 'no_db' }
   const normalized = normalizeCouponCode(code)
@@ -115,7 +149,10 @@ export async function validateCoupon(
     if (row.usos_maximos != null && Number(row.usos_actuales) >= Number(row.usos_maximos)) {
       return { ok: false, error: 'Cupón agotado', error_code: 'exhausted' }
     }
-    if (Number(row.monto_minimo_compra) > subtotalCents) {
+    // [P2b] La validación del monto mínimo se reserva para el momento de
+    // aplicar (checkout); al agregar a "Mis cupones" no debe depender del
+    // subtotal actual (carrito puede estar vacío).
+    if (!opts?.ignorarMinimo && Number(row.monto_minimo_compra) > subtotalCents) {
       return {
         ok: false,
         error: `Monto mínimo de $${(Number(row.monto_minimo_compra) / 100).toFixed(2)}`,

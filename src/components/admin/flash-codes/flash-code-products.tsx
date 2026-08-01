@@ -38,6 +38,12 @@ export function FlashCodeProductsManager({ flashCode }: Props) {
   const [search, setSearch] = useState('')
   const [specialPrice, setSpecialPrice] = useState<string>('') // precio especial (USD) al asociar
   const [actionStatus, setActionStatus] = useState<{ type: 'saving' | 'saved' | 'error'; msg?: string } | null>(null)
+  // [P1] Selección múltiple (mini-colección): IDs marcados con checkbox para
+  // asociar N productos de una sola vez con el mismo precio especial.
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  // [P1] Warning del servidor: el código está inactivo/vencido/agotado →
+  // los productos asociados aún no serán visibles para los usuarios.
+  const [serverWarning, setServerWarning] = useState<string | null>(null)
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -48,6 +54,9 @@ export function FlashCodeProductsManager({ flashCode }: Props) {
       if (data.ok) {
         setAssociated(data.associated ?? [])
         setAllProducts(data.available ?? [])
+        // [FIX Ronda 2] Refrescar el warning del servidor al recargar (si el
+        // admin activó/venció el código, el aviso se actualiza solo).
+        setServerWarning(data.warning ?? null)
       } else {
         setError(data.error ?? 'Error al cargar productos')
       }
@@ -59,7 +68,13 @@ export function FlashCodeProductsManager({ flashCode }: Props) {
   }, [flashCode.code])
 
   useEffect(() => {
-    loadData()
+    // [FIX Lint] setState síncrono en body de effect (react-hooks/
+    // set-state-in-effect) → se difiere el fetch al callback del timer
+    // (patrón aceptado: setState en callback async, no en el body).
+    const id = window.setTimeout(() => {
+      void loadData()
+    }, 0)
+    return () => window.clearTimeout(id)
   }, [loadData])
 
   const handleAssociate = async (productId: string) => {
@@ -80,6 +95,8 @@ export function FlashCodeProductsManager({ flashCode }: Props) {
       const data = await res.json()
       if (data.ok) {
         setActionStatus({ type: 'saved', msg: 'Producto asociado' })
+        // [P1] Mostrar warning del servidor (código no vigente) si aplica
+        setServerWarning(data.warning ?? null)
         setSpecialPrice('')
         setTimeout(() => setActionStatus(null), 2000)
         loadData()
@@ -121,6 +138,86 @@ export function FlashCodeProductsManager({ flashCode }: Props) {
       p.slug.toLowerCase().includes(search.toLowerCase())
   )
 
+  // [P1] Selección múltiple: toggle de un id, seleccionar/desmarcar los
+  // visibles en el buscador actual (mini-colección), y asociar todos los
+  // marcados con el precio especial indicado.
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const selectFiltered = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      const allSelected = filteredAvailable.every((p) => next.has(p.id))
+      filteredAvailable.forEach((p) => {
+        if (allSelected) next.delete(p.id)
+        else next.add(p.id)
+      })
+      return next
+    })
+  }
+
+  // [P1] Asocia TODOS los productos seleccionados (mini-colección) con el
+  // mismo precio especial opcional. Usa el mismo endpoint por producto; el
+  // resultado reporta cuántos quedaron asociados.
+  const handleAssociateMany = async () => {
+    const ids = Array.from(selectedIds)
+    if (ids.length === 0) return
+    setActionStatus({ type: 'saving' })
+    try {
+      const trimmed = specialPrice.trim()
+      const parsed = parseFloat(trimmed.replace(',', '.'))
+      const precio_especial_cents =
+        trimmed && Number.isFinite(parsed) && parsed >= 0
+          ? Math.round(parsed * 100)
+          : null
+
+      let okCount = 0
+      let failCount = 0
+      // [FIX Ronda 1] Capturar el warning del servidor (código inactivo/
+      // no iniciado/expirado/agotado) en el flujo de mini-colección — antes
+      // se descartaba y el aviso "los usuarios aún no podrán ver estos
+      // productos" no se mostraba al asociar en masa.
+      let lastWarning: string | null = null
+      // Asociar secuencialmente para evitar N requests concurrentes
+      // (el rate limit de Neon HTTP y la claridad del resultado).
+      for (const productId of ids) {
+        try {
+          const res = await fetch(`/api/flash-codes/${flashCode.code}/products`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ product_id: productId, precio_especial_cents }),
+          })
+          const data = await res.json()
+          if (data.ok) okCount++
+          else failCount++
+          if (data.warning) lastWarning = data.warning
+        } catch {
+          failCount++
+        }
+      }
+      setSelectedIds(new Set())
+      setSpecialPrice('')
+      setServerWarning(lastWarning)
+      setActionStatus({
+        type: failCount === 0 ? 'saved' : 'error',
+        msg:
+          failCount === 0
+            ? `Mini-colección: ${okCount} producto${okCount === 1 ? '' : 's'} asociado${okCount === 1 ? '' : 's'}`
+            : `Asociados ${okCount}, errores en ${failCount}`,
+      })
+      setTimeout(() => setActionStatus(null), 3000)
+      loadData()
+    } catch {
+      setActionStatus({ type: 'error', msg: 'Error de conexión' })
+    }
+  }
+
   if (loading) {
     return (
       <Card className="border-border/60">
@@ -159,8 +256,15 @@ export function FlashCodeProductsManager({ flashCode }: Props) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Productos asociados actualmente */}
-        {associated.length > 0 ? (
+        {/* Productos asociados actualmente */}          {/* [P1] Warning del servidor: código no vigente → productos aún no visibles */}
+          {serverWarning && (
+            <div className="flex items-start gap-2 rounded-md border border-munay-terracota/30 bg-munay-terracota/5 px-3 py-2 text-xs text-munay-ink">
+              <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-munay-terracota" aria-hidden />
+              <span>{serverWarning}</span>
+            </div>
+          )}
+
+          {associated.length > 0 ? (
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
               Asociados ({associated.length})
@@ -248,42 +352,91 @@ export function FlashCodeProductsManager({ flashCode }: Props) {
             />
           </div>
 
+          {filteredAvailable.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs"
+                onClick={selectFiltered}
+                disabled={actionStatus?.type === 'saving'}
+              >
+                {filteredAvailable.every((p) => selectedIds.has(p.id))
+                  ? 'Desmarcar visibles'
+                  : 'Marcar visibles'}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                className="h-8 bg-munay-terracota text-white text-xs hover:bg-munay-terracota-quemado"
+                onClick={handleAssociateMany}
+                disabled={selectedIds.size === 0 || actionStatus?.type === 'saving'}
+              >
+                {actionStatus?.type === 'saving' ? (
+                  <><Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> Asociando…</>
+                ) : (
+                  <><Plus className="h-3.5 w-3.5" aria-hidden /> Asociar seleccionados ({selectedIds.size})</>
+                )}
+              </Button>
+              {selectedIds.size > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  Mini-colección con {selectedIds.size} producto{selectedIds.size === 1 ? '' : 's'}
+                </span>
+              )}
+            </div>
+          )}
+
           {search && filteredAvailable.length === 0 ? (
             <p className="py-4 text-center text-xs text-muted-foreground">
               No se encontraron productos para <strong>"{search}"</strong>
             </p>
           ) : search ? (
             <div className="max-h-48 overflow-y-auto space-y-1 rounded-md border border-border/60 p-1.5">
-              {filteredAvailable.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => handleAssociate(p.id)}
-                  disabled={actionStatus?.type === 'saving'}
-                  className="flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-2 text-left text-sm hover:bg-accent/10 transition-colors disabled:opacity-50"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    {p.active ? (
-                      <ShoppingCart className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
-                    ) : (
-                      <EyeOff className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
-                    )}
-                    <div className="min-w-0">
-                      <p className="truncate">{p.title}</p>
-                      <p className="text-[10px] text-muted-foreground font-mono">{p.slug}</p>
+              {filteredAvailable.map((p) => {
+                const selected = selectedIds.has(p.id)
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => toggleSelect(p.id)}
+                    disabled={actionStatus?.type === 'saving'}
+                    aria-pressed={selected}
+                    className={`flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-2 text-left text-sm transition-colors disabled:opacity-50 ${
+                      selected ? 'bg-munay-terracota/10 ring-1 ring-munay-terracota/30' : 'hover:bg-accent/10'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      {/* [P1] Checkbox de selección múltiple (mini-colección) */}
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => toggleSelect(p.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label={`Seleccionar ${p.title}`}
+                        className="h-4 w-4 shrink-0 accent-munay-terracota"
+                      />
+                      {p.active ? (
+                        <ShoppingCart className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
+                      ) : (
+                        <EyeOff className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                      )}
+                      <div className="min-w-0">
+                        <p className="truncate">{p.title}</p>
+                        <p className="text-[10px] text-muted-foreground font-mono">{p.slug}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-xs text-muted-foreground">
-                      {formatCents(p.price_cents)} · {p.stock}
-                    </span>
-                    <Badge variant={p.active ? 'default' : 'outline'} className="text-[10px]">
-                      {p.active ? 'Activo' : 'Oculto'}
-                    </Badge>
-                    <Plus className="h-3.5 w-3.5 text-primary" />
-                  </div>
-                </button>
-              ))}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs text-muted-foreground">
+                        {formatCents(p.price_cents)} · {p.stock}
+                      </span>
+                      <Badge variant={p.active ? 'default' : 'outline'} className="text-[10px]">
+                        {p.active ? 'Activo' : 'Oculto'}
+                      </Badge>
+                    </div>
+                  </button>
+                )
+              })}
             </div>
           ) : null}
 
@@ -304,7 +457,7 @@ export function FlashCodeProductsManager({ flashCode }: Props) {
           )}
 
           <p className="text-[10px] text-muted-foreground">
-            Usa el buscador para encontrar productos. Haz click en <Plus className="inline h-2.5 w-2.5" /> para asociar.
+            Marca varios productos y pulsa "Asociar seleccionados" para crear una mini-colección.
           </p>
         </div>
       </CardContent>

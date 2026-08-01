@@ -65,6 +65,10 @@ export const LIMITS = {
 export const ROUTES = {
   home: '/',
   catalogo: '/catalogo',
+  // [P2a] Página dedicada "Mis cupones" (independiente de la landing y de
+  // los códigos flash). Antes el botón "Cupones y ofertas" anclaba a
+  // /#cupones-y-ofertas de la landing.
+  cupones: '/cupones',
   producto: (slug: string) => `/p/${slug}`,
   carrito: '/carrito',
   checkout: '/checkout',

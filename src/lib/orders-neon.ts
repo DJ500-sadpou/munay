@@ -81,6 +81,17 @@ export interface CreateOrderResult {
   coupon_discount_percent?: number | null
   /** % del FID- evaluado (competidor), para el mensaje de no-acumulación. */
   loyalty_discount_percent?: number | null
+  /**
+   * [P0b] Ítems de la orden con el precio FINAL autoritativo (ya resuelto
+   * flash vs regular según ganador) — para construir el mensaje de WhatsApp
+   * sin confiar en títulos/precios enviados por el cliente.
+   */
+  order_items?: Array<{
+    product_id: string
+    title: string
+    qty: number
+    unit_price_cents: number
+  }>
 }
 
 /**
@@ -177,6 +188,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
   // cupón/FID- y los ítems flash vuelven a precio regular para no acumular).
   const orderItems: Array<{
     product_id: string
+    title: string
     qty: number
     unit_price_cents: number
     regular_unit_price_cents: number
@@ -230,6 +242,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
 
     orderItems.push({
       product_id: item.product_id,
+      title: product.title,
       qty: item.qty,
       unit_price_cents: unitPriceCents,
       regular_unit_price_cents: regularPriceCents,
@@ -531,6 +544,16 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
         flashDiscountPercent,
         couponDiscountPercent,
         loyaltyDiscountPercent,
+        // [P0b] Precio FINAL por ítem (el que se registró en order_items):
+        // flash si ganó flash, regular si ganó cupón/FID-. Para el mensaje.
+        orderItems: orderItems.map((item) => ({
+          product_id: item.product_id,
+          title: item.title,
+          qty: item.qty,
+          unit_price_cents: useRegularPrices
+            ? item.regular_unit_price_cents
+            : item.unit_price_cents,
+        })),
       }
     })
 
@@ -548,6 +571,8 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
       flash_discount_percent: result.flashDiscountPercent,
       coupon_discount_percent: result.couponDiscountPercent,
       loyalty_discount_percent: result.loyaltyDiscountPercent,
+      // [P0b] Ítems con precio final autoritativo para el mensaje de WhatsApp.
+      order_items: result.orderItems ?? [],
     }
   } catch (err: any) {
     // Si falla por flash_invalid o points_invalid, el rollback libera el flash code

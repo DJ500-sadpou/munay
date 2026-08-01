@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { Search, User, Heart, ShoppingBag, Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import {
   Sheet,
   SheetContent,
@@ -19,7 +18,9 @@ import { ROUTES } from '@/lib/constants'
 
 const NAV_LINKS = [
   { href: ROUTES.catalogo, label: 'Comprar' },
-  { href: '/#cupones-y-ofertas', label: 'Cupones y Ofertas', live: true },
+  // [P2a] "Cupones y Ofertas" → "Cupones" apuntando a la página dedicada
+  // /cupones (ya no ancla a la sección de la landing).
+  { href: ROUTES.cupones, label: 'Cupones' },
   { href: '/cuenta/mis-publicaciones', label: 'Mis publicaciones' },
   { href: '/#como-funciona', label: 'Cómo funciona' },
 ]
@@ -54,11 +55,6 @@ export function MunayHeader() {
               className="flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-munay-ink/80 transition-colors hover:bg-munay-crema/30 hover:text-munay-terracota focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-munay-terracota"
             >
               {l.label}
-              {l.live && (
-                <Badge className="h-4 rounded-full bg-munay-terracota-quemado px-1.5 text-[9px] font-bold tracking-wide text-white hover:bg-munay-terracota-quemado">
-                  LIVE
-                </Badge>
-              )}
             </Link>
           ))}
         </nav>

@@ -58,7 +58,8 @@ export function MunayHero() {
               variant="outline"
               className="rounded-xl border-munay-terracota/50 bg-white px-7 text-base font-semibold text-munay-terracota hover:bg-munay-terracota/5 hover:text-munay-terracota-quemado"
             >
-              <Link href="/#cupones-y-ofertas">Ver cupones y ofertas</Link>
+              {/* [P2a] CTA → página dedicada de cupones (antes anclaba a la landing) */}
+              <Link href={ROUTES.cupones}>Ver cupones</Link>
             </Button>
           </div>
 

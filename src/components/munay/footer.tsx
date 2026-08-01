@@ -7,7 +7,8 @@ const COLUMNS = [
     title: 'Comprar',
     links: [
       { label: 'Catálogo', href: ROUTES.catalogo },
-      { label: 'Cupones y ofertas', href: '/#cupones-y-ofertas' },
+      // [P2a] "Cupones y ofertas" → "Cupones" → página dedicada /cupones.
+      { label: 'Cupones', href: ROUTES.cupones },
       { label: 'Carrito', href: ROUTES.carrito },
     ],
   },

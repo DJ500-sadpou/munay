@@ -12,8 +12,41 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth/require-admin'
 import { query, queryOne, isDbConfigured } from '@/lib/db/neon'
+// [FIX Ronda 1] formatDate con timezone America/Guayaquil explícita
+// (toLocaleDateString('es-EC') usaba la del servidor → fecha incorrecta
+// en timestamps límite para el admin).
+import { formatDate } from '@/lib/format'
 
 export const runtime = 'nodejs'
+
+/**
+ * [FIX Ronda 2] Lógica de warning única (GET y POST la usan): el admin debe
+ * saber cuándo los productos asociados AÚN no son visibles para el usuario
+ * (código inactivo, no iniciado, expirado o agotado). Si cambia un mensaje o
+ * un check, se actualiza en un solo lugar.
+ */
+function computeFlashCodeWarning(fc: {
+  active: boolean
+  starts_at: string
+  ends_at: string
+  max_uses: number | null
+  uses_count: number
+}): string | null {
+  const now = new Date()
+  if (!fc.active) {
+    return 'El código está INACTIVO: los usuarios aún no podrán ver estos productos.'
+  }
+  if (new Date(fc.starts_at) > now) {
+    return `El código aún no inicia (inicia el ${formatDate(fc.starts_at, { dateStyle: 'short' })}).`
+  }
+  if (new Date(fc.ends_at) < now) {
+    return 'El código ya EXPIRÓ: los usuarios no podrán ver estos productos.'
+  }
+  if (fc.max_uses !== null && Number(fc.uses_count) >= Number(fc.max_uses)) {
+    return 'El código ya AGOTÓ sus usos máximos: los usuarios no podrán ver estos productos.'
+  }
+  return null
+}
 
 /**
  * GET — Retorna:
@@ -34,11 +67,21 @@ export async function GET(
     return NextResponse.json({ ok: false, error: 'DB no configurada' }, { status: 503 })
   }
 
-  // Verificar que el código flash existe
-  const fc = await queryOne<any>(`SELECT code, type FROM flash_codes WHERE code = $1`, [cleanCode])
+  // Verificar que el código flash existe + su vigencia (para el warning
+  // "código no vigente" que el admin ve aunque no esté asociando).
+  // [FIX Ronda 2] El GET ahora calcula el MISMO warning que el POST, así
+  // loadData() refresca el aviso (antes quedaba obsoleto si el admin
+  // activaba/vencía el código sin re-asociar).
+  const fc = await queryOne<any>(`
+    SELECT code, type, active, starts_at, ends_at, max_uses, uses_count
+    FROM flash_codes WHERE code = $1
+  `, [cleanCode])
   if (!fc) {
     return NextResponse.json({ ok: false, error: 'Código flash no encontrado' }, { status: 404 })
   }
+
+  // [FIX Ronda 2] Mismo helper que el POST: warning único de código no vigente.
+  const warning = computeFlashCodeWarning(fc)
 
   // Productos asociados (incluye precio_especial_cents — F0/BLOQUE B)
   const associated = await query<any>(`
@@ -70,6 +113,7 @@ export async function GET(
       code: fc.code,
       type: fc.type,
     },
+    warning,
     associated,
     available: allProducts,
   })
@@ -118,11 +162,21 @@ export async function POST(
     return NextResponse.json({ ok: false, error: 'DB no configurada' }, { status: 503 })
   }
 
-  // Verificar que el código existe
-  const fc = await queryOne<any>(`SELECT code FROM flash_codes WHERE code = $1`, [cleanCode])
+  // Verificar que el código existe y su vigencia (para avisar al admin si el
+  // código aún no es visible: inactivo, expirado o agotado).
+  // [P1] La asociación NO se bloquea (el admin puede preparar códigos
+  // futuros), pero el warning guía: "asociaste productos a un código que
+  // los usuarios aún no pueden usar".
+  const fc = await queryOne<any>(`
+    SELECT code, active, starts_at, ends_at, max_uses, uses_count
+    FROM flash_codes WHERE code = $1
+  `, [cleanCode])
   if (!fc) {
     return NextResponse.json({ ok: false, error: 'Código flash no encontrado' }, { status: 404 })
   }
+
+  // [FIX Ronda 2] Helper único (GET y POST): warning de código no vigente.
+  const warning = computeFlashCodeWarning(fc)
 
   // Verificar que el producto existe
   const product = await queryOne<any>(`SELECT id FROM products WHERE id = $1`, [body.product_id])
@@ -140,7 +194,13 @@ export async function POST(
        DO UPDATE SET precio_especial_cents = EXCLUDED.precio_especial_cents`,
       [cleanCode, body.product_id, specialCents]
     )
-    return NextResponse.json({ ok: true, code: cleanCode, product_id: body.product_id, precio_especial_cents: specialCents })
+    return NextResponse.json({
+      ok: true,
+      code: cleanCode,
+      product_id: body.product_id,
+      precio_especial_cents: specialCents,
+      warning,
+    })
   } catch (err: any) {
     return NextResponse.json({ ok: false, error: 'Error al asociar producto' }, { status: 500 })
   }

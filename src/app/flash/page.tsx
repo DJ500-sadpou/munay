@@ -9,7 +9,8 @@ import { redirect } from 'next/navigation'
  * la sección "Cupones y ofertas" de la landing (#cupones-y-ofertas).
  */
 
-export const metadata = { title: 'Cupones y ofertas' }
+// [P2a] Metadata actualizada: el módulo se llama "Cupones" y vive en /cupones.
+export const metadata = { title: 'Cupones' }
 
 export default function FlashPage() {
   redirect('/catalogo')
