@@ -255,8 +255,20 @@ export async function POST(req: NextRequest) {
         phone: phone || null,
         message: (numero) =>
           `Pedido vía WhatsApp - Ticket: ${String(numero).padStart(4, '0')}`,
+        // [AUDIT A3] Guardar en el ticket los items AUTORITATIVOS del servidor
+        // (orderResult.order_items: título, qty y precio final resuelto flash vs
+        // regular) en vez de los items crudos del cliente (manipulables: un
+        // cliente podría enviar title: 'Gratis'). Fallback defensivo a los
+        // items del body solo si el server no devolvió order_items.
         itemsJson: JSON.stringify({
-          items: items,
+          items: orderResult.order_items && orderResult.order_items.length > 0
+            ? orderResult.order_items.map((it: any) => ({
+                product_id: it.product_id,
+                title: it.title,
+                qty: it.qty,
+                unit_price_cents: it.unit_price_cents,
+              }))
+            : items,
           shipping: { address: body.address, city: body.city, province: body.province },
         }),
         userId: userId ?? null,

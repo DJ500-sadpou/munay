@@ -238,6 +238,13 @@ export default function CheckoutPage() {
     e.preventDefault()
     // [P0b] Doble-submit guard: ignora clics mientras hay un request en vuelo.
     if (submittingRef.current) return
+    // [AUDIT A2] Gate de Turnstile: no enviar sin token anti-bot (evita el
+    // error opaco de requireTurnstile cuando el widget aún no verificó).
+    if (!turnstileToken) {
+      setError('Completa la verificación anti-bot antes de continuar.')
+      setStep('error')
+      return
+    }
     submittingRef.current = true
     setStep('sending')
     setError(null)
@@ -607,13 +614,28 @@ export default function CheckoutPage() {
               )}
 
               {/* Verificación anti-bot */}
-              <TurnstileWidget onVerify={setTurnstileToken} className="min-h-[65px]" />
+              <TurnstileWidget
+                onVerify={(token) => {
+                  setTurnstileToken(token)
+                  // [AUDIT] Limpiar el error del gate cuando el token finalmente
+                  // llega (el usuario completó el challenge) para no mostrar un
+                  // mensaje de error obsoleto.
+                  if (token) setError((prev) => (prev === 'Completa la verificación anti-bot antes de continuar.' ? null : prev))
+                }}
+                className="min-h-[65px]"
+              />
+              {!turnstileToken && step !== 'sending' && (
+                <p className="flex items-center gap-1.5 text-xs text-munay-ink/50">
+                  <AlertCircle className="h-3 w-3 shrink-0" aria-hidden />
+                  Completa la verificación anti-bot para habilitar el envío.
+                </p>
+              )}
 
               <Button
                 type="submit"
                 size="lg"
                 className="w-full bg-munay-whatsapp text-white hover:bg-munay-whatsapp/90"
-                disabled={step === 'sending' || step === 'redirecting' || retryIn > 0}
+                disabled={step === 'sending' || step === 'redirecting' || retryIn > 0 || !turnstileToken}
               >
                 {step === 'sending' ? (
                   <>

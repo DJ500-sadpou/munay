@@ -95,6 +95,21 @@ export interface CreateOrderResult {
 }
 
 /**
+ * [FIX RPC] Desanida el resultado jsonb de una función SQL.
+ *
+ * FOOTGUN (causa raíz del bug de "stock insuficiente"): `SELECT * FROM fn()`
+ * donde fn retorna jsonb NO devuelve el jsonb plano — Postgres expone una
+ * columna con el NOMBRE de la función: `[{ fn: {ok: true, ...} }]`. Leer
+ * `rows[0].ok` sobre esa fila es siempre `undefined` → toda orden fallaba con
+ * "Stock insuficiente para producto {uuid}" aunque hubiera stock. Por eso
+ * TODAS las invocaciones a RPC jsonb usan alias explícito `AS result` y este
+ * helper lee `rows[0].result`. NUNCA reviertas a `SELECT * FROM fn()`.
+ */
+function rpcResult(rows: any[]): any {
+  return rows?.[0]?.result ?? null
+}
+
+/**
  * Crea una orden en estado 'pending' de forma transaccional.
  *
  * Pasos:
@@ -210,9 +225,15 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
   for (const item of input.items) {
     const product = productsMap.get(item.product_id)
     if (!product || !product.active) {
+      // [AUDIT A2] Defensa en profundidad: un carrito persistido (pre-version 4)
+      // podría contener un listing P2P (id p2p_*). La UI ya bloquea agregarlos,
+      // pero si llegan aquí, dar un mensaje claro en vez del UUID confuso.
+      const isP2P = item.product_id.startsWith('p2p_')
       return {
         ok: false,
-        error: `Producto no encontrado o inactivo: ${item.product_id}`,
+        error: isP2P
+          ? 'Los productos de vendedor (P2P) aún no se pueden comprar en línea. Elige una pieza del catálogo.'
+          : `Producto no encontrado o inactivo: ${item.product_id}`,
         error_code: 'product_not_found',
       }
     }
@@ -281,8 +302,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
       // Si la tx redeem falla (saldo insuficiente, customer no encontrado),
       // la transacción entera falla y se hace ROLLBACK (no se crea la orden).
       if (input.points_to_redeem && input.points_to_redeem > 0 && input.user_id) {
-        const redeemRows = await tx`SELECT * FROM redeem_points(${input.user_id}, ${input.points_to_redeem}, ${orderId})`
-        const rr = redeemRows[0] as any
+        const rr = rpcResult(await tx`SELECT redeem_points(${input.user_id}, ${input.points_to_redeem}, ${orderId}) AS result`)
         if (!rr?.ok) {
           const reason = rr?.reason ?? 'unknown'
           const messages: Record<string, string> = {
@@ -522,14 +542,20 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
       }
 
       // 5f. reserve_inventory por item (falla si stock insuficiente)
+      // [FIX RPC] rpcResult desanida el jsonb (ver helper). Con el alias
+      // `AS result` el mensaje usa la razón REAL del RPC + el título del
+      // producto + el disponible real (antes el usuario solo veía el UUID).
       for (const item of orderItems) {
-        const reserveRows = await tx`SELECT * FROM reserve_inventory(${item.product_id}, ${item.qty})`
-        const rr = reserveRows[0] as any
+        const rr = rpcResult(await tx`SELECT reserve_inventory(${item.product_id}, ${item.qty}) AS result`)
         if (!rr?.ok) {
-          throw {
-            type: 'insufficient_stock',
-            message: `Stock insuficiente para producto ${item.product_id}`,
-          }
+          const reason = rr?.reason
+          const message =
+            reason === 'no_inventory'
+              ? `El producto "${item.title}" no tiene inventario registrado. Contacta a soporte.`
+              : reason === 'insufficient_stock'
+                ? `Stock insuficiente para "${item.title}". Disponible: ${rr?.available ?? 0}`
+                : `Stock insuficiente para producto ${item.product_id}`
+          throw { type: 'insufficient_stock', message }
         }
       }
 
@@ -655,14 +681,13 @@ export async function markOrderPaid(
       // 7. commit_inventory
       const items = await tx`SELECT product_id, qty FROM order_items WHERE order_id = ${orderId}`
       for (const item of items) {
-        await tx`SELECT * FROM commit_inventory(${item.product_id}, ${item.qty})`
+        await tx`SELECT commit_inventory(${item.product_id}, ${item.qty}) AS result`
       }
 
       // 8. award_points (idempotente via RPC)
       let pointsAwarded = false
       let pointsWarning: string | undefined
-      const awardResult = await tx`SELECT * FROM award_points(${orderId})`
-      const ar = awardResult[0] as any
+      const ar = rpcResult(await tx`SELECT award_points(${orderId}) AS result`)
       if (ar?.ok) {
         pointsAwarded = true
       } else if (ar?.reason === 'already_awarded') {
@@ -797,7 +822,7 @@ export async function markOrderCancelled(orderId: string, reason?: string): Prom
       // Liberar inventario
       const items = await tx`SELECT product_id, qty FROM order_items WHERE order_id = ${orderId}`
       for (const item of items) {
-        await tx`SELECT * FROM release_inventory(${item.product_id}, ${item.qty})`
+        await tx`SELECT release_inventory(${item.product_id}, ${item.qty}) AS result`
       }
 
       // Marcar payments como failed
