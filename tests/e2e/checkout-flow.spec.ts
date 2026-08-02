@@ -75,6 +75,43 @@ test.describe('Flujo de compra completo (modo demo)', () => {
     await expect(page.getByText(/carrito está vacío|Tu carrito/i).first()).toBeVisible()
   })
 
+  // [P1][P2] Cupones en el carrito (misma función que checkout) + prefijo +593
+  // precargado y editable en el checkout. Se siembra el carrito persistido de
+  // zustand (munay-cart, version 4) para que /carrito y /checkout no hagan
+  // early-return por carrito vacío. NO se envía el pedido (requiere Turnstile).
+  test('carrito muestra cupones y checkout precarga +593', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem(
+        'munay-cart',
+        JSON.stringify({
+          state: {
+            lines: [
+              {
+                id: 'demo-1',
+                slug: 'demo',
+                title: 'Pieza demo',
+                unit_price_cents: 2500,
+                qty: 1,
+                condition: 'new',
+              },
+            ],
+          },
+          version: 4,
+        })
+      )
+    })
+    await page.goto('/carrito')
+    await expect(page.getByRole('heading', { name: 'Carrito' })).toBeVisible()
+    // Cupón aplicable desde el carrito (misma función que el checkout)
+    await expect(page.getByText('¿Tienes un cupón de descuento?')).toBeVisible()
+    await expect(page.getByRole('link', { name: /Explorar mis cupones/i })).toBeVisible()
+    // Prefijo +593 precargado y editable en el checkout
+    await page.goto('/checkout')
+    const phone = page.getByLabel('Teléfono / WhatsApp')
+    await expect(phone).toBeVisible()
+    await expect(phone).toHaveValue('+593 ')
+  })
+
   test('página de login carga', async ({ page }) => {
     await page.goto('/cuenta/login')
     await expect(page.getByRole('heading', { name: /Mi cuenta/i })).toBeVisible()

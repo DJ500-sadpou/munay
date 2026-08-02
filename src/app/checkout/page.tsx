@@ -11,7 +11,8 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { formatCents } from '@/lib/format'
 import { ROUTES, POINTS_RULES } from '@/lib/constants'
-import { readSelected, clearSelected } from '@/lib/coupon-storage'
+import { readSelected, clearSelected, readApplied, writeApplied } from '@/lib/coupon-storage'
+import { computePromo } from '@/lib/coupon-math'
 import { useCart } from '@/store/cart'
 import { useMounted } from '@/hooks/use-mounted'
 import { CouponCheckoutInput, type AppliedCoupon } from '@/components/cart/coupon-checkout-input'
@@ -59,7 +60,9 @@ export default function CheckoutPage() {
   // Datos del formulario
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
-  const [phone, setPhone] = useState('')
+  // [P2] Prefijo +593 precargado para ahorrar tipeo; sigue siendo un input
+  // libre: el cliente puede borrarlo completo (campo opcional) o cambiarlo.
+  const [phone, setPhone] = useState('+593 ')
   const [address, setAddress] = useState('')
   const [city, setCity] = useState('Ibarra')
   const [province, setProvince] = useState('Imbabura')
@@ -104,7 +107,15 @@ export default function CheckoutPage() {
     // → checkout: el param se pierde al pasar por el catálogo, pero el selected
     // persiste y el checkout lo aplica al llegar.
     const params = new URLSearchParams(window.location.search)
-    let code = params.get('coupon')
+    const paramCode = params.get('coupon')
+    // [P1][FIX Ronda 5] Tercera fuente: el cupón YA VALIDADO en el carrito
+    // (munay.cupones.applied). Se revalida server-side con tolerancia a 429:
+    // si el rate limit de /api/coupons/apply (10s/IP) responde 429 por el
+    // request del carrito, se usa el payload almacenado sin re-validar (el
+    // descuento es preview; createOrder revalida y consume server-side).
+    const applied = readApplied()
+    // Precedencia: ?coupon= (explícito) > applied (carrito/checkout) > selected (TTL).
+    let code: string | null = paramCode ?? applied?.codigo ?? null
     if (!code) {
       // [FIX Ronda 5] El preferido (JSON { code, at } con TTL de 1h, limpieza
       // de obsoletos/corruptos/formato viejo) se lee desde el módulo
@@ -126,24 +137,45 @@ export default function CheckoutPage() {
         })
         const data = await res.json()
         // Red de seguridad: si llega un 429 (p.ej. el usuario acaba de aplicar
-        // el cupón manualmente), no mostrar un mensaje engañoso — el cupón ya
-        // está aplicado o se puede reintentar.
-        if (data.error_code === 'rate_limited') return
+        // el cupón en el carrito y el checkout revalida dentro de la ventana),
+        // NO mostrar un mensaje engañoso: si venía un "aplicado" del carrito,
+        // se muestra tal cual (preview; createOrder revalida en el submit).
+        if (data.error_code === 'rate_limited') {
+          if (applied && !paramCode) {
+            setCoupon({ codigo: applied.codigo, discount_percent: applied.discount_percent })
+          }
+          return
+        }
         if (data.ok) {
-          setCoupon({ codigo: data.codigo, discount_percent: data.discount_percent })
+          const payload = { codigo: data.codigo, discount_percent: data.discount_percent }
+          setCoupon(payload)
+          // [P1] Sincronizar el "aplicado" para que el carrito lo herede
+          // también (loop carrito <-> checkout cerrado en ambos sentidos).
+          writeApplied(payload)
           // [FIX Ronda 1] Limpiar el param de la URL para que un refresh NO
           // re-aplique el cupón aunque el usuario lo haya quitado después.
-          const url = new URL(window.location.href)
-          url.searchParams.delete('coupon')
-          window.history.replaceState(null, '', url.toString())
+          if (paramCode) {
+            const url = new URL(window.location.href)
+            url.searchParams.delete('coupon')
+            window.history.replaceState(null, '', url.toString())
+          }
           // [FIX Ronda 3] Limpiar el "preferido" de localStorage tras aplicarlo
           // (ya está aplicado; no debe re-aplicarse en futuros checkouts).
           // [FIX Ronda 5] Via módulo compartido (src/lib/coupon-storage.ts).
           clearSelected()
         } else {
+          // [P1] El cupón del carrito ya no es válido (venció/agotó/monto
+          // mínimo): limpiar el "aplicado" y mostrar el error real.
+          if (applied) writeApplied(null)
           setCouponError(data.error ?? 'No se pudo aplicar el cupón.')
         }
       } catch {
+        // Error de conexión: si venía un "aplicado" del carrito, mostrarlo
+        // (preview; createOrder revalida al confirmar).
+        if (applied && !paramCode) {
+          setCoupon({ codigo: applied.codigo, discount_percent: applied.discount_percent })
+          return
+        }
         setCouponError('No se pudo aplicar el cupón. Intenta nuevamente.')
       }
     })()
@@ -181,43 +213,21 @@ export default function CheckoutPage() {
 
   const pointsDiscountCents = Math.floor(pointsToRedeem / POINTS_RULES.POINTS_PER_DISCOUNT_DOLLAR) * 100
 
-  // [AUDIT] Replicar la no-acumulación del server (createOrder 5c-quater):
-  // el cupón/FID- se evalúa sobre el subtotal REGULAR y, si gana, los ítems
-  // flash vuelven a precio regular (base = regularSubtotalCents). Antes el
-  // preview calculaba el cupón sobre el subtotal flash → mostraba un total
-  // DISTINTO al que cobra createOrder (mismatch real reportado en auditoría).
-  const regularSubtotalCents = lines.reduce(
-    (s, l) => s + (l.regular_unit_price_cents ?? l.unit_price_cents) * l.qty,
-    0
-  )
-  const flashSavingsCents = Math.max(0, regularSubtotalCents - subtotalCents)
-  // [P2c] % de descuento Flash para el mensaje visible de no-acumulación.
-  const flashPct =
-    regularSubtotalCents > 0
-      ? Math.round((flashSavingsCents / regularSubtotalCents) * 100)
-      : 0
-  // Descuento del cupón (validado contra /api/coupons/apply; el consumo real
-  // ocurre en createOrder). Sobre el subtotal REGULAR, como el server.
-  const couponDiscountCents = coupon
-    ? Math.min(regularSubtotalCents, Math.round(regularSubtotalCents * (coupon.discount_percent / 100)))
-    : 0
-  // Descuento del cupón de fidelidad (FID-) si hay uno seleccionado.
-  const loyaltyDiscountCents = loyaltyPercent
-    ? Math.min(regularSubtotalCents, Math.round(regularSubtotalCents * (loyaltyPercent / 100)))
-    : 0
-  // [AUDIT] Ganador con 3 competidores (igual que createOrder): flash, cupón, FID-.
-  const flashWins =
-    flashSavingsCents > 0 &&
-    flashSavingsCents >= loyaltyDiscountCents &&
-    flashSavingsCents >= couponDiscountCents
-  const couponWins = !flashWins && couponDiscountCents > 0 && couponDiscountCents >= loyaltyDiscountCents
-  const loyaltyWins = !flashWins && !couponWins && loyaltyDiscountCents > 0
-  const promoDiscountCents = couponWins ? couponDiscountCents : loyaltyWins ? loyaltyDiscountCents : 0
-  const baseSubtotalCents = couponWins || loyaltyWins ? regularSubtotalCents : subtotalCents
-  const adjustedTotalCents = Math.max(0, baseSubtotalCents - promoDiscountCents - pointsDiscountCents)
-
-  const shipping = adjustedTotalCents > 0 ? 200 : 0
-  const grandTotal = adjustedTotalCents + shipping
+  // [P1][FIX Ronda 5] Aritmética de no-acumulación compartida con el carrito
+  // (src/lib/coupon-math.ts): el ganador (flash/cupón/FID-) y el total se
+  // calculan en UN solo lugar para que el preview del carrito y del checkout
+  // coincidan EXACTO entre sí y con createOrder (que cobra server-side).
+  const {
+    flashSavingsCents,
+    flashPct,
+    couponDiscountCents,
+    loyaltyDiscountCents,
+    flashWins,
+    couponWins,
+    promoDiscountCents,
+    shipping,
+    grandTotal,
+  } = computePromo({ lines, subtotalCents, coupon, loyaltyPercent, pointsDiscountCents })
 
   if (lines.length === 0) {
     return (
@@ -294,6 +304,9 @@ export default function CheckoutPage() {
       // Limpiar carrito y redirigir a WhatsApp
       setStep('redirecting')
       clear()
+      // [P1] El cupón ya se consumió dentro de createOrder: limpiar el
+      // "aplicado" para que no re-aparezca en un futuro carrito/checkout.
+      writeApplied(null)
 
       // [F2.4] Transportar el ganador de no-acumulación a la success page por
       // query params (createOrder corre server-side en POST; el checkout es
@@ -387,7 +400,9 @@ export default function CheckoutPage() {
                 <Label htmlFor="phone">Teléfono / WhatsApp</Label>
                 <Input
                   id="phone"
-                  placeholder="+593 ..."
+                  type="tel"
+                  inputMode="tel"
+                  placeholder="9X XXX XXXX"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   disabled={step === 'sending'}
@@ -574,6 +589,9 @@ export default function CheckoutPage() {
                   // cupón manual (antes solo se limpiaba al quitar el cupón).
                   setCoupon(c)
                   setCouponError(null)
+                  // [P1] Sincronizar el "aplicado" (null → borra) para que el
+                  // carrito lo herede / lo pierda al quitar aquí.
+                  writeApplied(c)
                 }}
               />
 

@@ -85,3 +85,73 @@ export function clearSelected() {
     /* ignore */
   }
 }
+
+/**
+ * [P1] Cupón YA VALIDADO en el carrito/checkout (preview). Key SEPARADA del
+ * "preferido" (SELECTED_KEY): el preferido es intención futura con TTL 1h;
+ * el "aplicado" es la intención ACTUAL del carrito, sin TTL — se limpia al
+ * quitar el cupón, al vaciar el carrito o al consumirse en createOrder.
+ *
+ * Por qué sin TTL: el carrito puede estar horas abierto; el descuento es
+ * SOLO preview y `createOrder` revalida y consume server-side, así que un
+ * payload obsoleto nunca produce un total incorrecto final (el error 422
+ * del cupón vencido/agotado aparece al confirmar, no silenciosamente).
+ */
+export const APPLIED_KEY = 'munay.cupones.applied'
+
+export interface AppliedCouponPayload {
+  codigo: string
+  discount_percent: number
+}
+
+/**
+ * Devuelve el cupón aplicado SOLO si tiene shape válido. Limpia entradas
+ * corruptas (no re-parsea basura en cada visita).
+ */
+export function readApplied(): AppliedCouponPayload | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = window.localStorage.getItem(APPLIED_KEY)
+    if (!raw) return null
+    const parsed: unknown = JSON.parse(raw)
+    if (
+      !parsed ||
+      typeof parsed !== 'object' ||
+      typeof (parsed as AppliedCouponPayload).codigo !== 'string' ||
+      typeof (parsed as AppliedCouponPayload).discount_percent !== 'number'
+    ) {
+      window.localStorage.removeItem(APPLIED_KEY)
+      return null
+    }
+    return parsed as AppliedCouponPayload
+  } catch {
+    try {
+      window.localStorage.removeItem(APPLIED_KEY)
+    } catch {
+      /* ignore */
+    }
+    return null
+  }
+}
+
+/** Escribe el cupón aplicado (o elimina si payload es null). */
+export function writeApplied(payload: AppliedCouponPayload | null) {
+  try {
+    if (payload) {
+      window.localStorage.setItem(APPLIED_KEY, JSON.stringify(payload))
+    } else {
+      window.localStorage.removeItem(APPLIED_KEY)
+    }
+  } catch {
+    /* localStorage no disponible (SSR/privacy mode) — no crítico */
+  }
+}
+
+/** Elimina el cupón aplicado (quitar cupón / vaciar carrito / orden creada). */
+export function clearApplied() {
+  try {
+    window.localStorage.removeItem(APPLIED_KEY)
+  } catch {
+    /* ignore */
+  }
+}
