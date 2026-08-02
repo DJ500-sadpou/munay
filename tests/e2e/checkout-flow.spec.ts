@@ -31,6 +31,24 @@ test.describe('Flujo de compra completo (modo demo)', () => {
     await expect(page.getByRole('heading', { name: 'Catálogo' })).toBeVisible()
   })
 
+  // [FIX BÚSQUEDA] Regresión del bug "No pudimos realizar la búsqueda": un
+  // mismatch de índices de parámetros entre las queries products y P2P de
+  // listProducts rompía toda búsqueda con texto. Aserción POSITIVA primero
+  // (heading visible) para tolerar cold-compile, luego la negativa del error.
+  // NOTA: en CI sin DATABASE_URL la query no se ejecuta (modo demo) — este
+  // test valida el render; el gate real del fix es el smoke test contra Neon.
+  test('búsqueda con texto no muestra error de búsqueda', async ({ page }) => {
+    await page.goto('/catalogo?q=chaqueta')
+    await expect(page.getByRole('heading', { name: 'Catálogo' })).toBeVisible()
+    await expect(page.getByText('No pudimos realizar la búsqueda.')).toHaveCount(0)
+  })
+
+  test('búsqueda sin resultados muestra empty state', async ({ page }) => {
+    await page.goto('/catalogo?q=zzznadaexiste')
+    await expect(page.getByRole('heading', { name: 'Catálogo' })).toBeVisible()
+    await expect(page.getByText('No encontramos resultados')).toBeVisible()
+  })
+
   test('búsqueda de código flash redirige a /flash/[code]', async ({ page }) => {
     await page.goto('/catalogo')
     const searchInput = page.getByLabel('Buscar en el catálogo')

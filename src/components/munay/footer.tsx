@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import { SITE, ROUTES } from '@/lib/constants'
 
 const COLUMNS = [
@@ -76,28 +75,16 @@ export function MunayFooter() {
       <div className="mx-auto max-w-7xl px-4 py-12 lg:px-6">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-6">
           <div className="lg:col-span-2">
-            <div className="flex items-start gap-4">
-              <div>
-                <span className="font-display text-2xl font-extrabold tracking-tight text-munay-terracota">
-                  MUNAY
-                </span>
-                <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.22em] text-munay-cacao/70">
-                  Para estar pinta
-                </p>
-                <p className="mt-4 max-w-xs text-xs leading-relaxed text-munay-ink/60">
-                  Moda circular, nueva y usada. Confianza que se siente.
-                </p>
-              </div>
-              {/* Código QR — escaneá y entrá a la moda circular */}
-              <div className="relative mt-1 h-20 w-20 shrink-0">
-                <Image
-                  src="/munay/ref-qr.webp"
-                  alt="Escaneá para ir a Munay"
-                  fill
-                  sizes="80px"
-                  className="object-contain"
-                />
-              </div>
+            <div>
+              <span className="font-display text-2xl font-extrabold tracking-tight text-munay-terracota">
+                MUNAY
+              </span>
+              <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.22em] text-munay-cacao/70">
+                Para estar pinta
+              </p>
+              <p className="mt-4 max-w-xs text-xs leading-relaxed text-munay-ink/60">
+                Moda circular, nueva y usada. Confianza que se siente.
+              </p>
             </div>
           </div>
 

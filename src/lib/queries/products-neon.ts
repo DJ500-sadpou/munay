@@ -231,24 +231,31 @@ export async function listProducts(filters: ProductFilters = {}): Promise<Produc
   }
 
   // ── 2. P2P listings publicados (user_listings) — solo cuando no es filtro 'new' ──
+  // [FIX BÚSQUEDA] Contador LOCAL e independiente del bloque 1 (products).
+  // ANTES se reutilizaba `paramIdxRef` (compartido con el bloque 1): con `q`
+  // activo, el bloque 1 usaba $1 y dejaba el contador en 2; este bloque
+  // generaba $2 pero listingParams arrancaba con 1 elemento → Postgres 42P18
+  // → "No pudimos realizar la búsqueda". Cada query() es independiente y
+  // recibe su propio array de params, así que DEBE indexar desde $1.
   if (includeP2P) {
+    const listingParamIdx = { current: 1 }
     const listingWhere: string[] = ["ul.status IN ('verified', 'published')", 'ul.active = true']
     const listingParams: any[] = []
 
     if (f.q) {
-      listingWhere.push(`(ul.title ILIKE $${paramIdxRef.current} OR ul.description ILIKE $${paramIdxRef.current})`)
+      listingWhere.push(`(ul.title ILIKE $${listingParamIdx.current} OR ul.description ILIKE $${listingParamIdx.current})`)
       listingParams.push(`%${f.q}%`)
-      paramIdxRef.current++
+      listingParamIdx.current++
     }
     if (f.minPriceCents !== undefined) {
-      listingWhere.push(`ul.price_cents >= $${paramIdxRef.current}`)
+      listingWhere.push(`ul.price_cents >= $${listingParamIdx.current}`)
       listingParams.push(f.minPriceCents)
-      paramIdxRef.current++
+      listingParamIdx.current++
     }
     if (f.maxPriceCents !== undefined) {
-      listingWhere.push(`ul.price_cents <= $${paramIdxRef.current}`)
+      listingWhere.push(`ul.price_cents <= $${listingParamIdx.current}`)
       listingParams.push(f.maxPriceCents)
-      paramIdxRef.current++
+      listingParamIdx.current++
     }
 
     const listingRows = await query<any>(`
