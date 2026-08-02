@@ -8,8 +8,9 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { auth, currentUser } from '@clerk/nextjs/server'
-import { transaction, isDbConfigured } from '@/lib/db/neon'
+import { query, transaction, isDbConfigured } from '@/lib/db/neon'
 import { slugify } from '@/lib/format'
+import { isProductCategory } from '@/lib/categories'
 
 export const runtime = 'nodejs'
 
@@ -30,6 +31,15 @@ async function checkAdmin() {
   return { ok: true, userId }
 }
 
+/** [P1][FIX R5] Valida que la marca exista Y esté activa (una marca inactiva
+ *  no puede asignarse a productos nuevos). Null → sin marca (válido). */
+async function validateBrandActive(marcaId: string | null | undefined): Promise<string | null> {
+  if (!marcaId) return null
+  const row = await query<any>(`SELECT id FROM brands WHERE id = $1 AND activo = true`, [marcaId])
+  if (!row[0]) return 'Marca inválida o inactiva'
+  return null
+}
+
 export async function POST(req: NextRequest) {
   const guard = await checkAdmin()
   if (!guard.ok) return guard.response!
@@ -44,6 +54,8 @@ export async function POST(req: NextRequest) {
     active: boolean
     stock: number
     images?: { url: string; public_id?: string; sort?: number }[]
+    categoria?: string | null
+    marca_id?: string | null
   }
   try {
     body = await req.json()
@@ -68,15 +80,25 @@ export async function POST(req: NextRequest) {
   if (body.grading && !['excelente', 'buena', 'regular'].includes(body.grading)) {
     return NextResponse.json({ error: 'Grading inválido' }, { status: 400 })
   }
+  // [P1] Categoría OBLIGATORIA (lista fija).
+  if (!isProductCategory(body.categoria)) {
+    return NextResponse.json({ error: 'Debes seleccionar una categoría válida' }, { status: 400 })
+  }
+  // [P1][FIX R5] Marca opcional pero debe existir y estar activa.
+  const brandErr = await validateBrandActive(body.marca_id)
+  if (brandErr) {
+    return NextResponse.json({ error: brandErr }, { status: 400 })
+  }
 
   try {
     // Fix CRIT-4 / FLOW2-012: usar transaction de Neon real (no stub upsert no-op).
     const result = await transaction(async (tx) => {
       const productRows = await tx`
-        INSERT INTO products (slug, title, description, price_cents, currency, condition, grading, active)
+        INSERT INTO products (slug, title, description, price_cents, currency, condition, grading, active, categoria, marca_id)
         VALUES (${slugify(body.title)}, ${body.title}, ${body.description ?? null},
                 ${body.price_cents}, 'USD', ${body.condition},
-                ${body.grading ?? null}, ${body.active})
+                ${body.grading ?? null}, ${body.active}, ${body.categoria},
+                ${body.marca_id ?? null})
         RETURNING id, slug
       `
       const product = productRows[0]

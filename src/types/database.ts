@@ -36,6 +36,8 @@ export interface Database {
           grading: ProductGrading | null
           active: boolean
           created_at: string
+          categoria: string | null
+          marca_id: string | null
         }
         Insert: {
           id?: string
@@ -48,8 +50,27 @@ export interface Database {
           grading?: ProductGrading | null
           active?: boolean
           created_at?: string
+          categoria?: string | null
+          marca_id?: string | null
         }
         Update: Partial<Database['public']['Tables']['products']['Insert']>
+      }
+      brands: {
+        Row: {
+          id: string
+          slug: string
+          nombre: string
+          activo: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          slug: string
+          nombre: string
+          activo?: boolean
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['brands']['Insert']>
       }
       product_images: {
         Row: {

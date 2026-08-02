@@ -21,14 +21,17 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import type { ProductFilters } from '@/lib/queries/products'
+import { PRODUCT_CATEGORIES } from '@/lib/categories'
 
 interface Props {
   filters: ProductFilters
   totalCount: number
   flashCodeActive?: string | null
+  /** [P1] Marca activa (via /marcas → /catalogo?marca=slug) para el banner. */
+  marcaActive?: { slug: string; nombre: string } | null
 }
 
-export function CatalogFilters({ filters, totalCount, flashCodeActive }: Props) {
+export function CatalogFilters({ filters, totalCount, flashCodeActive, marcaActive }: Props) {
   // Construir href con los filtros preservando los demás
   const buildHref = (updates: Partial<ProductFilters>): string => {
     const merged: ProductFilters = { ...filters, ...updates }
@@ -36,6 +39,9 @@ export function CatalogFilters({ filters, totalCount, flashCodeActive }: Props) 
     if (merged.q) params.set('q', merged.q)
     if (merged.condition && merged.condition !== 'all') params.set('condition', merged.condition)
     if (merged.grading && merged.grading !== 'all') params.set('grading', merged.grading)
+    // [P1] Categoría (misma semántica de centinela 'all' que condition/grading).
+    if (merged.categoria && merged.categoria !== 'all') params.set('categoria', merged.categoria)
+    if (merged.marca) params.set('marca', merged.marca)
     if (merged.minPriceCents !== undefined) params.set('minPrice', String(merged.minPriceCents / 100))
     if (merged.maxPriceCents !== undefined) params.set('maxPrice', String(merged.maxPriceCents / 100))
     if (merged.sort && merged.sort !== 'recent') params.set('sort', merged.sort)
@@ -73,6 +79,30 @@ export function CatalogFilters({ filters, totalCount, flashCodeActive }: Props) 
         <p className="text-[10px] text-muted-foreground">
           Los enlaces siguientes preservan el orden.
         </p>
+      </div>
+
+      {/* Categoría [P1] — mismo patrón de Links que Condición/Estado */}
+      <div className="space-y-2">
+        <Label className="text-xs font-medium">Categoría</Label>
+        <div className="flex flex-col gap-1">
+          {(['all', ...PRODUCT_CATEGORIES.map((c) => c.value)] as const).map((v) => {
+            const label = v === 'all' ? 'Todas' : (PRODUCT_CATEGORIES.find((c) => c.value === v)?.label ?? v)
+            const isActive = (filters.categoria ?? 'all') === v
+            return (
+              <Link
+                key={v}
+                href={buildHref({ categoria: v })}
+                className={`flex items-center justify-between rounded-md px-3 py-1.5 text-sm transition-colors ${
+                  isActive
+                    ? 'bg-primary/10 text-primary font-medium'
+                    : 'text-foreground/80 hover:bg-muted'
+                }`}
+              >
+                {label}
+              </Link>
+            )
+          })}
+        </div>
       </div>
 
       {/* Condición */}
@@ -166,6 +196,20 @@ export function CatalogFilters({ filters, totalCount, flashCodeActive }: Props) 
             <Link href={buildHref({ flashCode: undefined })}>
               <RotateCcw className="mr-1 h-3 w-3" aria-hidden />
               Quitar descuento
+            </Link>
+          </Button>
+        </div>
+      )}
+
+      {/* [P1] Marca activa (via /marcas) — banner + quitar filtro */}
+      {marcaActive && (
+        <div className="rounded-md border border-munay-terracota/20 bg-munay-terracota/5 p-3">
+          <p className="text-xs font-medium text-munay-terracota">Marca</p>
+          <p className="mt-1 text-sm font-semibold text-munay-ink">{marcaActive.nombre}</p>
+          <Button asChild variant="ghost" size="sm" className="mt-2 h-7 px-2 text-xs">
+            <Link href={buildHref({ marca: undefined })}>
+              <RotateCcw className="mr-1 h-3 w-3" aria-hidden />
+              Quitar filtro
             </Link>
           </Button>
         </div>

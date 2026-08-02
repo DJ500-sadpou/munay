@@ -20,16 +20,19 @@ export type Category = {
   href: string
 }
 
+// [P1] Íconos de la landing: cada categoría lleva al catálogo YA FILTRADO
+// con `?categoria=<value>` (el valor viene del vocabulario canónico
+// src/lib/categories.ts). "Marcas" va a la página de selección /marcas.
 export const CATEGORIES: Category[] = [
   { label: 'Todas', icon: LayoutGrid, href: '/catalogo' },
-  { label: 'Chaquetas', icon: Shirt, href: '/catalogo?cat=chaquetas' },
-  { label: 'Tops', icon: Shirt, href: '/catalogo?cat=tops' },
-  { label: 'Pantalones', icon: Tags, href: '/catalogo?cat=pantalones' },
-  { label: 'Zapatillas', icon: Footprints, href: '/catalogo?cat=zapatillas' },
-  { label: 'Bolsos', icon: ShoppingBag, href: '/catalogo?cat=bolsos' },
-  { label: 'Vestidos', icon: Sparkles, href: '/catalogo?cat=vestidos' },
-  { label: 'Accesorios', icon: Watch, href: '/catalogo?cat=accesorios' },
-  { label: 'Marcas', icon: Tags, href: '/catalogo?cat=marcas' },
+  { label: 'Chaquetas', icon: Shirt, href: '/catalogo?categoria=chaquetas' },
+  { label: 'Tops', icon: Shirt, href: '/catalogo?categoria=tops' },
+  { label: 'Pantalones', icon: Tags, href: '/catalogo?categoria=pantalones' },
+  { label: 'Zapatillas', icon: Footprints, href: '/catalogo?categoria=zapatillas' },
+  { label: 'Bolsos', icon: ShoppingBag, href: '/catalogo?categoria=bolsos' },
+  { label: 'Vestidos', icon: Sparkles, href: '/catalogo?categoria=vestidos' },
+  { label: 'Accesorios', icon: Watch, href: '/catalogo?categoria=accesorios' },
+  { label: 'Marcas', icon: Tags, href: '/marcas' },
 ]
 
 export type LiveCode = {

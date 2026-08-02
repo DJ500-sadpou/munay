@@ -16,6 +16,7 @@ import {
   getValidFlashCode,
   looksLikeFlashCode,
 } from '@/lib/queries/products'
+import { getBrandBySlug } from '@/lib/queries/brands'
 import { ROUTES } from '@/lib/constants'
 import { isDbConfigured } from '@/lib/db/neon'
 import { formatDate } from '@/lib/format'
@@ -43,6 +44,8 @@ export default async function CatalogoPage({ searchParams }: PageProps) {
   // [P1] Tipo completo FlashCodeInfo: el banner muestra vigencia (ends_at)
   // y usos restantes (remaining_uses) además del código.
   let activeFlashInfo: FlashCodeInfo | null = null
+  // [P1] Marca activa (via /marcas → /catalogo?marca=slug): banner + estado.
+  let marcaActive: { slug: string; nombre: string } | null = null
 
   // [P0a] Detección de código flash FUERA del try/catch: redirect() lanza
   // NEXT_REDIRECT (un error especial que Next.js maneja). Si se capturara
@@ -68,6 +71,13 @@ export default async function CatalogoPage({ searchParams }: PageProps) {
     // F0/BLOQUE B: los códigos flash son SOLO 'unlock' (desbloqueo de piezas).
     if (filters.flashCode) {
       activeFlashInfo = await getValidFlashCode(filters.flashCode)
+    }
+    // [P1] Resolver la marca activa para el banner (solo si viene ?marca=).
+    if (filters.marca) {
+      const brand = await getBrandBySlug(filters.marca)
+      if (brand?.activo) {
+        marcaActive = { slug: brand.slug, nombre: brand.nombre }
+      }
     }
   } catch (err) {
     console.error('[catalogo] error de búsqueda:', err)
@@ -176,6 +186,7 @@ export default async function CatalogoPage({ searchParams }: PageProps) {
             filters={filters}
             totalCount={products.length}
             flashCodeActive={activeFlashInfo?.code ?? null}
+            marcaActive={marcaActive}
           />
 
           <div className="space-y-8">

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Plus, Package, LogOut, Sparkles, ShoppingCart, DollarSign, TrendingUp, Zap, BarChart3, Gift, Percent, MessageCircle, ShieldCheck, Ticket } from 'lucide-react'
+import { Plus, Package, LogOut, Sparkles, ShoppingCart, DollarSign, TrendingUp, Zap, BarChart3, Gift, Percent, MessageCircle, ShieldCheck, Ticket, Tags } from 'lucide-react'
 import { requireAdmin } from '@/lib/auth/require-admin'
 import { query, queryOne, isDbConfigured } from '@/lib/db/neon'
 import { Button } from '@/components/ui/button'
@@ -135,6 +135,12 @@ export default async function AdminHomePage() {
             <Link href="/admin/listings">
               <ShieldCheck className="mr-2 h-4 w-4" aria-hidden />
               Listings P2P
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/admin/brands">
+              <Tags className="mr-2 h-4 w-4" aria-hidden />
+              Marcas
             </Link>
           </Button>
           <Button asChild>

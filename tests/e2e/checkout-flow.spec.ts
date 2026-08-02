@@ -65,6 +65,22 @@ test.describe('Flujo de compra completo (modo demo)', () => {
     await expect(page.getByText(/MUNAY10/i)).toBeVisible()
   })
 
+  // [P1] Filtro de categoría: /catalogo?categoria=chaquetas debe cargar sin
+  // error (heading visible) aunque haya 0 resultados en demo.
+  test('catálogo filtra por categoría sin romper', async ({ page }) => {
+    await page.goto('/catalogo?categoria=chaquetas')
+    await expect(page.getByRole('heading', { name: 'Catálogo' })).toBeVisible()
+    await expect(page.getByText('No pudimos realizar la búsqueda.')).toHaveCount(0)
+  })
+
+  // [P1] /marcas: carga con heading y, sin marcas en demo, muestra el empty
+  // state "Vuelve pronto" (listActiveBrands devuelve [] sin DB).
+  test('página de marcas carga con empty state', async ({ page }) => {
+    await page.goto('/marcas')
+    await expect(page.getByRole('heading', { name: 'Marcas' })).toBeVisible()
+    await expect(page.getByText(/vuelve pronto/i)).toBeVisible()
+  })
+
   test('carrito vacío muestra CTA', async ({ page }) => {
     await page.goto('/carrito')
     // Si hay carrito persistido, puede no estar vacío; en ese caso, vaciarlo

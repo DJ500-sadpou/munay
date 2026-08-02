@@ -5,9 +5,10 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { auth, currentUser } from '@clerk/nextjs/server'
-import { transaction, isDbConfigured } from '@/lib/db/neon'
+import { query, transaction, isDbConfigured } from '@/lib/db/neon'
 import { checkAdminRow } from '@/lib/auth/admin-checks'
 import { slugify } from '@/lib/format'
+import { isProductCategory } from '@/lib/categories'
 
 export const runtime = 'nodejs'
 
@@ -31,6 +32,26 @@ async function checkAdmin() {
   return { ok: true }
 }
 
+/** [P1][FIX R5][R2-R4] En PUT: la marca debe existir Y (estar activa O ser la
+ *  marca actualmente asignada al producto). Así el admin puede conservar una
+ *  marca que luego se desactivó sin romper el producto existente (spec:
+ *  "una marca inactiva no debe poder asignarse a productos nuevos, pero no
+ *  debe romper productos que ya la tengan asignada"). Null → sin marca. */
+async function validateBrandForUpdate(
+  marcaId: string | null | undefined,
+  productId: string
+): Promise<string | null> {
+  if (!marcaId) return null
+  const row = await query<any>(
+    `SELECT b.id FROM brands b
+     WHERE b.id = $1
+       AND (b.activo = true OR b.id = (SELECT p.marca_id FROM products p WHERE p.id = $2))`,
+    [marcaId, productId]
+  )
+  if (!row[0]) return 'Marca inválida o inactiva'
+  return null
+}
+
 export async function PUT(req: NextRequest, ctx: RouteContext) {
   const guard = await checkAdmin()
   if (!guard.ok) return guard.response!
@@ -47,6 +68,8 @@ export async function PUT(req: NextRequest, ctx: RouteContext) {
     active: boolean
     stock: number
     images?: { url: string; public_id?: string; sort?: number }[]
+    categoria?: string | null
+    marca_id?: string | null
   }
   try {
     body = await req.json()
@@ -64,6 +87,16 @@ export async function PUT(req: NextRequest, ctx: RouteContext) {
   if (!['new', 'used'].includes(body.condition)) {
     return NextResponse.json({ error: 'Condición inválida' }, { status: 400 })
   }
+  // [P1] Categoría OBLIGATORIA (lista fija).
+  if (!isProductCategory(body.categoria)) {
+    return NextResponse.json({ error: 'Debes seleccionar una categoría válida' }, { status: 400 })
+  }
+  // [P1][FIX R5][R2-R4] Marca opcional: activa (asignación) o la actual del
+  // producto aunque esté inactiva (conservación).
+  const brandErr = await validateBrandForUpdate(body.marca_id, id)
+  if (brandErr) {
+    return NextResponse.json({ error: brandErr }, { status: 400 })
+  }
 
   try {
     // Fix CRIT-4 / FLOW2-013: usar transaction real (no stub upsert no-op).
@@ -76,7 +109,9 @@ export async function PUT(req: NextRequest, ctx: RouteContext) {
             price_cents = ${body.price_cents},
             condition = ${body.condition},
             grading = ${body.grading ?? null},
-            active = ${body.active}
+            active = ${body.active},
+            categoria = ${body.categoria},
+            marca_id = ${body.marca_id ?? null}
         WHERE id = ${id}
       `
       // Upsert de inventario real con INSERT ... ON CONFLICT DO UPDATE.

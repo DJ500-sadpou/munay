@@ -14,6 +14,16 @@ import { Switch } from '@/components/ui/switch'
 import { slugify } from '@/lib/format'
 import { ROUTES } from '@/lib/constants'
 import { ImageUpload } from '@/components/admin/image-upload'
+import { PRODUCT_CATEGORIES, type ProductCategory } from '@/lib/categories'
+
+/** Marca para el Select del form. Todas las marcas (para poder preseleccionar
+ *  una marca hoy inactiva al editar — [FIX R5]); solo las activas son
+ *  elegibles para asignar. */
+export interface BrandOption {
+  id: string
+  nombre: string
+  activo: boolean
+}
 
 interface ImageData {
   url: string
@@ -34,10 +44,14 @@ interface Props {
     active: boolean
     stock: number
     images?: ImageData[]
+    categoria?: ProductCategory | null
+    marca_id?: string | null
   }
+  /** [P1] Todas las marcas (activas + inactivas) para el Select. */
+  brands?: BrandOption[]
 }
 
-export function ProductForm({ product }: Props) {
+export function ProductForm({ product, brands = [] }: Props) {
   const router = useRouter()
   const isEdit = !!product
 
@@ -52,6 +66,12 @@ export function ProductForm({ product }: Props) {
   const [stock, setStock] = useState(product ? String(product.stock) : '0')
   const [active, setActive] = useState(product?.active ?? true)
   const [images, setImages] = useState<ImageData[]>(product?.images ?? [])
+  // [P1] Categoría (obligatoria) y marca (opcional).
+  const [categoria, setCategoria] = useState<ProductCategory | ''>(
+    product?.categoria ?? ''
+  )
+  // 'none' = Sin marca. Preselecciona la marca actual aunque esté inactiva.
+  const [marcaId, setMarcaId] = useState<string>(product?.marca_id ?? 'none')
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -80,6 +100,13 @@ export function ProductForm({ product }: Props) {
       return
     }
 
+    // [P1] Categoría obligatoria (validación client-side + server-side).
+    if (!categoria) {
+      setError('Selecciona una categoría.')
+      setLoading(false)
+      return
+    }
+
     const payload = {
       slug: slug.trim(),
       title: title.trim(),
@@ -90,6 +117,8 @@ export function ProductForm({ product }: Props) {
       active,
       stock: stockNum,
       images: images.map((img) => ({ url: img.url, public_id: img.public_id, sort: img.sort })),
+      categoria,
+      marca_id: marcaId === 'none' ? null : marcaId,
     }
 
     try {
@@ -243,6 +272,51 @@ export function ProductForm({ product }: Props) {
                     <SelectItem value="excelente">Excelente</SelectItem>
                     <SelectItem value="buena">Bueno</SelectItem>
                     <SelectItem value="regular">Regular</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* [P1] Categoría (obligatoria) + Marca (opcional) */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="categoria">Categoría *</Label>
+                <Select
+                  value={categoria}
+                  onValueChange={(v) => setCategoria(v as ProductCategory)}
+                >
+                  <SelectTrigger id="categoria">
+                    <SelectValue placeholder="Selecciona…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRODUCT_CATEGORIES.map((c) => (
+                      <SelectItem key={c.value} value={c.value}>
+                        {c.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {!categoria && (
+                  <p className="text-xs text-munay-ink/50">Requerida para aparecer en los filtros de categoría.</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="marca">Marca</Label>
+                <Select value={marcaId} onValueChange={setMarcaId}>
+                  <SelectTrigger id="marca">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin marca</SelectItem>
+                    {/* Activas elegibles + la actual aunque esté inactiva */}
+                    {brands
+                      .filter((b) => b.activo || b.id === product?.marca_id)
+                      .map((b) => (
+                        <SelectItem key={b.id} value={b.id}>
+                          {b.nombre}
+                          {!b.activo ? ' (inactiva)' : ''}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>

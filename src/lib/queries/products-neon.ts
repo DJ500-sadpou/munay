@@ -9,6 +9,7 @@
 
 import { query, queryOne, isDbConfigured } from '@/lib/db/neon'
 import type { ProductCondition, ProductGrading } from '@/types/database'
+import { isProductCategory, type ProductCategory } from '@/lib/categories'
 
 // ---- Tipos públicos ----
 
@@ -24,6 +25,8 @@ export interface ProductListItem {
   stock: number
   flash_discount_percent: number | null
   flash_code: string | null
+  /** [P1] Categoría del producto (null si el admin aún no la clasificó). */
+  categoria: ProductCategory | null
 }
 
 export interface ProductDetail extends ProductListItem {
@@ -42,12 +45,18 @@ export interface ProductFilters {
   sort?: 'recent' | 'price_asc' | 'price_desc' | 'title_asc'
   flashCode?: string
   flashCampaign?: boolean
+  /** [P1] Filtro de categoría ('all' = sin filtro). */
+  categoria?: ProductCategory | 'all'
+  /** [P1] Filtro de marca (slug; solo vía URL, sin selector visible). */
+  marca?: string
 }
 
 export const DEFAULT_FILTERS: ProductFilters = {
   sort: 'recent',
   condition: 'all',
   grading: 'all',
+  // [FIX R1] Centinela canónico 'all' (consistente con condition/grading).
+  categoria: 'all',
 }
 
 export function parseFiltersFromSearchParams(
@@ -66,6 +75,12 @@ export function parseFiltersFromSearchParams(
   const sort = (get('sort') as ProductFilters['sort']) ?? 'recent'
   const q = get('q')?.trim()
   const flashCode = get('flash')?.trim().toUpperCase()
+  // [P1] Categoría: valor válido o centinela 'all' (nunca basura en el SQL).
+  const rawCategoria = get('categoria') ?? 'all'
+  const categoria = isProductCategory(rawCategoria) ? rawCategoria : 'all'
+  // [P1] Marca: slug limpio (trim + longitud acotada) o undefined.
+  const rawMarca = get('marca')?.trim()
+  const marca = rawMarca && rawMarca.length <= 100 ? rawMarca : undefined
 
   return {
     q: q || undefined,
@@ -79,6 +94,8 @@ export function parseFiltersFromSearchParams(
     sort: ['recent', 'price_asc', 'price_desc', 'title_asc'].includes(sort as string) ? sort : 'recent',
     flashCode: flashCode || undefined,
     flashCampaign: get('flashCampaign') === 'true',
+    categoria,
+    marca,
   }
 }
 
@@ -139,8 +156,16 @@ export async function listProducts(filters: ProductFilters = {}): Promise<Produc
     flashInfo = await getValidFlashCode(f.flashCode)
   }
 
-  // P2P listings solo cuando NO hay flash activo y el filtro no es 'new'
-  const includeP2P = f.condition !== 'new' && !flashInfo
+  // [P1][FIX R1] Centinela: undefined/'all' = sin filtro (NUNCA truthy con 'all'
+  // → p.categoria = 'all' daría 0 resultados). Mismo patrón que condition.
+  const categoriaFilter = f.categoria && f.categoria !== 'all' ? f.categoria : undefined
+  const marcaFilter = f.marca && f.marca.trim() ? f.marca.trim() : undefined
+
+  // P2P listings solo cuando NO hay flash activo, el filtro no es 'new' y no
+  // hay filtro de categoría/marca (D4: el vocabulario P2P difiere del catálogo
+  // curado; mezclarlos daría resultados incoherentes y contador incorrecto).
+  const includeP2P =
+    f.condition !== 'new' && !flashInfo && !categoriaFilter && !marcaFilter
 
   let items: ProductListItem[] = []
   const paramIdxRef = { current: 1 }
@@ -167,6 +192,20 @@ export async function listProducts(filters: ProductFilters = {}): Promise<Produc
     if (f.grading && f.grading !== 'all') {
       where.push(`p.grading = $${paramIdxRef.current}`)
       params.push(f.grading)
+      paramIdxRef.current++
+    }
+    // [P1] Filtro de categoría (combina con condition/grading/precio/sort).
+    if (categoriaFilter) {
+      where.push(`p.categoria = $${paramIdxRef.current}`)
+      params.push(categoriaFilter)
+      paramIdxRef.current++
+    }
+    // [P1] Filtro de marca (solo vía URL /marcas): SOLO marcas activas.
+    if (marcaFilter) {
+      where.push(`p.marca_id IN (
+        SELECT id FROM brands WHERE activo = true AND slug = $${paramIdxRef.current}
+      )`)
+      params.push(marcaFilter)
       paramIdxRef.current++
     }
     if (f.minPriceCents !== undefined) {
@@ -203,6 +242,7 @@ export async function listProducts(filters: ProductFilters = {}): Promise<Produc
     const productRows = await query<any>(`
       SELECT
         p.id, p.slug, p.title, p.price_cents, p.currency, p.condition, p.grading,
+        p.categoria,
         COALESCE(
           (SELECT pi.url FROM product_images pi
            WHERE pi.product_id = p.id ORDER BY pi.sort ASC LIMIT 1),
@@ -227,6 +267,7 @@ export async function listProducts(filters: ProductFilters = {}): Promise<Produc
       stock: Math.max(0, Number(r.stock)),
       flash_discount_percent: null,
       flash_code: null,
+      categoria: isProductCategory(r.categoria) ? r.categoria : null,
     }))
   }
 
@@ -265,7 +306,6 @@ export async function listProducts(filters: ProductFilters = {}): Promise<Produc
       WHERE ${listingWhere.join(' AND ')}
       ORDER BY ul.created_at DESC
     `, listingParams)
-
     const listingItems: ProductListItem[] = listingRows.map((r: any) => {
       // [P0a] safeParseImages: un JSON malformado no rompe la búsqueda.
       const images = safeParseImages(r.images)
@@ -281,6 +321,7 @@ export async function listProducts(filters: ProductFilters = {}): Promise<Produc
         stock: 1,  // cada listing es una unidad única
         flash_discount_percent: null,
         flash_code: null,
+        categoria: null,
       }
     })
 
@@ -333,8 +374,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
     SELECT id, url, sort FROM product_images
     WHERE product_id = $1 ORDER BY sort ASC
   `, [p.id])
-
-  return {
+    return {
     id: p.id,
     slug: p.slug,
     title: p.title,
@@ -347,6 +387,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
     stock: Math.max(0, Number(p.stock)),
     flash_discount_percent: null,
     flash_code: null,
+    categoria: isProductCategory(p.categoria) ? p.categoria : null,
     images: imgs.map((i: any) => ({ id: i.id, url: i.url, sort: Number(i.sort) })),
   }
 }
@@ -490,6 +531,7 @@ export async function getProductByIdForAdmin(id: string) {
   return await queryOne<any>(`
     SELECT
       p.id, p.slug, p.title, p.description, p.price_cents, p.currency, p.condition, p.grading, p.active,
+      p.categoria, p.marca_id,
       COALESCE(i.stock, 0) AS stock
     FROM products p
     LEFT JOIN inventory i ON i.product_id = p.id
